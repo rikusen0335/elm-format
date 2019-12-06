@@ -13,7 +13,6 @@ import qualified AST.Module
 import qualified AST.Pattern
 import AST.Structure
 import qualified AST.Variable
-import Data.Fix
 import Data.Functor.Identity
 import qualified Reporting.Annotation
 import qualified Reporting.Region

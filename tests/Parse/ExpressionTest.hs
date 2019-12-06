@@ -12,13 +12,11 @@ import AST.Structure
 import AST.Variable
 import qualified Box
 import qualified Data.Bimap as Bimap
-import Data.Fix
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Text.Parsec.Char (string)
 import ElmFormat.ImportInfo (ImportInfo(..))
-import ElmFormat.Mapping
 import ElmFormat.Render.Box (formatExpression, ExpressionContext(..))
 import ElmVersion
 import Parse.TestHelpers

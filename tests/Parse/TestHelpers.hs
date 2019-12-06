@@ -8,7 +8,7 @@ import Test.Tasty.HUnit
 import AST.Structure
 import Parse.Helpers (iParse)
 import Parse.IParser
-import Reporting.Annotation hiding (map, at)
+import Reporting.Annotation hiding (at)
 import Reporting.Region
 import Text.ParserCombinators.Parsec.Combinator (eof)
 import qualified Data.List as List
