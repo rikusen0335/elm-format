@@ -6,51 +6,41 @@ module AST.Pattern where
 import AST.V0_16
 import ElmFormat.Mapping
 
-import qualified Reporting.Annotation as A
 
-
-type Pattern ns =
-    A.Located (Pattern' ns)
-
-
-data Pattern' ns
+data Pattern typeRef ctorRef varRef pat typ expr
     = Anything
     | UnitPattern Comments
     | Literal Literal
     | VarPattern LowercaseIdentifier
     | OpPattern SymbolIdentifier
-    | Data (ns, UppercaseIdentifier) [C1 BeforeTerm (Pattern ns)]
-    | PatternParens (C2 Before After (Pattern ns))
-    | Tuple [C2 BeforeTerm AfterTerm (Pattern ns)]
+    | Data typeRef [C1 BeforeTerm pat]
+    | PatternParens (C2 Before After pat)
+    | Tuple [C2 BeforeTerm AfterTerm pat]
     | EmptyListPattern Comments
-    | List [C2 BeforeTerm AfterTerm (Pattern ns)]
+    | List [C2 BeforeTerm AfterTerm pat]
     | ConsPattern
-        { first :: C0Eol (Pattern ns)
-        , rest :: Sequence (Pattern ns)
+        { first :: C0Eol pat
+        , rest :: Sequence pat
         }
     | EmptyRecordPattern Comments
     | Record [C2 BeforeTerm AfterTerm LowercaseIdentifier]
-    | Alias (C1 After (Pattern ns)) (C1 Before LowercaseIdentifier)
-    deriving (Eq, Show, Functor)
+    | Alias (C1 After pat) (C1 Before LowercaseIdentifier)
+    deriving (Eq, Show)
 
 
-instance MapNamespace a b (Pattern' a) (Pattern' b) where
-    mapNamespace = fmap
-
-
-instance MapReferences a b (Pattern' a) (Pattern' b) where
-    mapReferences fu fl = \case
+instance MapAST Pattern where
+    mapAll ftref _ _ fpat _ _ = \case
         Anything -> Anything
         UnitPattern c -> UnitPattern c
         Literal l -> Literal l
         VarPattern l -> VarPattern l
-        OpPattern o -> OpPattern o
-        Data ctor args -> Data (fu ctor) (mapReferences fu fl args)
-        PatternParens p -> PatternParens (mapReferences fu fl p)
-        Tuple ps -> Tuple (mapReferences fu fl ps)
+        OpPattern s -> OpPattern s
+        Data typ pats -> Data (ftref typ) (fmap (fmap fpat) pats)
+        PatternParens pat -> PatternParens (fmap fpat pat)
+        Tuple pats -> Tuple (fmap (fmap fpat) pats)
         EmptyListPattern c -> EmptyListPattern c
-        List ps -> List (mapReferences fu fl ps)
-        ConsPattern first rest -> ConsPattern (mapReferences fu fl first) (mapReferences fu fl rest)
+        List pats -> List (fmap (fmap fpat) pats)
+        ConsPattern first rest -> ConsPattern (fmap fpat first) (fmap (fmap fpat) rest)
         EmptyRecordPattern c -> EmptyRecordPattern c
-        Record fs -> Record fs
-        Alias p as -> Alias (mapReferences fu fl p) as
+        Record fields -> Record fields
+        Alias pat name -> Alias (fmap fpat pat) name

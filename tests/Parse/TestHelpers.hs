@@ -5,6 +5,7 @@ import Elm.Utils ((|>))
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import AST.Structure
 import Parse.Helpers (iParse)
 import Parse.IParser
 import Reporting.Annotation hiding (map, at)
@@ -45,7 +46,8 @@ assertParseFailure parser input =
 
 nowhere = Region (Position 0 0) (Position 0 0)
 
-at a b c d = A (Region (Position a b) (Position c d))
+at :: Int -> Int -> Int -> Int -> ASTNS t Located ns -> FixASTNS t Located ns
+at a b c d = FixAST . A (Region (Position a b) (Position c d))
 
 
 {-| Checks that removing indentation causes parsing to fail.

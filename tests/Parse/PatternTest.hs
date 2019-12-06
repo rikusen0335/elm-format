@@ -6,12 +6,14 @@ import Test.Tasty.HUnit
 import Parse.Pattern
 import AST.V0_16
 import AST.Pattern
+import AST.Structure
 import ElmVersion
+import Reporting.Annotation (Located)
 
 import Parse.TestHelpers
 
 
-example :: String -> String -> Pattern [UppercaseIdentifier] -> TestTree
+example :: String -> String -> FixASTNS Pattern Located [UppercaseIdentifier] -> TestTree
 example name input expected =
     testCase name $
         assertParse (expr Elm_0_19) input expected

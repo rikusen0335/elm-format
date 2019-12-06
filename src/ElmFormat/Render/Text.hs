@@ -1,8 +1,9 @@
-{-# OPTIONS_GHC -Wall #-}
 module ElmFormat.Render.Text where
 
+import Data.Coapplicative
 import Elm.Utils ((|>))
 import ElmVersion (ElmVersion)
+import AST.Structure
 import AST.V0_16
 
 import qualified AST.Module
@@ -11,7 +12,7 @@ import qualified Data.Text as Text
 import qualified ElmFormat.Render.Box as Render
 
 
-render :: ElmVersion -> AST.Module.Module -> Text.Text
+render :: Coapplicative annf => ElmVersion -> ASTNS (AST.Module.Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier] -> Text.Text
 render elmVersion modu =
     renderBox $ Render.formatModule elmVersion True 2 modu
 

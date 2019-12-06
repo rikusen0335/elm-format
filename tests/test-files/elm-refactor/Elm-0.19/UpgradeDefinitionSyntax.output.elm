@@ -1,5 +1,6 @@
 port module UpgradDefinitionSyntax exposing (x)
 
+import A
 import B
 
 

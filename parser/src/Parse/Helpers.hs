@@ -3,15 +3,16 @@ module Parse.Helpers where
 
 import Prelude hiding (until)
 import Control.Monad (guard)
-import Data.Fix
 import Data.Map.Strict hiding (foldl)
 import qualified Data.Maybe as Maybe
 import Text.Parsec hiding (newline, spaces, State)
 import Text.Parsec.Indent (indented, runIndent)
 
 import AST.V0_16
+import AST.Expression (Expression)
 import qualified AST.Expression
 import qualified AST.Helpers as Help
+import AST.Structure (FixAST(..))
 import AST.Variable (Ref)
 import qualified AST.Variable
 import ElmVersion
@@ -480,29 +481,21 @@ located parser =
       return (start, value, end)
 
 
-accessible :: ElmVersion -> IParser AST.Expression.Expr -> IParser AST.Expression.Expr
+accessible :: ElmVersion -> IParser (FixAST Expression A.Located typeRef ctorRef varRef) -> IParser (FixAST Expression A.Located typeRef ctorRef varRef)
 accessible elmVersion exprParser =
   do  start <- getMyPosition
-
-      annotatedRootExpr@(Fix (AST.Expression.AE (A.A _ _rootExpr))) <- exprParser
-
+      rootExpr <- exprParser
       access <- optionMaybe (try dot <?> "a field access like .name")
 
       case access of
         Nothing ->
-          return annotatedRootExpr
+          return rootExpr
 
         Just _ ->
           accessible elmVersion $
             do  v <- lowVar elmVersion
                 end <- getMyPosition
-                return . Fix . AST.Expression.AE . A.at start end $
-                    -- case rootExpr of
-                    --   AST.Expression.VarExpr (AST.Variable.VarRef name@(c:_))
-                    --     | Char.isUpper c ->
-                    --         AST.Expression.VarExpr $ AST.Variable.VarRef (name ++ '.' : v)
-                    --   _ ->
-                        AST.Expression.Access annotatedRootExpr v
+                return $ FixAST $ A.at start end $ AST.Expression.Access rootExpr v
 
 
 dot :: IParser ()

@@ -8,12 +8,13 @@ import Test.QuickCheck
 
 import AST.V0_16
 import qualified AST.Declaration
-import AST.Expression (AnnotatedExpression(AE))
 import qualified AST.Expression
 import qualified AST.Module
 import qualified AST.Pattern
+import AST.Structure
 import qualified AST.Variable
 import Data.Fix
+import Data.Functor.Identity
 import qualified Reporting.Annotation
 import qualified Reporting.Region
 
@@ -55,29 +56,6 @@ lowerIdentifier =
         return $ LowercaseIdentifier $ first:rest
 
 
-nowhere :: Reporting.Region.Position
-nowhere =
-    Reporting.Region.Position 0 0
-
-
-located :: a -> Reporting.Annotation.Located a
-located =
-    Reporting.Annotation.at nowhere nowhere
-
-
-instance Arbitrary Reporting.Region.Region where
-    arbitrary =
-        return $ Reporting.Region.Region nowhere nowhere
-
-
-instance (Arbitrary a) => Arbitrary (Reporting.Annotation.Located a) where
-    arbitrary =
-        do
-            ann <- arbitrary
-            a <- arbitrary
-            return $ Reporting.Annotation.A ann a
-
-
 commented :: Gen a -> Gen (C2 before after a)
 commented inner =
     C ([], []) <$> inner
@@ -95,7 +73,7 @@ listing =
     return $ AST.Variable.OpenListing (C ([], []) ())
 
 
-instance Arbitrary AST.Module.Module where
+instance Arbitrary (ASTNS (AST.Module.Module Identity [UppercaseIdentifier]) Identity [UppercaseIdentifier]) where
     arbitrary =
         do
             name <- listOf1 $ capIdentifier
@@ -109,6 +87,6 @@ instance Arbitrary AST.Module.Module where
                   Nothing
                   (Just $ C ([], []) listing)
                 )
-                (located Nothing)
+                (Reporting.Annotation.at (Reporting.Region.Position 0 0) (Reporting.Region.Position 0 0) Nothing)
                 (C [] empty)
-                [ AST.Declaration.Entry $ located $ AST.Declaration.Definition (located $ AST.Pattern.Anything) [] [] (Fix $ AE $ located $ AST.Expression.TupleFunction 2)]
+                [ AST.Declaration.Entry $ pure $ AST.Declaration.Definition (FixAST $ pure $ AST.Pattern.Anything) [] [] (FixAST $ pure $ AST.Expression.TupleFunction 2)]

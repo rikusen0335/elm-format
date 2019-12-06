@@ -6,6 +6,7 @@ module Reporting.Annotation where
 import Prelude ()
 import Relude
 
+import Data.Coapplicative
 import Text.Show (showParen, showString, showsPrec)
 
 import qualified Reporting.Region as R
@@ -14,26 +15,21 @@ import qualified Data.String as String
 
 -- ANNOTATION
 
-type Located a =
-    Annotated R.Region a
+data Located a =
+    A R.Region a
+    deriving (Eq, Functor)
 
 
-data Annotated ann a =
-    A ann a
-    deriving (Eq)
-
-
-instance Functor (Annotated ann) where
-    fmap f (A region a) =
-        A region (f a)
-
-
-instance (Show a, Show ann) => Show (Annotated ann a) where
+instance (Show a) => Show (Located a) where
     showsPrec p (A ann a) = showParen (p > 10) $
         showString $ String.unwords
             [ show ann
             , showsPrec 99 a ""
             ]
+
+instance Coapplicative Located where
+    extract (A _ x) = x
+    {-# INLINE extract #-}
 
 
 -- CREATE
@@ -51,15 +47,3 @@ merge (A region1 _) (A region2 _) value =
 sameAs :: Located a -> b -> Located b
 sameAs (A annotation _) value =
     A annotation value
-
-
--- MANIPULATE
-
-map :: (a -> b) -> Located a -> Located b
-map f (A annotation value) =
-    A annotation (f value)
-
-
-drop :: Located a -> a
-drop (A _ value) =
-    value

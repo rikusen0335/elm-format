@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module AST.V0_16 where
 
-import qualified Reporting.Annotation as A
+import Data.Coapplicative
 import Data.Int (Int64)
 
 
@@ -42,6 +42,10 @@ data Commented c a =
     C c a
     deriving (Eq, Ord, Functor, Show) -- TODO: is Ord needed?
 
+instance Coapplicative (Commented c) where
+    extract (C _ a) = a
+    {-# INLINE extract #-}
+
 type C1 l1 a = Commented Comments a
 type C2 l1 l2 a = Commented (Comments, Comments) a
 type C3 l1 l2 l3 a = Commented (Comments, Comments, Comments) a
@@ -49,9 +53,6 @@ type C3 l1 l2 l3 a = Commented (Comments, Comments, Comments) a
 type C0Eol a = Commented (Maybe String) a
 type C1Eol l1 a = Commented (Comments, Maybe String) a
 type C2Eol l1 l2 a = Commented (Comments, Comments, Maybe String) a
-
-dropComments :: Commented c a -> a
-dropComments (C _ a) = a
 
 
 {-| This represents a list of things separated by comments.
@@ -182,31 +183,27 @@ data Literal
     deriving (Eq, Show)
 
 
-data TypeConstructor ns
-    = NamedConstructor (ns, UppercaseIdentifier)
+data TypeConstructor ctorRef
+    = NamedConstructor ctorRef
     | TupleConstructor Int -- will be 2 or greater, indicating the number of elements in the tuple
     deriving (Eq, Show, Functor)
 
 data Before; data After
-data Type' ns
+data Typ typeRef ctorRef varRef pat typ expr
     = UnitType Comments
     | TypeVariable LowercaseIdentifier
-    | TypeConstruction (TypeConstructor ns) [C1 Before (Type ns)]
-    | TypeParens (C2 Before After (Type ns))
-    | TupleType [C2Eol Before After (Type ns)]
+    | TypeConstruction (TypeConstructor ctorRef) [C1 Before typ]
+    | TypeParens (C2 Before After typ)
+    | TupleType [C2Eol Before After typ]
     | RecordType
         { base :: Maybe (C2 Before After LowercaseIdentifier)
-        , fields :: Sequence (Pair LowercaseIdentifier (Type ns))
+        , fields :: Sequence (Pair LowercaseIdentifier typ)
         , trailingComments :: Comments
         , forceMultiline :: ForceMultiline
         }
     | FunctionType
-        { first :: C0Eol (Type ns)
-        , rest :: Sequence (Type ns)
+        { first :: C0Eol typ
+        , rest :: Sequence typ
         , forceMultiline :: ForceMultiline
         }
-    deriving (Eq, Show, Functor)
-
-
-type Type ns =
-    A.Located (Type' ns)
+    deriving (Eq, Show)

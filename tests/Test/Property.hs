@@ -3,10 +3,13 @@ module Test.Property where
 import Prelude hiding ((>>))
 import Elm.Utils ((|>), (>>))
 
+import AST.V0_16
+import AST.Structure
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Test.QuickCheck.IO ()
+import Reporting.Annotation (Located)
 
 import qualified AST.Module
 import qualified Data.Text as Text
@@ -31,7 +34,7 @@ assertStringToString source =
         assertEqual "" (Right source') result
 
 
-astToAst :: AST.Module.Module -> Assertion
+astToAst :: ASTNS (AST.Module.Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier] -> Assertion
 astToAst ast =
     let
         result =

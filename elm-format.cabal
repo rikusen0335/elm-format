@@ -63,9 +63,11 @@ library
         AST.Helpers
         AST.Module
         AST.Pattern
+        AST.Structure
         AST.V0_16
         AST.Variable
         Box
+        Data.Coapplicative
         Elm.Utils
         ElmFormat.Execute
         ElmFormat.FileStore
@@ -95,8 +97,8 @@ library
         Util.List
 
     other-modules:
-        AST.Annotated
         AST.Json
+        AST.MatchReferences
         Build_elm_format
         Cheapskate.Inlines
         Cheapskate.Parse

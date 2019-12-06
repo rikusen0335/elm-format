@@ -1,25 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module AST.Json where
 
 import Elm.Utils ((|>))
 
-import AST.Annotated ()
 import AST.Declaration
 import AST.Expression
+import AST.MatchReferences (fromMatched, matchReferences)
 import AST.Module
 import AST.Pattern
+import AST.Structure
 import AST.Variable
 import AST.V0_16
-import Data.Fix
+import Data.Coapplicative
 import Data.Maybe (mapMaybe)
-import ElmFormat.Mapping
-import Reporting.Annotation hiding (map)
+import Reporting.Annotation
 import Text.JSON hiding (showJSON)
 
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified ElmFormat.Version
 import qualified Reporting.Region as Region
 import qualified ReversedList
@@ -31,8 +33,8 @@ pleaseReport what details =
     error ("<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >")
 
 
-showModule :: Module -> JSValue
-showModule (Module _ maybeHeader _ (C _ imports) body) =
+showModule :: ASTNS (Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier] -> JSValue
+showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
     let
         header =
             maybeHeader
@@ -40,21 +42,8 @@ showModule (Module _ maybeHeader _ (C _ imports) body) =
 
         (Header _ (C _ name) _ _) = header
 
-        getAlias :: ImportMethod -> Maybe UppercaseIdentifier
-        getAlias importMethod =
-            fmap dropComments (alias importMethod)
-
-        importAliases =
-            Map.fromList $ map (\(k, v) -> (v, k)) $ Map.toList $ Map.mapMaybe (getAlias . dropComments) imports
-
-        normalizeNamespace :: [UppercaseIdentifier] -> [UppercaseIdentifier]
-        normalizeNamespace namespace =
-            case namespace of
-                [alias] ->
-                    Map.findWithDefault namespace alias importAliases
-
-                _ ->
-                    namespace
+        importInfo =
+            ImportInfo.fromModule mempty modu
 
         importJson (moduleName, C _ (ImportMethod alias (C _ exposing))) =
             let
@@ -66,28 +55,34 @@ showModule (Module _ maybeHeader _ (C _ imports) body) =
                 , ( "exposing", showImportListingJSON exposing )
                 ]
             )
+
+        normalizeDecl =
+            mapNs (fromMatched []) . matchReferences importInfo
+
+        normalizedBody =
+            fmap (fmap $ fmap normalizeDecl) body
     in
     makeObj
         [ ( "moduleName", showJSON name )
         , ( "imports", makeObj $ fmap importJson $ Map.toList imports )
-        , ( "body" , JSArray $ fmap showJSON $ mergeDeclarations $ (fmap (mapNamespace normalizeNamespace) body :: List (TopLevelStructure (Declaration [UppercaseIdentifier] (Fix (AnnotatedExpression [UppercaseIdentifier] Region.Region))))) )
+        , ( "body", JSArray $ fmap showJSON $ mergeDeclarations $ normalizedBody )
         ]
 
 
-data MergedTopLevelStructure ns e
+data MergedTopLevelStructure ns
     = MergedDefinition
         { _definitionLocation :: Region.Region
         , _name :: LowercaseIdentifier
-        , _args :: List (C1 Before (Pattern ns))
+        , _args :: List (C1 Before (FixASTNS Pattern Located ns))
         , _preEquals :: Comments
-        , _expression :: e
+        , _expression :: FixASTNS Expression Located ns
         , _doc :: Maybe Comment
-        , _annotation :: Maybe (Comments, Comments, Type ns)
+        , _annotation :: Maybe (Comments, Comments, FixASTNS Typ Located ns)
         }
     | TodoTopLevelStructure String
 
 
-mergeDeclarations :: Show e => List (TopLevelStructure (Declaration [UppercaseIdentifier] e)) -> List (MergedTopLevelStructure [UppercaseIdentifier] e)
+mergeDeclarations :: forall ns. Show ns => List (TopLevelStructure (Located (ASTNS Declaration Located ns))) -> List (MergedTopLevelStructure ns)
 mergeDeclarations decls =
     let
         collectAnnotation decl =
@@ -95,13 +90,13 @@ mergeDeclarations decls =
                 Entry (A _ (TypeAnnotation (C preColon (VarRef () name)) (C postColon typ))) -> Just (name, (preColon, postColon, typ))
                 _ -> Nothing
 
-        annotations :: Map.Map LowercaseIdentifier (Comments, Comments, Type [UppercaseIdentifier])
+        annotations :: Map.Map LowercaseIdentifier (Comments, Comments, FixASTNS Typ Located ns)
         annotations =
             Map.fromList $ mapMaybe collectAnnotation decls
 
         merge decl =
             case decl of
-                Entry (A region (Definition (A _ (VarPattern name)) args preEquals expr)) ->
+                Entry (A region (Definition (FixAST (A _ (VarPattern name))) args preEquals expr)) ->
                     Just $ MergedDefinition
                         { _definitionLocation = region
                         , _name = name
@@ -172,7 +167,7 @@ instance ToJSON DetailedListing where
             ]
 
 
-instance ToJSON e => ToJSON (MergedTopLevelStructure [UppercaseIdentifier] e) where
+instance ToJSON (MergedTopLevelStructure [UppercaseIdentifier]) where
     showJSON (TodoTopLevelStructure what) =
         JSString $ toJSString ("TODO: " ++ what)
     showJSON (MergedDefinition region (LowercaseIdentifier name) args _ expression doc annotation) =
@@ -196,8 +191,8 @@ instance ToJSON e => ToJSON (MergedTopLevelStructure [UppercaseIdentifier] e) wh
 --   showJSON _ = JSString $ toJSString "TODO: Decl"
 
 
-instance ToJSON Expr where
-  showJSON (Fix (AE (A region expr))) =
+instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
+  showJSON (FixAST (A region expr)) =
       case expr of
           Unit _ ->
               makeObj [ type_ "UnitLiteral" ]
@@ -273,7 +268,7 @@ instance ToJSON Expr where
               makeObj
                   [ type_ "FunctionApplication"
                   , ("function", showJSON expr)
-                  , ("arguments", JSArray $ showJSON <$> map dropComments args)
+                  , ("arguments", JSArray $ showJSON <$> map extract args)
                   ]
 
           Binops first rest _ ->
@@ -284,7 +279,7 @@ instance ToJSON Expr where
                     , JSArray $ map
                         (\(BinopsClause _ op _ expr) ->
                            makeObj
-                               [ ("operator", showJSON $ Fix $ AE $ noRegion $ VarExpr op)
+                               [ ("operator", showJSON $ (FixAST $ noRegion $ VarExpr op :: FixASTNS Expression Located [UppercaseIdentifier]))
                                , ("term", showJSON expr)
                                ]
                         )
@@ -305,13 +300,13 @@ instance ToJSON Expr where
           ExplicitList terms _ _ ->
               makeObj
                   [ type_ "ListLiteral"
-                  , ("terms", JSArray $ fmap showJSON (map dropComments terms))
+                  , ("terms", JSArray $ fmap showJSON (map extract terms))
                   ]
 
           AST.Expression.Tuple exprs _ ->
               makeObj
                   [ type_ "TupleLiteral"
-                  , ("terms", JSArray $ fmap showJSON (map dropComments exprs))
+                  , ("terms", JSArray $ fmap showJSON (map extract exprs))
                   ]
 
           TupleFunction n | n <= 1 ->
@@ -372,13 +367,13 @@ instance ToJSON Expr where
           Lambda parameters _ body _ ->
               makeObj
                   [ type_ "AnonymousFunction"
-                  , ("parameters", JSArray $ map (\(C _ (A _ pat)) -> showJSON pat) parameters)
+                  , ("parameters", JSArray $ fmap (showJSON . extract) parameters)
                   , ("body", showJSON body)
                   ]
 
           If (IfClause (C _ cond') (C _ thenBody')) rest' (C _ elseBody) ->
               let
-                  ifThenElse :: Expr -> Expr -> [C1 Before (IfClause Expr)] -> JSValue
+                  ifThenElse :: ToJSON e => e -> e -> [C1 Before (IfClause e)] -> JSValue
                   ifThenElse cond thenBody rest =
                       makeObj
                           [ type_ "IfExpression"
@@ -409,7 +404,7 @@ instance ToJSON Expr where
                   , ( "subject", showJSON subject )
                   , ( "branches"
                     , JSArray $ map
-                        (\(CaseBranch _ _ _ (A _ pat) body) ->
+                        (\(CaseBranch _ _ _ pat body) ->
                            makeObj
                                [ ("pattern", showJSON pat)
                                , ("body", showJSON body)
@@ -443,10 +438,10 @@ sourceLocation region =
     ( "sourceLocation", showJSON region )
 
 
-instance (ToJSON e, Show e, Show ns) => ToJSON (LetDeclaration [ns] e) where
+instance ToJSON (ASTNS LetDeclaration Located [UppercaseIdentifier]) where
   showJSON letDeclaration =
       case letDeclaration of
-          LetDefinition (A _ (VarPattern (LowercaseIdentifier var))) [] _ expr ->
+          LetDefinition (FixAST (A _ (VarPattern (LowercaseIdentifier var)))) [] _ expr ->
               makeObj
                   [ type_ "Definition"
                   , ("name" , JSString $ toJSString var)
@@ -467,20 +462,20 @@ instance ToJSON FloatRepresentation where
     showJSON ExponentFloat = JSString $ toJSString "ExponentFloat"
 
 
-instance ToJSON (Pattern' [UppercaseIdentifier]) where
+instance ToJSON (FixASTNS Pattern Located [UppercaseIdentifier]) where
   showJSON pattern' =
       JSString $ toJSString $ "TODO: Pattern (" ++ show pattern' ++ ")"
 
 
-instance ToJSON (Type [UppercaseIdentifier]) where
-    showJSON (A _ type') =
-        case type' of
+instance ToJSON (FixASTNS Typ Located [UppercaseIdentifier]) where
+    showJSON type' =
+        case extract $ unFixAST type' of
             TypeConstruction (NamedConstructor (namespace, name)) args ->
                 makeObj
                     [ type_ "TypeReference"
                     , ( "name", showJSON name )
                     , ( "module", showJSON namespace )
-                    , ( "arguments", JSArray $ fmap (showJSON . dropComments) args )
+                    , ( "arguments", JSArray $ fmap (showJSON . extract) args )
                     ]
 
             TypeVariable (LowercaseIdentifier name) ->

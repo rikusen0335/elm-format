@@ -1,26 +1,28 @@
-{-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 module Parse.Type where
 
 import Text.Parsec ((<|>), (<?>), char, many1, string, try, optionMaybe)
 
 import Parse.Helpers
+import Reporting.Annotation (Located)
 import qualified Reporting.Annotation as A
 import AST.V0_16
+import AST.Structure (FixAST(..))
+import Data.Coapplicative
 import ElmVersion
 import Parse.IParser
 import Parse.Common
 import Data.Maybe (maybeToList)
 
 
-tvar :: ElmVersion -> IParser (Type ns)
+tvar :: ElmVersion -> IParser (FixAST Typ Located typeRef ctorRef varRef)
 tvar elmVersion =
-  addLocation
+  fmap FixAST $ addLocation
     (TypeVariable <$> lowVar elmVersion <?> "a type variable")
 
 
-tuple :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+tuple :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 tuple elmVersion =
-  addLocation $
+  fmap FixAST $ addLocation $
   do  types <- parens'' (withEol $ expr elmVersion)
       return $
           case types of
@@ -29,16 +31,16 @@ tuple elmVersion =
               Right [] ->
                   UnitType []
               Right [C ([], []) (C Nothing t)] ->
-                  A.drop t
+                  extract $ unFixAST t
               Right [C (pre, post) (C eol t)] ->
                   TypeParens $ C (pre, maybeToList (fmap LineComment eol) ++ post) t
               Right types' ->
                   TupleType $ fmap (\(C (pre, post) (C eol t)) -> C (pre, post, eol) t) types'
 
 
-record :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+record :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 record elmVersion =
-    addLocation $ brackets' $ checkMultiline $
+    fmap FixAST $ addLocation $ brackets' $ checkMultiline $
         do
             base' <- optionMaybe $ try (commented (lowVar elmVersion) <* string "|")
             (fields', trailing) <- sectionedGroup (pair (lowVar elmVersion) lenientHasType (expr elmVersion))
@@ -50,7 +52,7 @@ capTypeVar elmVersion =
     dotSep1 (capVar elmVersion)
 
 
-constructor0 :: ElmVersion -> IParser (TypeConstructor [UppercaseIdentifier])
+constructor0 :: ElmVersion -> IParser (TypeConstructor ([UppercaseIdentifier], UppercaseIdentifier))
 constructor0 elmVersion =
   do  name <- capTypeVar elmVersion
       case reverse name of
@@ -59,14 +61,14 @@ constructor0 elmVersion =
             return (NamedConstructor (reverse rest', last'))
 
 
-constructor0' :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+constructor0' :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 constructor0' elmVersion =
-    addLocation $
+    fmap FixAST $ addLocation $
     do  ctor <- constructor0 elmVersion
         return (TypeConstruction ctor [])
 
 
-term :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+term :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 term elmVersion =
   tuple elmVersion <|> record elmVersion <|> tvar elmVersion <|> constructor0' elmVersion
 
@@ -77,15 +79,15 @@ tupleCtor =
         return (TupleConstructor (length ctor + 1))
 
 
-app :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+app :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 app elmVersion =
-  addLocation $
+  fmap FixAST $ addLocation $
   do  f <- constructor0 elmVersion <|> try tupleCtor <?> "a type constructor"
       args <- spacePrefix (term elmVersion)
       return $ TypeConstruction f args
 
 
-expr :: ElmVersion -> IParser (Type [UppercaseIdentifier])
+expr :: ElmVersion -> IParser (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)
 expr elmVersion =
   do
     result <- separated rightArrow (app elmVersion <|> term elmVersion)
@@ -94,16 +96,16 @@ expr elmVersion =
         Left t ->
           t
         Right (region, first', rest', multiline) ->
-          A.A region $ FunctionType first' rest' (ForceMultiline multiline)
+          FixAST $ A.A region $ FunctionType first' rest' (ForceMultiline multiline)
 
 
-constructor :: ElmVersion -> IParser ([UppercaseIdentifier], [C1 before (Type [UppercaseIdentifier])])
+constructor :: ElmVersion -> IParser ([UppercaseIdentifier], [C1 before (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)])
 constructor elmVersion =
   (,) <$> (capTypeVar elmVersion<?> "another type constructor")
       <*> spacePrefix (term elmVersion)
 
 
-tag :: ElmVersion -> IParser (UppercaseIdentifier, [C1 before (Type [UppercaseIdentifier])])
+tag :: ElmVersion -> IParser (UppercaseIdentifier, [C1 before (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef)])
 tag elmVersion =
   (,) <$> (capVar elmVersion <?> "another type constructor")
       <*> spacePrefix (term elmVersion)

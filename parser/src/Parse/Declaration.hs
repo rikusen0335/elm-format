@@ -1,10 +1,10 @@
-{-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 module Parse.Declaration where
 
 import Text.Parsec ( (<|>), (<?>), choice, digit, optionMaybe, string, try )
 
 import AST.Declaration
-import AST.Expression (Expr)
+import AST.Structure
+import AST.Variable as Var
 import ElmVersion
 import Parse.Comments
 import qualified Parse.Expression as Expr
@@ -13,9 +13,10 @@ import qualified Parse.Type as Type
 import AST.V0_16
 import Parse.IParser
 import Parse.Whitespace
+import Reporting.Annotation (Located)
 
 
-declaration :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] Expr)
+declaration :: ElmVersion -> IParser (ASTNS Declaration Located [UppercaseIdentifier])
 declaration elmVersion =
     typeDecl elmVersion <|> infixDecl elmVersion <|> port elmVersion <|> definition elmVersion
 
@@ -24,14 +25,14 @@ topLevelStructure :: IParser a -> IParser (TopLevelStructure a)
 topLevelStructure entry =
     choice
         [ DocComment <$> docCommentAsMarkdown
-        , Entry <$> addLocation entry
+        , Entry <$> entry
         ]
 
 
 
 -- TYPE ANNOTATIONS and DEFINITIONS
 
-definition :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] Expr)
+definition :: ElmVersion -> IParser (ASTNS Declaration Located [UppercaseIdentifier])
 definition elmVersion =
     (Expr.typeAnnotation elmVersion TypeAnnotation <|> Expr.definition elmVersion Definition)
     <?> "a value definition"
@@ -39,7 +40,7 @@ definition elmVersion =
 
 -- TYPE ALIAS and UNION TYPES
 
-typeDecl :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] e)
+typeDecl :: ElmVersion -> IParser (Declaration typeRef ctorRef varRef pat (FixAST Typ Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef) expr)
 typeDecl elmVersion =
   do  try (reserved elmVersion "type") <?> "a type declaration"
       postType <- forcedWS
@@ -71,7 +72,7 @@ typeDecl elmVersion =
 -- INFIX
 
 
-infixDecl :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] e)
+infixDecl :: ElmVersion -> IParser (Declaration typeRef ctorRef (Var.Ref [UppercaseIdentifier]) pat typ e)
 infixDecl elmVersion =
     expecting "an infix declaration" $
     choice
@@ -80,7 +81,7 @@ infixDecl elmVersion =
         ]
 
 
-infixDecl_0_19 :: ElmVersion -> IParser (Declaration ns e)
+infixDecl_0_19 :: ElmVersion -> IParser (Declaration typeRef ctorRef varRef pat typ e)
 infixDecl_0_19 elmVersion =
     let
         assoc =
@@ -97,7 +98,7 @@ infixDecl_0_19 elmVersion =
         <*> (equals *> preCommented (lowVar elmVersion))
 
 
-infixDecl_0_16 :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] e)
+infixDecl_0_16 :: ElmVersion -> IParser (Declaration typeRef ctorRef (Var.Ref [UppercaseIdentifier]) pat typ e)
 infixDecl_0_16 elmVersion =
   do  assoc <-
           choice
@@ -113,7 +114,7 @@ infixDecl_0_16 elmVersion =
 
 -- PORT
 
-port :: ElmVersion -> IParser (Declaration [UppercaseIdentifier] Expr)
+port :: ElmVersion -> IParser (ASTNS Declaration Located [UppercaseIdentifier])
 port elmVersion =
   expecting "a port declaration" $
   do  try (reserved elmVersion "port")

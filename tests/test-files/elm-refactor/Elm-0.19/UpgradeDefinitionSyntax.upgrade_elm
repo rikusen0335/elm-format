@@ -1,3 +1,5 @@
+import A
+
 upgrade_A_value = ()
 upgrade_A2_a2value = ()
 upgrade_A3_a3value = "a3value"

@@ -4,35 +4,38 @@ import AST.V0_16
 import AST.Variable (Listing(..))
 import Elm.Utils ((|>))
 
+import AST.Module (Module)
 import qualified AST.Module
+import AST.Structure
+import Data.Coapplicative
 import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Dict
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 
-data ImportInfo =
+data ImportInfo ns =
     ImportInfo
-        { _exposed :: Dict.Map LowercaseIdentifier [UppercaseIdentifier]
-        , _exposedTypes :: Dict.Map UppercaseIdentifier [UppercaseIdentifier]
-        , _aliases :: Bimap.Bimap UppercaseIdentifier [UppercaseIdentifier]
-        , _directImports :: Set.Set [UppercaseIdentifier]
-        , _ambiguous :: Dict.Map UppercaseIdentifier [[UppercaseIdentifier]]
+        { _exposed :: Dict.Map LowercaseIdentifier ns
+        , _exposedTypes :: Dict.Map UppercaseIdentifier ns
+        , _aliases :: Bimap.Bimap UppercaseIdentifier ns
+        , _directImports :: Set.Set ns
+        , _ambiguous :: Dict.Map UppercaseIdentifier [ns]
         }
     deriving Show
 
 
 fromModule ::
     ([UppercaseIdentifier] -> AST.Module.DetailedListing)
-    -> AST.Module.Module
-    -> ImportInfo
+    -> ASTNS (Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier]
+    -> ImportInfo [UppercaseIdentifier]
 fromModule knownModuleContents modu =
-    fromImports knownModuleContents (fmap dropComments $ dropComments $ AST.Module.imports modu)
+    fromImports knownModuleContents (fmap extract $ extract $ AST.Module.imports $ modu)
 
 
 fromImports ::
     ([UppercaseIdentifier] -> AST.Module.DetailedListing)
     -> Dict.Map [UppercaseIdentifier] AST.Module.ImportMethod
-    -> ImportInfo
+    -> ImportInfo [UppercaseIdentifier]
 fromImports knownModuleContents imports =
     let
         -- these are things we know will get exposed for certain modules when we see "exposing (..)"
