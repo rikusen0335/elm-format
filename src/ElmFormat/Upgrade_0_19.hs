@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, mergeUpgradeImports, MatchedNamespace(..)) where
 
@@ -18,6 +19,7 @@ import AST.Variable
 import Control.Applicative (liftA2)
 import Control.Monad (zipWithM)
 import Data.Coapplicative
+import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
@@ -316,8 +318,12 @@ data Source
     | FromSource
 
 
-{- An expression annotated with a Source -- this type is used throughout the upgrade transformation. -}
-type UExpr = FixASTNS Expression ((,) Source) (MatchedNamespace [UppercaseIdentifier])
+{- An expression annotated with a Source -- this type is used throughout the upgrade transformation.
+
+NOTE: this uses `Compose Identity ((,) Source)` instead of just `(,) Source` with the thought that maybe `Identity` could be extracted as a parameter
+
+-}
+type UExpr = FixASTNS Expression (Compose Identity ((,) Source)) (MatchedNamespace [UppercaseIdentifier])
 
 
 transform' ::
@@ -325,10 +331,11 @@ transform' ::
     UpgradeDefinition
     -> ImportInfo [UppercaseIdentifier]
     -> FixASTNS Expression annf (MatchedNamespace [UppercaseIdentifier])
-    -> FixASTNS Expression ((,) Source) (MatchedNamespace [UppercaseIdentifier]) -- TODO: refactor to retain the original annf
+    -> UExpr -- TODO: refactor to retain the original annf around ((,) Source)?
 transform' upgradeDefinition importInfo =
     cataAll FixAST FixAST (simplify . applyUpgrades upgradeDefinition importInfo . FixAST)
-        . convertFix ((,) FromSource . extract)
+        . convertFix (Compose . Identity . (,) FromSource . extract)
+        -- TODO: get rid of extract and keep the original annf
 
 
 transformType ::
@@ -336,7 +343,7 @@ transformType ::
     (Coapplicative annf, Applicative annf) =>
     UpgradeDefinition
     -> FixASTNS Typ annf (MatchedNamespace [UppercaseIdentifier])
-    -> FixASTNS Typ annf (MatchedNamespace [UppercaseIdentifier])
+    -> FixASTNS Typ annf (MatchedNamespace [UppercaseIdentifier]) -- TODO: should return ((,) Source) instead of annf
 transformType upgradeDefinition typ =
     case extract $ unFixAST typ of
         TypeConstruction (NamedConstructor (MatchedImport ctorNs, ctorName)) args ->
@@ -411,19 +418,19 @@ applyUpgrades upgradeDefinition importInfo expr =
                     (FixAST $ pure $ AST.Expression.Tuple (fmap (\v -> C ([], []) (makeVarRef v)) vars) False)
                     False
     in
-    case unFixAST expr of
+    case runIdentity $ getCompose $ unFixAST expr of
         (_, VarExpr var) ->
-            Maybe.fromMaybe expr $ fmap (convertFix ((,) FromUpgradeDefinition . extract)) $ replace var
+            Maybe.fromMaybe expr $ fmap (convertFix (Compose . pure . (,) FromUpgradeDefinition . extract)) $ replace var
 
         (_, TupleFunction n) ->
-            convertFix ((,) FromUpgradeDefinition . runIdentity) $ makeTuple n
+            convertFix (Compose . pure . (,) FromUpgradeDefinition . runIdentity) $ makeTuple n
 
         (ann, ExplicitList terms' trailing multiline) ->
             let
                 ha = (fmap UppercaseIdentifier ["Html", "Attributes"])
                 styleExposed = Dict.lookup (LowercaseIdentifier "style") exposed == Just ha
             in
-            FixAST $ (,) ann $ ExplicitList (concat $ fmap (expandHtmlStyle styleExposed) $ terms') trailing multiline
+            FixAST $ Compose $ pure $ (,) ann $ ExplicitList (concat $ fmap (expandHtmlStyle styleExposed) $ terms') trailing multiline
 
         _ ->
             expr
@@ -432,25 +439,25 @@ applyUpgrades upgradeDefinition importInfo expr =
 simplify :: UExpr -> UExpr
 simplify expr =
     let
-        isElmFixRemove (C _ (FixAST (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove")))))= True
-        isElmFixRemove (C _ (FixAST (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove")))))= True
+        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
+        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
         isElmFixRemove _ = False
     in
-    case unFixAST expr of
+    case runIdentity $ getCompose $ unFixAST expr of
         -- apply arguments to special functions (like literal lambdas)
         (source, App fn args multiline) ->
             simplifyFunctionApplication source fn args multiline
 
         -- Remove ElmFix.remove from lists
         (source, ExplicitList terms' trailing multiline) ->
-            FixAST $ (,) source $ ExplicitList
-                (filter (not . isElmFixRemove) terms')
+            FixAST $ Compose $ Identity $ (,) source $ ExplicitList
+                (filter (not . isElmFixRemove . runIdentity . getCompose. unFixAST . extract) terms')
                 trailing
                 multiline
 
         -- Inline field access of a literal record
         (FromUpgradeDefinition, Access e field) ->
-            case unFixAST e of
+            case runIdentity $ getCompose $ unFixAST e of
                 (_, AST.Expression.Record _ fs _ _) ->
                     case List.find (\(C _ (Pair (C _ f) _ _)) -> f == field) fs of
                         Nothing ->
@@ -486,8 +493,8 @@ expandHtmlStyle :: Bool -> C2Eol preComma pre UExpr -> [C2Eol preComma pre UExpr
 expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
     let
         lambda fRef =
-            convertFix ((,) FromUpgradeDefinition . extract) $
-            FixAST $ Identity $
+            convertFix (Compose . Identity . (,) FromUpgradeDefinition . runIdentity) $
+            FixAST $ pure $
             Lambda
                 [(C [] $ FixAST $ pure $ AST.Pattern.Tuple [makeArg' "a", makeArg' "b"]) ] []
                 (FixAST $ pure $ App
@@ -505,7 +512,7 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
                 VarRef NoNamespace (LowercaseIdentifier "style") -> styleExposed
                 _ -> False
     in
-    case extract $ unFixAST term of
+    case extract $ unFixAST $ convertFix (runIdentity . getCompose) term of
         App (FixAST (_, VarExpr var)) [C preStyle (FixAST (_, ExplicitList styles trailing _))] _
           | isHtmlAttributesStyle var
           ->
@@ -516,7 +523,7 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
                         , pre ++ preStyle ++ pre' ++ trailing ++ (Maybe.maybeToList $ fmap LineComment eol)
                         , eol'
                         )
-                        (FixAST $ (,) FromUpgradeDefinition $ App (lambda var) [C [] style] (FAJoinFirst JoinAll))
+                        (FixAST $ Compose $ Identity $ (,) FromUpgradeDefinition $ App (lambda var) [C [] $ convertFix (Compose . Identity) style] (FAJoinFirst JoinAll))
             in
             fmap convert styles
 
@@ -567,34 +574,38 @@ makeVarRef varName =
 applyMappings :: Bool -> Dict.Map LowercaseIdentifier UExpr -> UExpr -> UExpr
 applyMappings insertMultiline mappings =
     cataAll FixAST FixAST (simplify . FixAST)
-        . convertFix (\((_, ann), x) -> (ann, x))
+        . convertFix (Compose . Identity . fmap snd . getCompose)
         . cataAll FixAST FixAST (inlineVars ((==) NoNamespace) insertMultiline mappings . FixAST)
-        . convertFix (\(ann, x) -> ((False, ann), x))
+        . convertFix (Compose . fmap ((,) False) . runIdentity . getCompose)
 
 
 inlineVars ::
+    forall ns ann.
     (ns -> Bool)
     -> Bool
-    -> Dict.Map LowercaseIdentifier (FixASTNS Expression ((,) ann) ns)
-    -> FixASTNS Expression ((,) (Bool, ann)) ns
-    -> FixASTNS Expression ((,) (Bool, ann)) ns
+    -> Dict.Map LowercaseIdentifier (FixASTNS Expression (Compose Identity ((,) ann)) ns)
+    -> FixASTNS Expression (Compose ((,) ann) ((,) Bool)) ns
+    -> FixASTNS Expression (Compose ((,) ann) ((,) Bool)) ns
 inlineVars isLocal insertMultiline mappings expr =
-    case unFixAST expr of
-        (_, VarExpr (VarRef ns n)) | isLocal ns ->
+    let
+        mapFst f (a, b) = (f a, b)
+    in
+    case extract $ unFixAST expr of
+        VarExpr (VarRef ns n) | isLocal ns ->
             case Dict.lookup n mappings of
                 Just e ->
-                    (\(FixAST ((_, ann), x)) -> FixAST ((insertMultiline, ann), x)) $
-                    convertFix (\(ann, x) -> ((False, ann), x)) e
+                    FixAST $ Compose $ fmap (mapFst $ const insertMultiline) $ getCompose $ unFixAST
+                    $ convertFix (Compose . fmap ((,) False) . runIdentity . getCompose) e
 
                 Nothing ->
                     expr
 
-        (ann, AST.Expression.Tuple terms' multiline) ->
+        AST.Expression.Tuple terms' multiline ->
             let
-                requestedMultiline (C _ (FixAST ((m, _), _))) = m
+                requestedMultiline (C _ (FixAST (Compose (_, (m, _))))) = m
                 newMultiline = multiline || any requestedMultiline terms'
             in
-            FixAST $ (,) ann $ AST.Expression.Tuple terms' newMultiline
+            FixAST $ fmap (\_ -> AST.Expression.Tuple terms' newMultiline) $ unFixAST expr
 
         -- TODO: handle expanding multiline in contexts other than tuples
 
@@ -651,7 +662,7 @@ destructureFirstMatch value choices fallback =
 
 withComments :: Comments -> UExpr -> Comments -> UExpr
 withComments [] e [] = e
-withComments pre e post = FixAST $ (,) FromUpgradeDefinition $ Parens $ C (pre, post) e
+withComments pre e post = FixAST $ Compose $ pure $ (,) FromUpgradeDefinition $ Parens $ C (pre, post) e
 
 
 data DestructureResult a
@@ -739,7 +750,7 @@ destructure pat arg =
 
         -- Custom type variants with arguments
         ( C preVar (Data (nsd, name) argVars)
-          , C preArg (App (FixAST (_, VarExpr (TagRef ns tag))) argValues _)
+          , C preArg (App (FixAST (Compose (Identity (_, VarExpr (TagRef ns tag))))) argValues _)
           )
           ->
             if name == tag && namespaceMatch nsd ns then
@@ -749,7 +760,7 @@ destructure pat arg =
 
         -- Custom type variants where pattern and value don't match in having args
         ( C _ (Data _ (_:_)), C _ (VarExpr (TagRef _ _)) ) -> DoesntMatch
-        ( C _ (Data _ []), C _ (App (FixAST (_, VarExpr (TagRef _ _))) _ _) ) -> DoesntMatch
+        ( C _ (Data _ []), C _ (App (FixAST (Compose (Identity (_, VarExpr (TagRef _ _))))) _ _) ) -> DoesntMatch
 
         -- Named variable pattern
         ( C preVar (VarPattern name)
@@ -762,7 +773,7 @@ destructure pat arg =
           , C preArg (AST.Expression.Binops e (BinopsClause pre (OpRef (SymbolIdentifier "<|")) post arg1 : rest) ml)
           )
           ->
-            destructure pat (C preArg $ FixAST $ (,) FromSource $ App e [(C (pre ++ post) $ FixAST $ (,) FromSource $ Binops arg1 rest ml)] (FAJoinFirst JoinAll))
+            destructure pat (C preArg $ FixAST $ Compose $ pure $ (,) FromSource $ App e [(C (pre ++ post) $ FixAST $ Compose $ pure $ (,) FromSource $ Binops arg1 rest ml)] (FAJoinFirst JoinAll))
 
         -- Tuple with two elements (TODO: generalize this for all tuples)
         ( C preVar (AST.Pattern.Tuple varItems)
@@ -815,7 +826,7 @@ destructure pat arg =
 simplifyFunctionApplication :: Source -> UExpr -> [C1 before UExpr] -> FunctionApplicationMultiline -> UExpr
 simplifyFunctionApplication appSource fn args appMultiline =
     case (unFixAST fn, args) of
-        ((lambdaSource, Lambda (pat:restVar) preBody body multiline), arg:restArgs) ->
+        (Compose (Identity (lambdaSource, Lambda (pat:restVar) preBody body multiline)), arg:restArgs) ->
             case destructure pat arg of
                 Matches mappings ->
                     let
@@ -830,19 +841,19 @@ simplifyFunctionApplication appSource fn args appMultiline =
                     case restVar of
                         [] ->
                             -- we applied the argument and none are left, so remove the lambda
-                            FixAST $ (,) appSource $ App
+                            FixAST $ Compose $ pure $ (,) appSource $ App
                                 (withComments preBody newBody [])
                                 restArgs
                                 newMultiline
 
                         _:_ ->
                             -- we applied this argument; try to apply the next argument
-                            simplifyFunctionApplication appSource (FixAST $ (,) lambdaSource $ Lambda restVar preBody newBody multiline) restArgs newMultiline
+                            simplifyFunctionApplication appSource (FixAST $ Compose $ pure $ (,) lambdaSource $ Lambda restVar preBody newBody multiline) restArgs newMultiline
                 _ ->
                     -- failed to destructure the next argument, so stop
-                    FixAST $ (,) appSource $ App fn args appMultiline
+                    FixAST $ Compose $ pure $ (,) appSource $ App fn args appMultiline
 
 
         (_, []) -> fn
 
-        _ -> FixAST $ (,) appSource $ App fn args appMultiline
+        _ -> FixAST $ Compose $ pure $ (,) appSource $ App fn args appMultiline

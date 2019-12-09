@@ -1,5 +1,6 @@
 module Data.Coapplicative (Coapplicative(..)) where
 
+import Data.Functor.Compose
 import Data.Functor.Identity
 
 
@@ -12,4 +13,8 @@ instance Coapplicative ((,) x) where
 
 instance Coapplicative Identity where
     extract = runIdentity
+    {-# INLINE extract #-}
+
+instance (Coapplicative a, Coapplicative b) => Coapplicative (Compose a b) where
+    extract = extract . extract . getCompose
     {-# INLINE extract #-}
