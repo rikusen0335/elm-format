@@ -17,7 +17,7 @@ data ImportInfo ns =
     ImportInfo
         { _exposed :: Dict.Map LowercaseIdentifier ns
         , _exposedTypes :: Dict.Map UppercaseIdentifier ns
-        , _aliases :: Bimap.Bimap UppercaseIdentifier ns
+        , _aliases :: Bimap.Bimap ns ns
         , _directImports :: Set.Set ns
         , _ambiguous :: Dict.Map UppercaseIdentifier [ns]
         }
@@ -80,7 +80,7 @@ fromImports knownModuleContents imports =
                 getAlias importMethod =
                     case AST.Module.alias importMethod of
                         Just (C _ alias) ->
-                            Just alias
+                            Just [alias]
 
                         Nothing -> Nothing
 

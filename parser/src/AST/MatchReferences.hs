@@ -1,6 +1,5 @@
 module AST.MatchReferences (MatchedNamespace(..), fromMatched, matchReferences, applyReferences) where
 
-import AST.V0_16
 import AST.Structure
 import AST.Variable
 import Control.Applicative ((<|>))
@@ -28,10 +27,10 @@ fromMatched _ (Unmatched t) = t
 
 
 matchReferences ::
-    (Functor annf, MapAST t) =>
-    ImportInfo [UppercaseIdentifier]
-    -> ASTNS t annf [UppercaseIdentifier]
-    -> ASTNS t annf (MatchedNamespace [UppercaseIdentifier])
+    (Functor annf, MapAST t, Ord u) =>
+    ImportInfo [u]
+    -> ASTNS t annf [u]
+    -> ASTNS t annf (MatchedNamespace [u])
 matchReferences importInfo =
     let
         aliases = Bimap.toMap $ ImportInfo._aliases importInfo
@@ -57,11 +56,7 @@ matchReferences importInfo =
                                 Nothing
 
                         fromAlias =
-                            case ns of
-                                [single] ->
-                                    Dict.lookup single aliases
-                                _ ->
-                                    Nothing
+                            Dict.lookup ns aliases
 
                         resolved =
                             fromAlias <|> self
@@ -83,10 +78,10 @@ matchReferences importInfo =
 
 
 applyReferences ::
-    (Functor annf, MapAST t) =>
-    ImportInfo [UppercaseIdentifier]
-    -> ASTNS t annf (MatchedNamespace [UppercaseIdentifier])
-    -> ASTNS t annf [UppercaseIdentifier]
+    (Functor annf, MapAST t, Ord u) =>
+    ImportInfo [u]
+    -> ASTNS t annf (MatchedNamespace [u])
+    -> ASTNS t annf [u]
 applyReferences importInfo =
     let
         aliases = Bimap.toMapR $ ImportInfo._aliases importInfo
@@ -101,7 +96,7 @@ applyReferences importInfo =
                 MatchedImport ns ->
                     case Dict.lookup identifier exposed of
                         Just exposedFrom | exposedFrom == ns -> []
-                        _ -> Maybe.fromMaybe ns $ fmap pure $ Dict.lookup ns aliases
+                        _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases
                 Unmatched name -> name
         mapTypeRef (ns, u) = (f ns (Right u), u)
         mapCtorRef (ns, u) = (f ns (Right u), u)
