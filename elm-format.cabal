@@ -61,6 +61,7 @@ library
         AST.Declaration
         AST.Expression
         AST.Helpers
+        AST.MatchReferences
         AST.Module
         AST.Pattern
         AST.Structure
@@ -98,7 +99,6 @@ library
 
     other-modules:
         AST.Json
-        AST.MatchReferences
         Build_elm_format
         Cheapskate.Inlines
         Cheapskate.Parse
@@ -182,12 +182,14 @@ test-Suite elm-format-tests
         Test.hs
 
     other-modules:
+        AST.MatchReferencesTest
         BoxTest
         CommonMarkTests
         ElmFormat.ImportInfoTest
         ElmFormat.Render.ElmStructureTest
         ElmFormat.Upgrade_0_19Test
         ElmFormat.TestWorld
+        Expect
         Integration.CliTest
         Integration.LiteralTest
         Parse.ExpressionTest

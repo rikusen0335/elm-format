@@ -3,6 +3,7 @@ module Main where
 import Test.Tasty
 
 import qualified Test.Property
+import qualified AST.MatchReferencesTest
 import qualified BoxTest
 -- import qualified CommonMarkTests
 import qualified ElmFormat.ImportInfoTest
@@ -25,6 +26,7 @@ main =
         -- markdownTests <- CommonMarkTests.construct
         defaultMain $ testGroup "elm-format" $
             [ Test.Property.propertyTests
+            , AST.MatchReferencesTest.tests
             , BoxTest.tests
             , ElmFormat.ImportInfoTest.tests
             , ElmFormat.Render.ElmStructureTest.tests
