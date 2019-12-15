@@ -5,7 +5,7 @@ import qualified Text.Parsec.Error as Parsec
 import AST.V0_16
 import AST.Declaration (TopLevelStructure, Declaration)
 import AST.Expression (Expression)
-import qualified AST.Module
+import AST.Module (Module)
 import AST.Structure
 import ElmVersion hiding (parse)
 import Parse.Comments (withEol)
@@ -21,7 +21,7 @@ import Parse.IParser
 import Text.Parsec (eof)
 
 
-parseModule :: ElmVersion -> String -> Result.Result () Error.Error (ASTNS (AST.Module.Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier])
+parseModule :: ElmVersion -> String -> Result.Result () Error.Error (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
 parseModule elmVersion src =
     parse src (Parse.Module.elmModule elmVersion)
 

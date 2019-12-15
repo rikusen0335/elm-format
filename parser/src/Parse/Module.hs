@@ -7,8 +7,9 @@ import Text.Parsec hiding (newline, spaces)
 
 import Parse.Helpers
 import Parse.Declaration as Decl
+import AST.Declaration (Declaration)
 import qualified AST.Declaration
-import AST.Module (BeforeExposing, AfterExposing, BeforeAs, AfterAs, ImportMethod)
+import AST.Module (Module, BeforeExposing, AfterExposing, BeforeAs, AfterAs, ImportMethod)
 import qualified AST.Module as Module
 import AST.Structure
 import qualified AST.Variable as Var
@@ -19,7 +20,7 @@ import Parse.Whitespace
 import Reporting.Annotation (Located)
 
 
-elmModule :: ElmVersion -> IParser (ASTNS (Module.Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier])
+elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
 elmModule elmVersion =
   do  preModule <- option [] freshLine
       h <- moduleDecl elmVersion

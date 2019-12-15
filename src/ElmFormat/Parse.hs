@@ -3,6 +3,7 @@ module ElmFormat.Parse where
 import Elm.Utils ((|>))
 import AST.V0_16
 
+import AST.Declaration (Declaration)
 import AST.Module (Module)
 import AST.Structure
 import Data.Coapplicative
@@ -15,7 +16,7 @@ import qualified Reporting.Result as Result
 import Reporting.Annotation (Located)
 
 
-parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (ASTNS (Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier])
+parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
 parse elmVersion input =
     Text.unpack input
         |> Parse.parseModule elmVersion

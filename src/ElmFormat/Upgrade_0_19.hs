@@ -213,8 +213,8 @@ transformModule ::
     forall annf.
     (Applicative annf, Coapplicative annf) =>
     UpgradeDefinition
-    -> ASTNS (Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier]
-    -> ASTNS (Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier]
+    -> Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier]))
+    -> Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier]))
 transformModule upgradeDefinition modu =
     let
         (Module a b c (C preImports originalImports) originalBody') =

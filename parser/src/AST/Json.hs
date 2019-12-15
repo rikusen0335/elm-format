@@ -33,7 +33,7 @@ pleaseReport what details =
     error ("<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >")
 
 
-showModule :: ASTNS (Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier] -> JSValue
+showModule :: Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])) -> JSValue
 showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
     let
         header =

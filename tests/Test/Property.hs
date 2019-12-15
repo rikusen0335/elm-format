@@ -4,6 +4,8 @@ import Prelude hiding ((>>))
 import Elm.Utils ((|>), (>>))
 
 import AST.V0_16
+import AST.Declaration (Declaration)
+import AST.Module (Module)
 import AST.Structure
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -34,7 +36,7 @@ assertStringToString source =
         assertEqual "" (Right source') result
 
 
-astToAst :: ASTNS (AST.Module.Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier] -> Assertion
+astToAst :: Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])) -> Assertion
 astToAst ast =
     let
         result =

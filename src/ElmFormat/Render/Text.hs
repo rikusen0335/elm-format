@@ -6,13 +6,14 @@ import ElmVersion (ElmVersion)
 import AST.Structure
 import AST.V0_16
 
-import qualified AST.Module
+import AST.Module (Module)
+import AST.Declaration (Declaration)
 import qualified Box
 import qualified Data.Text as Text
 import qualified ElmFormat.Render.Box as Render
 
 
-render :: Coapplicative annf => ElmVersion -> ASTNS (AST.Module.Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier] -> Text.Text
+render :: Coapplicative annf => ElmVersion -> Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier])) -> Text.Text
 render elmVersion modu =
     renderBox $ Render.formatModule elmVersion True 2 modu
 

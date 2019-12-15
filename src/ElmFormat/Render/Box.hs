@@ -232,7 +232,7 @@ sortVars forceMultiline fromExposing fromDocs =
         else ( listedInDocs ++ if List.null remainingFromExposing then [] else [ remainingFromExposing ], commentsFromReorderedVars )
 
 
-formatModuleHeader :: Coapplicative annf => ElmVersion -> Bool -> ASTNS (AST.Module.Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier] -> [Box]
+formatModuleHeader :: Coapplicative annf => ElmVersion -> Bool -> AST.Module.Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier])) -> [Box]
 formatModuleHeader elmVersion addDefaultHeader modu =
   let
       maybeHeader =
@@ -372,7 +372,7 @@ formatModuleHeader elmVersion addDefaultHeader modu =
       ]
 
 
-formatImports :: ElmVersion -> ASTNS (AST.Module.Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier] -> [Box]
+formatImports :: ElmVersion -> AST.Module.Module [UppercaseIdentifier] decl -> [Box]
 formatImports elmVersion modu =
     let
         (C comments imports) =
@@ -516,7 +516,7 @@ formatModuleLine elmVersion (varsToExpose, extraComments) srcTag name moduleSett
       [ exports ]
 
 
-formatModule :: Coapplicative annf => ElmVersion -> Bool -> Int -> ASTNS (AST.Module.Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier] -> Box
+formatModule :: Coapplicative annf => ElmVersion -> Bool -> Int -> AST.Module.Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier])) -> Box
 formatModule elmVersion addDefaultHeader spacing modu =
     let
         initialComments' =
@@ -637,7 +637,7 @@ formatTopLevelBody linesBetween elmVersion importInfo entryType formatEntry body
 data ElmCodeBlock annf ns
     = DeclarationsCode [TopLevelStructure (ASTNS Declaration annf ns)]
     | ExpressionsCode [TopLevelStructure (C0Eol (FixASTNS Expression annf ns))]
-    | ModuleCode (ASTNS (AST.Module.Module annf ns) annf ns)
+    | ModuleCode (AST.Module.Module ns (annf (ASTNS Declaration annf ns)))
 
 instance Functor ann => ChangeAnnotation (ElmCodeBlock ann ns) ann where
     type SetAnnotation ann' (ElmCodeBlock ann ns) = ElmCodeBlock ann' ns

@@ -7,8 +7,10 @@ import Data.Map.Strict
 import Test.QuickCheck
 
 import AST.V0_16
+import AST.Declaration (Declaration)
 import qualified AST.Declaration
 import qualified AST.Expression
+import AST.Module (Module)
 import qualified AST.Module
 import qualified AST.Pattern
 import AST.Structure
@@ -72,7 +74,7 @@ listing =
     return $ AST.Variable.OpenListing (C ([], []) ())
 
 
-instance Arbitrary (ASTNS (AST.Module.Module Identity [UppercaseIdentifier]) Identity [UppercaseIdentifier]) where
+instance Arbitrary (Module [UppercaseIdentifier] (Identity (ASTNS Declaration Identity [UppercaseIdentifier]))) where
     arbitrary =
         do
             name <- listOf1 $ capIdentifier

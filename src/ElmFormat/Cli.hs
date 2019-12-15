@@ -3,6 +3,8 @@ module ElmFormat.Cli (main, main') where
 import Prelude ()
 import Relude hiding (exitFailure, exitSuccess, putStr, putStrLn)
 
+import AST.Declaration (Declaration)
+import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
 import Messages.Types
@@ -20,7 +22,6 @@ import ElmFormat.World
 import Reporting.Annotation (Located)
 
 import qualified AST.Json
-import qualified AST.Module
 import qualified CommandLine.Helpers as Helpers
 import qualified CommandLine.Program as Program
 import qualified CommandLine.ResolveFiles as ResolveFiles
@@ -189,7 +190,7 @@ validate elmVersion (inputFile, inputText) =
             Left $ ParseError inputFile (toString inputText) errs
 
 
-parseModule :: ElmVersion -> (FilePath, Text.Text) -> Either InfoMessage (ASTNS (AST.Module.Module Located [UppercaseIdentifier]) Located [UppercaseIdentifier])
+parseModule :: ElmVersion -> (FilePath, Text.Text) -> Either InfoMessage (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
 parseModule elmVersion (inputFile, inputText) =
     case Parse.parse elmVersion inputText of
         Result.Result _ (Result.Ok modu) ->

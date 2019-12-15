@@ -12,7 +12,7 @@ module AST.Module
     , BeforeExposing, AfterExposing, BeforeAs, AfterAs
     ) where
 
-import AST.Declaration (TopLevelStructure, Declaration)
+import AST.Declaration (TopLevelStructure)
 import AST.Structure
 import qualified AST.Variable as Var
 import qualified Cheapskate.Types as Markdown
@@ -25,19 +25,18 @@ import AST.V0_16
 
 
 data BeforeImports
-data Module annf ns typeRef ctorRef varRef pat typ expr =
+data Module ns decl =
     Module
     { initialComments :: Comments
     , header :: Maybe Header
     , docs :: A.Located (Maybe Markdown.Blocks)
     , imports :: C1 BeforeImports (Map ns (C1 Before ImportMethod))
-    , body :: [TopLevelStructure (annf (Declaration typeRef ctorRef varRef pat typ expr))]
+    , body :: [TopLevelStructure decl]
     }
-deriving instance Eq ns => Eq (annf (Declaration typeRef ctorRef varRef pat typ expr)) => Eq (Module annf ns typeRef ctorRef varRef pat typ expr)
-deriving instance Show ns => Show (annf (Declaration typeRef ctorRef varRef pat typ expr)) => Show (Module annf ns typeRef ctorRef varRef pat typ expr)
+    deriving (Eq, Show)
 
-instance Functor ann => ChangeAnnotation (ASTNS (Module ann ns') ann ns) ann where
-    type SetAnnotation ann' (ASTNS (Module ann ns') ann ns) = ASTNS (Module ann' ns') ann' ns
+instance (Functor ann, ChangeAnnotation decl ann) => ChangeAnnotation (Module ns (ann decl)) ann where
+    type SetAnnotation ann' (Module ns (ann decl)) = Module ns (ann' (SetAnnotation ann' decl))
     convertFix f mod = mod { body = fmap (fmap $ f . (fmap $ convertFix f)) (body mod) }
 
 

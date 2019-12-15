@@ -6,7 +6,6 @@ import Elm.Utils ((|>))
 
 import AST.Module (Module)
 import qualified AST.Module
-import AST.Structure
 import Data.Coapplicative
 import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Dict
@@ -26,7 +25,7 @@ data ImportInfo ns =
 
 fromModule ::
     ([UppercaseIdentifier] -> AST.Module.DetailedListing)
-    -> ASTNS (Module annf [UppercaseIdentifier]) annf [UppercaseIdentifier]
+    -> Module [UppercaseIdentifier] decl
     -> ImportInfo [UppercaseIdentifier]
 fromModule knownModuleContents modu =
     fromImports knownModuleContents (fmap extract $ extract $ AST.Module.imports $ modu)
