@@ -46,9 +46,8 @@ instance MapAST Declaration where
         Fixity a c n c' name -> Fixity a c n c' (fvr name)
         Fixity_0_19 a n op name -> Fixity_0_19 a n op name
 
-instance Functor annf => ChangeAnnotation (ASTNS Declaration annf ns) where
-    type GetAnnotation (ASTNS Declaration annf ns) = annf
-    type SetAnnotation ann' (ASTNS Declaration annf ns) = ASTNS Declaration ann' ns
+instance Functor ann => ChangeAnnotation (ASTNS Declaration ann ns) ann where
+    type SetAnnotation ann' (ASTNS Declaration ann ns) = ASTNS Declaration ann' ns
     convertFix f = mapAll id id id (convertFix f) (convertFix f) (convertFix f)
 
 

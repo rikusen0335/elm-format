@@ -4,10 +4,11 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 module AST.Structure
     ( FixAST(..), FixASTNS, ASTNS
-    , ChangeAnnotation, GetAnnotation, SetAnnotation, convertFix
+    , ChangeAnnotation, SetAnnotation, convertFix
     , FixedAST(..)
     , cataReferences
     , bottomUpReferences
@@ -64,13 +65,11 @@ instance FixedAST (FixAST Expression) where
         fe . fmap (mapAll id id id (cataAll fp ft fe) (cataAll fp ft fe) (cataAll fp ft fe)) . unFixAST
 
 
-class ChangeAnnotation t where
-    type GetAnnotation t :: * -> *
+class ChangeAnnotation t ann | t -> ann where
     type SetAnnotation (ann' :: * -> *) t
-    convertFix :: (forall x. (GetAnnotation t) x -> ann' x) -> t -> SetAnnotation ann' t
+    convertFix :: (forall x. ann x -> ann' x) -> t -> SetAnnotation ann' t
 
-instance (MapAST t, Functor ann) => ChangeAnnotation (FixAST t ann typeRef ctorRef varRef) where
-    type GetAnnotation (FixAST t ann typeRef ctorRef varRef) = ann
+instance (MapAST t, Functor ann) => ChangeAnnotation (FixAST t ann typeRef ctorRef varRef) ann where
     type SetAnnotation ann' (FixAST t ann typeRef ctorRef varRef) = FixAST t ann' typeRef ctorRef varRef
     convertFix f = FixAST . f . fmap (mapAll id id id (convertFix f) (convertFix f) (convertFix f)) . unFixAST
 

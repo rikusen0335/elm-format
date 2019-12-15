@@ -36,9 +36,8 @@ data Module annf ns typeRef ctorRef varRef pat typ expr =
 deriving instance Eq ns => Eq (annf (Declaration typeRef ctorRef varRef pat typ expr)) => Eq (Module annf ns typeRef ctorRef varRef pat typ expr)
 deriving instance Show ns => Show (annf (Declaration typeRef ctorRef varRef pat typ expr)) => Show (Module annf ns typeRef ctorRef varRef pat typ expr)
 
-instance Functor annf => ChangeAnnotation (ASTNS (Module annf ns') annf ns) where
-    type GetAnnotation (ASTNS (Module annf ns') annf ns) = annf
-    type SetAnnotation ann' (ASTNS (Module annf ns') annf ns) = ASTNS (Module ann' ns') ann' ns
+instance Functor ann => ChangeAnnotation (ASTNS (Module ann ns') ann ns) ann where
+    type SetAnnotation ann' (ASTNS (Module ann ns') ann ns) = ASTNS (Module ann' ns') ann' ns
     convertFix f mod = mod { body = fmap (fmap $ f . (fmap $ convertFix f)) (body mod) }
 
 

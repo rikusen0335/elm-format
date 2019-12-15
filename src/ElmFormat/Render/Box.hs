@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module ElmFormat.Render.Box where
 
@@ -638,9 +639,8 @@ data ElmCodeBlock annf ns
     | ExpressionsCode [TopLevelStructure (C0Eol (FixASTNS Expression annf ns))]
     | ModuleCode (ASTNS (AST.Module.Module annf ns) annf ns)
 
-instance Functor annf => ChangeAnnotation (ElmCodeBlock annf ns) where
-    type GetAnnotation (ElmCodeBlock annf ns) = annf
-    type SetAnnotation ann' (ElmCodeBlock annf ns) = ElmCodeBlock ann' ns
+instance Functor ann => ChangeAnnotation (ElmCodeBlock ann ns) ann where
+    type SetAnnotation ann' (ElmCodeBlock ann ns) = ElmCodeBlock ann' ns
     convertFix f = \case
         DeclarationsCode decls -> DeclarationsCode (fmap (fmap $ convertFix f) decls)
         ExpressionsCode exprs -> ExpressionsCode (fmap (fmap $ fmap $ convertFix f) exprs)
