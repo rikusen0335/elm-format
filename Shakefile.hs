@@ -17,6 +17,8 @@ main = do
       shakeVersion = shakefilesHash
     } $ do
     StdoutTrim stackLocalInstallRoot <- liftIO $ cmd "stack path --local-install-root"
+    StdoutTrim gitDescribe <- liftIO $ cmd "git" [ "describe", "--abbrev=8", "--always" ]
+    StdoutTrim gitSha <- liftIO $ cmd "git" [ "describe", "--always", "--match", "NOT A TAG", "--dirty" ]
 
     let elmFormat = stackLocalInstallRoot </> "bin/elm-format" <.> exe
     let elmRefactor = stackLocalInstallRoot </> "bin/elm-refactor" <.> exe
@@ -36,6 +38,7 @@ main = do
     phony "elm-format" $ need [ elmFormat ]
     phony "elm-refactor" $ need [ elmRefactor ]
     phony "stack-test" $ need [ "_build/stack-test.ok" ]
+    phony "profile" $ need [ "_build/tests/test-files/prof.ok" ]
 
     phony "clean" $ do
         cmd_ "stack clean"
@@ -63,7 +66,6 @@ main = do
 
     "generated/Build_elm_format.hs" %> \out -> do
         alwaysRerun
-        (StdoutTrim gitDescribe) <- cmd "git" [ "describe", "--abbrev=8", "--always" ]
         writeFileChanged out $ unlines
             [ "module Build_elm_format where"
             , ""
@@ -89,6 +91,15 @@ main = do
         need sourceFiles
         need generatedSourceFiles
         cmd_ "stack build elm-refactor:exe:elm-refactor"
+
+    "_build/bin/elm-format-prof" %> \out -> do
+        StdoutTrim profileInstallRoot <- liftIO $ cmd "stack path --profile --local-install-root"
+        sourceFiles <- getDirectoryFiles "" sourceFilesPattern
+        need sourceFiles
+        need generatedSourceFiles
+        cmd_ "stack build --profile --executable-profiling --library-profiling"
+        copyFileChanged (profileInstallRoot </> "bin/elm-format" <.> exe) out
+
 
     --
     -- Haskell tests
@@ -145,6 +156,15 @@ main = do
         cmd_ ("bash" <.> exe) script elmFormat
         writeFile' out ""
 
+    "_build/tests/test-files/prof.ok" %> \out -> do
+        let oks =
+              [ "_build/tests/test-files/good/Elm-0.17/prof.ok"
+              , "_build/tests/test-files/good/Elm-0.18/prof.ok"
+              , "_build/tests/test-files/good/Elm-0.19/prof.ok"
+              ]
+        need oks
+        writeFile' out (unlines oks)
+
 
     -- Elm files
 
@@ -158,6 +178,20 @@ main = do
             let oks = ["_build" </> f -<.> "elm_matches" | f <- elmFiles]
             need oks
             writeFile' out (unlines elmFiles)
+
+        ("_build/tests/test-files/good/Elm-" ++ elmVersion ++ "/prof.ok") %> \out -> do
+            alwaysRerun
+            elmFiles <- getDirectoryFiles ""
+                [ "tests/test-files/good/Elm-" ++ elmVersion ++ "//*.elm"
+                ]
+            let oks = ["_profile" </> f -<.> (gitSha ++ ".prof") | f <- elmFiles]
+            need oks
+            writeFile' out (unlines oks)
+
+        ("_profile/tests/test-files/good/Elm-" ++ elmVersion ++ "//*." ++ gitSha ++ ".prof") %> \out -> do
+            let source = dropDirectory1 $ dropExtensions out <.> "elm"
+            need [ "_build/bin/elm-format-prof", source ]
+            cmd_ "_build/bin/elm-format-prof" source "--output" "/dev/null" ("--elm-version=" ++ elmVersion) "+RTS" "-p" ("-po" ++ (out -<.> ""))
 
         ("_build/tests/test-files/*/Elm-" ++ elmVersion ++ "//*.elm_formatted") %> \out -> do
             let source = dropDirectory1 $ out -<.> "elm"

@@ -1,3 +1,9 @@
+## 0.8.3
+
+Bug fixes:
+  - performance is improved, allowing excessively long lists to be formatted without crashing
+
+
 ## 0.8.2
 
 New features:
