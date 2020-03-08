@@ -5,188 +5,153 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module AST.Structure
-    ( FixAST(..), FixASTNS, ASTNS
-    , ChangeAnnotation, SetAnnotation, convertFix
-    , FixedAST(..)
-    , cataReferences
+    ( FixAST, ASTNS
+    , foldReferences
     , bottomUpReferences
     , mapNs
     ) where
 
 
-import AST.Expression (Expression(..), BinopsClause(..), IfClause(..), LetDeclaration(..), CaseBranch(..))
-import AST.Pattern (Pattern(..))
-import qualified AST.Variable as Var
 import Data.Coapplicative
-import ElmFormat.Mapping
+import Data.Foldable (fold)
 import AST.V0_16
+import qualified Data.Indexed as I
 
 
-newtype FixAST t annf typeRef ctorRef varRef =
-    FixAST
-        { unFixAST ::
-            annf
-                (t typeRef ctorRef varRef
-                    (FixAST Pattern annf typeRef ctorRef varRef)
-                    (FixAST Typ annf typeRef ctorRef varRef)
-                    (FixAST Expression annf typeRef ctorRef varRef)
-                )
-        }
-deriving instance Show (annf (t typeRef ctorRef varRef (FixAST Pattern annf typeRef ctorRef varRef) (FixAST Typ annf typeRef ctorRef varRef) (FixAST Expression annf typeRef ctorRef varRef))) => Show (FixAST t annf typeRef ctorRef varRef)
-deriving instance Eq (annf (t typeRef ctorRef varRef (FixAST Pattern annf typeRef ctorRef varRef) (FixAST Typ annf typeRef ctorRef varRef) (FixAST Expression annf typeRef ctorRef varRef))) => Eq (FixAST t annf typeRef ctorRef varRef)
+type FixAST annf typeRef ctorRef varRef (kind :: NodeKind) =
+    I.Fix annf (AST typeRef ctorRef varRef) kind
 
 
-class FixedAST fix where
-    type Seed fix pat typ expr :: *
+type ASTNS annf ns (kind :: NodeKind) =
+    FixAST annf (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns) kind
 
-    cataAll ::
-        Functor annf =>
-        (annf (Pattern typeRef ctorRef varRef pat typ expr) -> pat)
-        -> (annf (Typ typeRef ctorRef varRef pat typ expr) -> typ)
-        -> (annf (Expression typeRef ctorRef varRef pat typ expr) -> expr)
-        -> fix annf typeRef ctorRef varRef
-        -> Seed fix pat typ expr
-
-instance FixedAST (FixAST Pattern) where
-    type Seed (FixAST Pattern) pat typ expr = pat
-    cataAll fp ft fe =
-        fp . fmap (mapAll id id id (cataAll fp ft fe) (cataAll fp ft fe) (cataAll fp ft fe)) . unFixAST
-
-instance FixedAST (FixAST Typ) where
-    type Seed (FixAST Typ) pat typ expr = typ
-    cataAll fp ft fe =
-        ft . fmap (mapAll id id id (cataAll fp ft fe) (cataAll fp ft fe) (cataAll fp ft fe)) . unFixAST
-
-instance FixedAST (FixAST Expression) where
-    type Seed (FixAST Expression) pat typ expr = expr
-    cataAll fp ft fe =
-        fe . fmap (mapAll id id id (cataAll fp ft fe) (cataAll fp ft fe) (cataAll fp ft fe)) . unFixAST
-
-
-class ChangeAnnotation t ann | t -> ann where
-    type SetAnnotation (ann' :: * -> *) t
-    convertFix :: (forall x. ann x -> ann' x) -> t -> SetAnnotation ann' t
-
-instance (MapAST t, Functor ann) => ChangeAnnotation (FixAST t ann typeRef ctorRef varRef) ann where
-    type SetAnnotation ann' (FixAST t ann typeRef ctorRef varRef) = FixAST t ann' typeRef ctorRef varRef
-    convertFix f = FixAST . f . fmap (mapAll id id id (convertFix f) (convertFix f) (convertFix f)) . unFixAST
-
-
-type FixASTNS t annf ns =
-    FixAST t annf (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Var.Ref ns)
-
-type ASTNS t annf ns =
-    t (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Var.Ref ns)
-        (FixASTNS Pattern annf ns)
-        (FixASTNS Typ annf ns)
-        (FixASTNS Expression annf ns)
 
 bottomUpReferences ::
-    (Functor annf, FixedAST fix) =>
+    (Functor annf) =>
     (typeRef1 -> typeRef2)
     -> (ctorRef1 -> ctorRef2)
     -> (varRef1 -> varRef2)
-    -> fix annf typeRef1 ctorRef1 varRef1
-    -> Seed fix
-        (FixAST Pattern annf typeRef2 ctorRef2 varRef2)
-        (FixAST Typ annf typeRef2 ctorRef2 varRef2)
-        (FixAST Expression annf typeRef2 ctorRef2 varRef2)
+    -> (forall kind.
+        FixAST annf typeRef1 ctorRef1 varRef1 kind
+        -> FixAST annf typeRef2 ctorRef2 varRef2 kind
+       )
 bottomUpReferences ftr fcr fvr =
-    cataAll
-        (FixAST . fmap (mapAll ftr fcr fvr id id id))
-        (FixAST . fmap (mapAll ftr fcr fvr id id id))
-        (FixAST . fmap (mapAll ftr fcr fvr id id id))
+    I.cata (I.Fix . fmap (mapAll ftr fcr fvr id))
 
-cataReferences ::
-    (Monoid a, FixedAST fix, Coapplicative annf) =>
+
+-- TODO: move this Data.Indexed?
+newtype Const x y = Const { unConst :: x }
+-- TODO: probably best to remove this monoid instance so unwrapping can be more explicit
+instance Semigroup x => Semigroup (Const x y) where
+    (Const a) <> (Const b) = Const (a <> b)
+instance Monoid x => Monoid (Const x y) where
+    mempty = Const mempty
+
+
+foldReferences ::
+    forall a annf typeRef ctorRef varRef kind.
+    (Monoid a, Coapplicative annf) =>
     (typeRef -> a) -> (ctorRef -> a) -> (varRef -> a)
-    -> fix annf typeRef ctorRef varRef
-    -> Seed fix a a a -- NOTE: this should always result in `a`
-cataReferences ftype fctor fvar =
-    cataAll (foldPattern . extract) (foldType . extract) (foldExpression . extract)
+    -> FixAST annf typeRef ctorRef varRef kind -> a
+foldReferences ftype fctor fvar =
+    unConst . I.cata (foldNode  . extract)
     where
-        -- TODO: is there some way to move all these functions into MapAST without unnecessary performance overhead?
-        foldPattern = \case
+        -- This is kinda confusing, but we use the Const type constructor to merge all the different NodeKinds into a single type `a`
+        -- See http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html for relevant details.
+        foldNode :: forall kind'. AST typeRef ctorRef varRef (Const a) kind' -> Const a kind'
+        foldNode = \case
+            -- Declarations
+            Definition name args _ e -> Const (unConst name <> foldMap (unConst . extract) args <> unConst e)
+            TypeAnnotation _ t -> Const (unConst $ extract t)
+            Datatype _ ctors -> Const (foldMap (unConst . fold) ctors)
+            TypeAlias _ _ t -> Const (unConst $ extract t)
+            PortAnnotation _ _ t -> Const (unConst t)
+            PortDefinition _ _ e -> Const (unConst e)
+            Fixity _ _ _ _ name -> Const (fvar name)
+            Fixity_0_19 _ _ _ _ -> mempty
+
+            -- Expressions
+            Unit _ -> mempty
+            Literal _ -> mempty
+            VarExpr var -> Const $ fvar var
+            App first rest _ -> first <> mconcat (fmap extract rest)
+            Unary _ e -> e
+            Binops first ops _ -> Const (unConst first <> foldMap foldBinopsClause ops)
+            Parens e -> extract e
+            ExplicitList terms _ _ -> fold terms
+            Range left right _ -> extract left <> extract right
+            Tuple terms _ -> mconcat $ fmap extract terms
+            TupleFunction _ -> mempty
+            Record _ fields _ _ -> foldMap (extract . _value) fields
+            Access e _ -> e
+            AccessFunction _ -> mempty
+            Lambda args _ e _ -> Const (foldMap (unConst . extract) args <> unConst e)
+            If cond elsifs els -> Const (foldIfClause cond <> foldMap (foldIfClause . extract) elsifs <> unConst (extract els))
+            Let defs _ e -> Const (foldMap unConst defs <> unConst e)
+            LetDefinition name args _ body -> Const (unConst name <> foldMap (unConst . extract) args <> unConst body)
+            LetAnnotation _ typ -> Const (unConst $ extract typ)
+            LetComment _ -> mempty
+            Case (cond, _) branches -> Const (unConst (extract cond) <> foldMap unConst branches)
+            CaseBranch _ _ _ p e -> Const (unConst p <> unConst e)
+            GLShader _ -> mempty
+
+            -- Patterns
             Anything -> mempty
             UnitPattern _ -> mempty
-            AST.Pattern.Literal _ -> mempty
+            LiteralPattern _ -> mempty
             VarPattern _ -> mempty
             OpPattern _ -> mempty
-            Data ctor args -> ftype ctor <> mconcat (fmap extract args)
+            DataPattern ctor args -> Const (ftype ctor <> foldMap (unConst . extract) args)
             PatternParens p -> extract p
-            AST.Pattern.Tuple terms -> mconcat (fmap extract terms)
+            TuplePattern terms -> foldMap extract terms
             EmptyListPattern _ -> mempty
-            List terms -> mconcat (fmap extract terms)
-            ConsPattern first rest -> extract first <> mconcat (fmap extract rest)
+            ListPattern terms -> foldMap extract terms
+            ConsPattern first rest -> extract first <> fold rest
             EmptyRecordPattern _ -> mempty
-            AST.Pattern.Record _ -> mempty
+            RecordPattern _ -> mempty
             Alias p _ -> extract p
 
+            -- Types
+            UnitType _ -> mempty
+            TypeVariable _ -> mempty
+            TypeConstruction ctor args -> Const (foldTypeConstructor ctor <> foldMap (unConst . extract) args)
+            TypeParens typ -> extract typ
+            TupleType terms -> foldMap extract terms
+            RecordType _ fields _ _ -> foldMap (extract . _value) fields
+            FunctionType first rest _ -> extract first <> fold rest
+
+        foldTypeConstructor :: TypeConstructor ctorRef -> a
         foldTypeConstructor = \case
             NamedConstructor ctor -> fctor ctor
             TupleConstructor _ -> mempty
 
-        foldType = \case
-            UnitType _ -> mempty
-            TypeVariable _ -> mempty
-            TypeConstruction ctor args -> foldTypeConstructor ctor <> mconcat (fmap extract args)
-            TypeParens typ -> extract typ
-            TupleType terms -> mconcat (fmap extract terms)
-            RecordType _ fields _ _ -> mconcat $ fmap (extract . _value . extract) fields
-            FunctionType first rest _ -> extract first <> mconcat (fmap extract rest)
-
+        foldBinopsClause :: BinopsClause varRef (Const a 'ExpressionNK) -> a
         foldBinopsClause = \case
-            BinopsClause _ op _ e -> fvar op <> e
+            BinopsClause _ op _ e -> fvar op <> unConst e
 
+        foldIfClause :: IfClause (Const a 'ExpressionNK) -> a
         foldIfClause = \case
-            IfClause cond els -> extract cond <> extract els
-
-        foldLetDeclaration = \case
-            LetDefinition name args _ body -> name <> mconcat (fmap extract args) <> body
-            LetAnnotation _ typ -> extract typ
-            LetComment _ -> mempty
-
-        foldCaseBranch = \case
-            CaseBranch _ _ _ p e -> p <> e
-
-        foldExpression = \case
-            Unit _ -> mempty
-            AST.Expression.Literal _ -> mempty
-            VarExpr var -> fvar var
-            App first rest _ -> first <> mconcat (fmap extract rest)
-            Unary _ e -> e
-            Binops first ops _ -> first <> mconcat (fmap foldBinopsClause ops)
-            Parens e -> extract e
-            ExplicitList terms _ _ -> mconcat $ fmap extract terms
-            Range left right _ -> extract left <> extract right
-            AST.Expression.Tuple terms _ -> mconcat $ fmap extract terms
-            TupleFunction _ -> mempty
-            AST.Expression.Record _ fields _ _ -> mconcat $ fmap (extract . _value . extract) fields
-            Access e _ -> e
-            AccessFunction _ -> mempty
-            Lambda args _ e _ -> mconcat (fmap extract args) <> e
-            If cond elsifs els -> foldIfClause cond <> mconcat (fmap (foldIfClause . extract) elsifs) <> extract els
-            Let defs _ e -> mconcat (fmap foldLetDeclaration defs) <> e
-            Case (cond, _) branches -> extract cond <> mconcat (fmap foldCaseBranch branches)
-            GLShader _ -> mempty
+            IfClause cond els -> unConst (extract cond) <> unConst (extract els)
 
 
 mapNs ::
-    (MapAST t, Functor annf) =>
+    Functor annf =>
     (ns1 -> ns2)
-    -> ASTNS t annf ns1
-    -> ASTNS t annf ns2
+    -> (forall kind.
+        ASTNS annf ns1 kind
+        -> ASTNS annf ns2 kind
+       )
 mapNs f =
     let
         mapTypeRef (ns, u) = (f ns, u)
         mapCtorRef (ns, u) = (f ns, u)
-        mapVarRef (Var.VarRef ns l) = Var.VarRef (f ns) l
-        mapVarRef (Var.TagRef ns u) = Var.TagRef (f ns) u
-        mapVarRef (Var.OpRef op) = Var.OpRef op
+        mapVarRef (VarRef ns l) = VarRef (f ns) l
+        mapVarRef (TagRef ns u) = TagRef (f ns) u
+        mapVarRef (OpRef op) = OpRef op
     in
-    mapAll mapTypeRef mapCtorRef mapVarRef
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
+    bottomUpReferences mapTypeRef mapCtorRef mapVarRef

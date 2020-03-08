@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Parse.Module (moduleDecl, elmModule, topLevel) where
 
 import qualified Control.Applicative
@@ -6,9 +7,7 @@ import Elm.Utils ((|>))
 import Text.Parsec hiding (newline, spaces)
 
 import Parse.Helpers
-import Parse.Declaration as Decl
-import AST.Declaration (Declaration)
-import qualified AST.Declaration
+import qualified Parse.Declaration as Decl
 import AST.Module (Module, BeforeExposing, AfterExposing, BeforeAs, AfterAs, ImportMethod)
 import qualified AST.Module as Module
 import AST.Structure
@@ -20,7 +19,7 @@ import Parse.Whitespace
 import Reporting.Annotation (Located)
 
 
-elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
+elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (Located (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)))
 elmModule elmVersion =
   do  preModule <- option [] freshLine
       h <- moduleDecl elmVersion
@@ -44,21 +43,21 @@ elmModule elmVersion =
           h
           docs
           (C (preDocsComments ++ postDocsComments ++ preImportComments) imports')
-          ((map AST.Declaration.BodyComment postImportComments) ++ decls ++ (map AST.Declaration.BodyComment trailingComments))
+          ((map BodyComment postImportComments) ++ decls ++ (map BodyComment trailingComments))
 
 
-topLevel :: IParser a -> IParser [AST.Declaration.TopLevelStructure a]
+topLevel :: IParser a -> IParser [TopLevelStructure a]
 topLevel entry =
   (++) <$> option [] (((\x -> [x]) <$> Decl.topLevelStructure entry))
       <*> (concat <$> many (freshDef entry))
 
 
-freshDef :: IParser a -> IParser [AST.Declaration.TopLevelStructure a]
+freshDef :: IParser a -> IParser [TopLevelStructure a]
 freshDef entry =
     commitIf (freshLine >> (letter <|> char '_')) $
       do  comments <- freshLine
           decl <- Decl.topLevelStructure entry
-          return $ (map AST.Declaration.BodyComment comments) ++ [decl]
+          return $ (map BodyComment comments) ++ [decl]
 
 
 moduleDecl :: ElmVersion -> IParser (Maybe Module.Header)

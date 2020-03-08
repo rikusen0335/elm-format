@@ -12,7 +12,6 @@ module AST.Module
     , BeforeExposing, AfterExposing, BeforeAs, AfterAs
     ) where
 
-import AST.Declaration (TopLevelStructure)
 import AST.Structure
 import qualified AST.Variable as Var
 import qualified Cheapskate.Types as Markdown
@@ -34,10 +33,6 @@ data Module ns decl =
     , body :: [TopLevelStructure decl]
     }
     deriving (Eq, Show)
-
-instance (Functor ann, ChangeAnnotation decl ann) => ChangeAnnotation (Module ns (ann decl)) ann where
-    type SetAnnotation ann' (Module ns (ann decl)) = Module ns (ann' (SetAnnotation ann' decl))
-    convertFix f mod = mod { body = fmap (fmap $ f . (fmap $ convertFix f)) (body mod) }
 
 
 -- HEADERS

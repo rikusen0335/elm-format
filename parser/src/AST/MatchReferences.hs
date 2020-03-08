@@ -1,10 +1,9 @@
 module AST.MatchReferences (MatchedNamespace(..), fromMatched, matchReferences, applyReferences) where
 
+import AST.V0_16
 import AST.Structure
-import AST.Variable
 import Control.Applicative ((<|>))
 import ElmFormat.ImportInfo (ImportInfo)
-import ElmFormat.Mapping
 
 import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Dict
@@ -27,10 +26,10 @@ fromMatched _ (Unmatched t) = t
 
 
 matchReferences ::
-    (Functor annf, MapAST t, Ord u) =>
+    (Functor annf, Ord u) =>
     ImportInfo [u]
-    -> ASTNS t annf [u]
-    -> ASTNS t annf (MatchedNamespace [u])
+    -> ASTNS annf [u] kind
+    -> ASTNS annf (MatchedNamespace [u]) kind
 matchReferences importInfo =
     let
         aliases = Bimap.toMap $ ImportInfo._aliases importInfo
@@ -71,17 +70,14 @@ matchReferences importInfo =
         mapVarRef (TagRef ns u) = TagRef (f ns (Right u)) u
         mapVarRef (OpRef op) = OpRef op
     in
-    mapAll mapTypeRef mapCtorRef mapVarRef
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
+    bottomUpReferences mapTypeRef mapCtorRef mapVarRef
 
 
 applyReferences ::
-    (Functor annf, MapAST t, Ord u) =>
+    (Functor annf, Ord u) =>
     ImportInfo [u]
-    -> ASTNS t annf (MatchedNamespace [u])
-    -> ASTNS t annf [u]
+    -> ASTNS annf (MatchedNamespace [u]) kind
+    -> ASTNS annf [u] kind
 applyReferences importInfo =
     let
         aliases = Bimap.toMapR $ ImportInfo._aliases importInfo
@@ -104,7 +100,4 @@ applyReferences importInfo =
         mapVarRef (TagRef ns u) = TagRef (f ns (Right u)) u
         mapVarRef (OpRef op) = OpRef op
     in
-    mapAll mapTypeRef mapCtorRef mapVarRef
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
-        (bottomUpReferences mapTypeRef mapCtorRef mapVarRef)
+    bottomUpReferences mapTypeRef mapCtorRef mapVarRef

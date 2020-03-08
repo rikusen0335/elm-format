@@ -58,12 +58,9 @@ library
         ElmFormat.Upgrade_0_19
         ElmFormat.World
         -- exposed for tests
-        AST.Declaration
-        AST.Expression
         AST.Helpers
         AST.MatchReferences
         AST.Module
-        AST.Pattern
         AST.Structure
         AST.V0_16
         AST.Variable
@@ -75,7 +72,6 @@ library
         ElmFormat.FileWriter
         ElmFormat.ImportInfo
         ElmFormat.InputConsole
-        ElmFormat.Mapping
         ElmFormat.OutputConsole
         ElmFormat.Parse
         ElmFormat.Render.Box
@@ -106,6 +102,7 @@ library
         Cheapskate.Types
         Cheapskate.Util
         CommandLine.Helpers
+        Data.Indexed
         ElmFormat.CliFlags
         ElmFormat.Filesystem
         ElmFormat.Operation

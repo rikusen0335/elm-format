@@ -1,9 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 module ElmFormat.Parse where
 
 import Elm.Utils ((|>))
 import AST.V0_16
 
-import AST.Declaration (Declaration)
 import AST.Module (Module)
 import AST.Structure
 import Data.Coapplicative
@@ -16,7 +16,7 @@ import qualified Reporting.Result as Result
 import Reporting.Annotation (Located)
 
 
-parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
+parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (Module [UppercaseIdentifier] (Located (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)))
 parse elmVersion input =
     Text.unpack input
         |> Parse.parseModule elmVersion
@@ -39,6 +39,7 @@ toEither res =
             Left $ map extract b
 
 
-parseLiteral :: Text.Text -> Result.Result () Syntax.Error Literal
+-- TODO: can this be removed?
+parseLiteral :: Text.Text -> Result.Result () Syntax.Error LiteralValue
 parseLiteral input =
      Parse.parse (Text.unpack input) Parse.Literal.literal

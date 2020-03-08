@@ -1,11 +1,12 @@
+{-# LANGUAGE DataKinds #-}
 module Parse.Binop (binops) where
 
 import Text.Parsec ((<|>), choice, try)
 
-import AST.Expression (Expression)
-import qualified AST.Expression as E
-import AST.Structure (FixAST(..))
+import AST.V0_16
+import AST.Structure (FixAST)
 import Data.Coapplicative
+import qualified Data.Indexed as I
 import Parse.Helpers (commitIf, addLocation, multilineToBool)
 import Parse.IParser
 import Parse.Whitespace
@@ -13,19 +14,19 @@ import Reporting.Annotation (Located)
 
 
 binops
-    :: IParser (FixAST Expression Located typeRef ctorRef varRef)
-    -> IParser (FixAST Expression Located typeRef ctorRef varRef)
+    :: IParser (FixAST Located typeRef ctorRef varRef 'ExpressionNK)
+    -> IParser (FixAST Located typeRef ctorRef varRef 'ExpressionNK)
     -> IParser varRef
-    -> IParser (FixAST Expression Located typeRef ctorRef varRef)
+    -> IParser (FixAST Located typeRef ctorRef varRef 'ExpressionNK)
 binops term last anyOp =
-  fmap FixAST $ addLocation $
+  fmap I.Fix $ addLocation $
   do  ((e, ops), multiline) <- trackNewline ((,) <$> term <*> nextOps)
       return $
         case ops of
           [] ->
-            extract $ unFixAST e
+            extract $ I.unFix e
           _ ->
-            E.Binops e ops $ multilineToBool multiline
+            Binops e ops $ multilineToBool multiline
   where
     nextOps =
       choice
@@ -35,7 +36,7 @@ binops term last anyOp =
                 preExpressionComments <- whitespace
                 expr <- Left <$> try term <|> Right <$> last
                 case expr of
-                  Left t -> (:) (E.BinopsClause preOpComments op preExpressionComments t) <$> nextOps
-                  Right e -> return [E.BinopsClause preOpComments op preExpressionComments e]
+                  Left t -> (:) (BinopsClause preOpComments op preExpressionComments t) <$> nextOps
+                  Right e -> return [BinopsClause preOpComments op preExpressionComments e]
         , return []
         ]

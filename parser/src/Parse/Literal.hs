@@ -10,17 +10,17 @@ import Parse.IParser
 import AST.V0_16
 
 
-literal :: IParser Literal
+literal :: IParser LiteralValue
 literal =
   num <|> (uncurry Str <$> str) <|> (Chr <$> chr)
 
 
-num :: IParser Literal
+num :: IParser LiteralValue
 num =
   toLiteral <$> (rawNumber <?> "a number")
 
 
-toLiteral :: String -> Literal
+toLiteral :: String -> LiteralValue
 toLiteral n
   | 'x' `elem` n         = IntNum (read n) HexadecimalInt
   | any (`elem` ("eE" :: String)) n = FloatNum (read n) ExponentFloat

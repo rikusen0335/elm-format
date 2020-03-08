@@ -6,13 +6,12 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Text.Parsec.Error as Parsec
 
-import qualified AST.Variable as Var
 import qualified Reporting.Report as Report
 
 
 data Error
     = Parse [Parsec.Message]
-    | InfixDuplicate (Var.Ref [UppercaseIdentifier])
+    | InfixDuplicate (Ref [UppercaseIdentifier])
     | TypeWithoutDefinition String
     | PortWithoutAnnotation String
     | UnexpectedPort
@@ -45,9 +44,9 @@ toReport err =
       where
         operator =
             case op of
-              Var.VarRef _namespace (LowercaseIdentifier name) -> "`" ++ name ++ "`"
-              Var.TagRef _namespace (UppercaseIdentifier name) -> "`" ++ name ++ "`"
-              Var.OpRef (SymbolIdentifier name) -> "(" ++ name ++ ")"
+              VarRef _namespace (LowercaseIdentifier name) -> "`" ++ name ++ "`"
+              TagRef _namespace (UppercaseIdentifier name) -> "`" ++ name ++ "`"
+              OpRef (SymbolIdentifier name) -> "(" ++ name ++ ")"
 
     TypeWithoutDefinition valueName ->
         Report.simple

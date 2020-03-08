@@ -1,10 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 module Parse.Parse (parse, parseModule, parseDeclarations, parseExpressions) where
 
 import qualified Text.Parsec.Error as Parsec
 
 import AST.V0_16
-import AST.Declaration (TopLevelStructure, Declaration)
-import AST.Expression (Expression)
 import AST.Module (Module)
 import AST.Structure
 import ElmVersion hiding (parse)
@@ -21,17 +20,17 @@ import Parse.IParser
 import Text.Parsec (eof)
 
 
-parseModule :: ElmVersion -> String -> Result.Result () Error.Error (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
+parseModule :: ElmVersion -> String -> Result.Result () Error.Error (Module [UppercaseIdentifier] (Located (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)))
 parseModule elmVersion src =
     parse src (Parse.Module.elmModule elmVersion)
 
 
-parseDeclarations :: ElmVersion -> String -> Result.Result () Error.Error [TopLevelStructure (ASTNS Declaration Located [UppercaseIdentifier])]
+parseDeclarations :: ElmVersion -> String -> Result.Result () Error.Error [TopLevelStructure (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)]
 parseDeclarations elmVersion src =
     parse src (Parse.Module.topLevel (Parse.Declaration.declaration elmVersion) <* eof)
 
 
-parseExpressions :: ElmVersion -> String -> Result.Result () Error.Error [TopLevelStructure (C0Eol (FixASTNS Expression Located [UppercaseIdentifier]))]
+parseExpressions :: ElmVersion -> String -> Result.Result () Error.Error [TopLevelStructure (C0Eol (ASTNS Located [UppercaseIdentifier] 'ExpressionNK))]
 parseExpressions elmVersion src =
     parse src (Parse.Module.topLevel (withEol $ Parse.Expression.expr elmVersion) <* eof)
 

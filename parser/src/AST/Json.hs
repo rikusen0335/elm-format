@@ -5,13 +5,9 @@ module AST.Json where
 
 import Elm.Utils ((|>))
 
-import AST.Declaration
-import AST.Expression
 import AST.MatchReferences (fromMatched, matchReferences)
 import AST.Module
-import AST.Pattern
 import AST.Structure
-import AST.Variable
 import AST.V0_16
 import Data.Coapplicative
 import Data.Maybe (mapMaybe)
