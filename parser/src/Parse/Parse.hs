@@ -20,7 +20,7 @@ import Parse.IParser
 import Text.Parsec (eof)
 
 
-parseModule :: ElmVersion -> String -> Result.Result () Error.Error (Module [UppercaseIdentifier] (Located (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)))
+parseModule :: ElmVersion -> String -> Result.Result () Error.Error (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK))
 parseModule elmVersion src =
     parse src (Parse.Module.elmModule elmVersion)
 

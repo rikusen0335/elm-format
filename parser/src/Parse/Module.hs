@@ -19,7 +19,7 @@ import Parse.Whitespace
 import Reporting.Annotation (Located)
 
 
-elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (Located (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)))
+elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK))
 elmModule elmVersion =
   do  preModule <- option [] freshLine
       h <- moduleDecl elmVersion
@@ -30,7 +30,7 @@ elmModule elmVersion =
           , (,) <$> addLocation (return Nothing) <*> return []
           ]
       (preImportComments, imports', postImportComments) <- imports elmVersion
-      decls <- topLevel $ addLocation $ Decl.declaration elmVersion
+      decls <- topLevel $ Decl.declaration elmVersion
       trailingComments <-
           (++)
               <$> option [] freshLine

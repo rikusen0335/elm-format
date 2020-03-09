@@ -108,15 +108,18 @@ parseUpgradeDefinition definitionText =
 
                 getExpressionReplacement ::
                     TopLevelStructure (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)
-                    -> Maybe (([UppercaseIdentifier], String), (ASTNS Identity [UppercaseIdentifier] 'ExpressionNK))
+                    -> Maybe
+                        ( ( [UppercaseIdentifier], String )
+                        , ASTNS Identity [UppercaseIdentifier] 'ExpressionNK
+                        )
                 getExpressionReplacement def =
-                    case def of
-                        Entry (A _ (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) [] _ upgradeBody)) ->
+                    case fmap (extract . I.unFix) def of
+                        Entry (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) [] _ upgradeBody) ->
                             case makeName name of
                                 Just functionName -> Just (functionName, I.convert (pure . extract) upgradeBody)
                                 Nothing -> Nothing
 
-                        Entry (A _ (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) args comments upgradeBody)) ->
+                        Entry (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) args comments upgradeBody) ->
                             case makeName name of
                                 Just functionName ->
                                     Just
@@ -131,12 +134,22 @@ parseUpgradeDefinition definitionText =
 
                 getTypeReplacement ::
                     TopLevelStructure (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)
-                    -> Maybe (([UppercaseIdentifier], UppercaseIdentifier) ,([LowercaseIdentifier], ASTNS Identity (MatchedNamespace [UppercaseIdentifier] 'TypeNK)))
+                    -> Maybe
+                        ( ( [UppercaseIdentifier], UppercaseIdentifier )
+                        , ( [LowercaseIdentifier]
+                          , ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'TypeNK
+                          )
+                        )
                 getTypeReplacement = \case
-                    Entry (A _ (TypeAlias comments (C _ (name, args)) (C _ typ))) ->
+                    Entry (I.Fix (A _ (TypeAlias comments (C _ (NameWithArgs name args)) (C _ typ)))) ->
                         case makeTypeName name of
                             Just typeName ->
-                                Just (typeName, (fmap extract args, I.Fix $ fmap (matchReferences importInfo) $ I.unFix $ I.convert (pure . extract) $ typ))
+                                Just
+                                    ( typeName
+                                    , ( fmap extract args
+                                      , matchReferences importInfo $ I.convert (pure . extract) $ typ
+                                      )
+                                    )
 
                             Nothing -> Nothing
 
@@ -144,7 +157,7 @@ parseUpgradeDefinition definitionText =
             in
             Right $ UpgradeDefinition
                 -- TODO: it should be an error if any of the namespaces end up unmatched; we should require that upgrade script authors always reference imports unambiguously
-                { _replacements = fmap (I.Fix . fmap (matchReferences importInfo) . I.unFix) $ Dict.fromList $ Maybe.mapMaybe getExpressionReplacement body
+                { _replacements = fmap (matchReferences importInfo) $ Dict.fromList $ Maybe.mapMaybe getExpressionReplacement body
                 , _typeReplacements = Dict.fromList $ Maybe.mapMaybe getTypeReplacement body
                 , _imports = imports
                 }
@@ -179,7 +192,7 @@ countUsages ::
     ASTNS annf ns 'ExpressionNK
     -> UsageCount ns
 countUsages =
-    cataReferences
+    foldReferences
         -- XXX: TODO: type names and ctor names should be independent from one another
         (\(ns, UppercaseIdentifier typName) -> UsageCount $ Dict.singleton ns (Dict.singleton typName 1))
         (\(ns, UppercaseIdentifier ctorName) -> UsageCount $ Dict.singleton ns (Dict.singleton ctorName 1))
@@ -193,15 +206,15 @@ countUsages =
 transform ::
     (Coapplicative annf, Applicative annf) => -- TODO: can this be replaced with Functor annf?
     ImportInfo [UppercaseIdentifier]
-    -> ASTNS annf [UppercaseIdentifier] 'ExpressionNK
-    -> ASTNS annf [UppercaseIdentifier] 'ExpressionNK
+    -> ASTNS annf [UppercaseIdentifier] kind
+    -> ASTNS annf [UppercaseIdentifier] kind
 transform importInfo =
     case parseUpgradeDefinition elm0_19upgrade of
         Right replacements ->
-            (I.Fix . fmap (applyReferences importInfo) . I.unFix)
+            applyReferences importInfo
                 . I.convert (pure . extract)
                 . transform' replacements importInfo
-                . (I.Fix . fmap (matchReferences importInfo) . I.unFix)
+                . matchReferences importInfo
 
         Left () ->
             error "Couldn't parse upgrade definition"
@@ -228,14 +241,19 @@ transformModule upgradeDefinition modu =
             ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
             -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
         transformDeclaration =
-            -- TODO: should do a single cataAll instead of map with separate cata for type and expr
-            mapAll id id id
-                id
-                (cataAll I.Fix (transformType upgradeDefinition . I.Fix) I.Fix)
-                (I.convert (pure . extract) . transform' upgradeDefinition importInfo)
+            -- TODO: did switching from a mapAll to a unified cata break anything?
+            I.cata
+                  (I.convert (pure . extract)
+                      . transform' upgradeDefinition importInfo
+                      . transformType upgradeDefinition
+                      . I.Fix
+                  )
 
+        expressionFromTopLevelStructure ::
+            TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)
+            -> Maybe (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
         expressionFromTopLevelStructure structure =
-            case fmap extract structure of
+            case fmap (extract . I.unFix) structure of
                 Entry (Definition _ _ _ expr) -> Just expr
                 _ -> Nothing
 
@@ -274,11 +292,11 @@ transformModule upgradeDefinition modu =
 
         originalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
         originalBody =
-            fmap (fmap $ fmap $ matchReferences importInfo) originalBody'
+            fmap (fmap $ matchReferences importInfo) originalBody'
 
         finalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
         finalBody =
-            fmap (fmap $ fmap transformDeclaration) originalBody
+            fmap (fmap transformDeclaration) originalBody
 
         finalImports =
             mergeUpgradeImports
@@ -291,7 +309,7 @@ transformModule upgradeDefinition modu =
             ImportInfo.fromImports (const mempty) $ fmap extract finalImports
     in
     finalBody
-        |> fmap (fmap $ fmap $ applyReferences finalImportInfo)
+        |> fmap (fmap $ applyReferences finalImportInfo)
         |> Module a b c (C preImports finalImports)
 
 
@@ -329,8 +347,8 @@ transform' ::
     Coapplicative annf =>
     UpgradeDefinition
     -> ImportInfo [UppercaseIdentifier]
-    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK
-    -> UExpr -- TODO: refactor to retain the original annf around ((,) Source)?
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
+    -> UAST kind -- TODO: refactor to retain the original annf around ((,) Source)?
 transform' upgradeDefinition importInfo =
     I.cata (simplify . applyUpgrades upgradeDefinition importInfo . I.Fix)
         . I.convert (Compose . Identity . (,) FromSource . extract)
@@ -341,8 +359,8 @@ transformType ::
     -- TODO: can (Coapplicative annf, Applicative annf) be reduced to Functor annf?
     (Coapplicative annf, Applicative annf) =>
     UpgradeDefinition
-    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TypeNK
-    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TypeNK -- TODO: should return ((,) Source) instead of annf
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind -- TODO: should return ((,) Source) instead of annf
 transformType upgradeDefinition typ =
     case extract $ I.unFix typ of
         TypeConstruction (NamedConstructor (MatchedImport ctorNs, ctorName)) args ->
@@ -541,22 +559,6 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
 pleaseReport'' :: String -> String -> String
 pleaseReport'' what details =
     "<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >"
-
-
-
-nowhere :: Region.Position
-nowhere =
-    Region.Position 0 0
-
-
-noRegion' :: Region.Region
-noRegion' =
-    Region.Region nowhere nowhere
-
-
-noRegion :: a -> RA.Located a
-noRegion =
-    RA.at nowhere nowhere
 
 
 makeArg :: Applicative annf => String -> C1 before (ASTNS annf ns 'PatternNK)
