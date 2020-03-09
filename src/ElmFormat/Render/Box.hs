@@ -9,17 +9,9 @@ import Elm.Utils ((|>))
 import Box
 import ElmVersion (ElmVersion(..))
 
-import qualified AST.V0_16 as AST
 import AST.V0_16
-import AST.Declaration (TopLevelStructure, Declaration)
-import qualified AST.Declaration
-import AST.Expression (Expression)
-import qualified AST.Expression
 import qualified AST.Module
-import AST.Pattern (Pattern)
-import qualified AST.Pattern
 import AST.Structure
-import AST.Variable (Ref)
 import qualified AST.Variable
 import qualified Cheapskate.Types as Markdown
 import qualified Control.Monad as Monad

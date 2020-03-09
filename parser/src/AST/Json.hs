@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 module AST.Json where
 
 import Elm.Utils ((|>))
@@ -9,11 +11,14 @@ import AST.MatchReferences (fromMatched, matchReferences)
 import AST.Module
 import AST.Structure
 import AST.V0_16
+import AST.Variable
 import Data.Coapplicative
+import Data.Foldable
 import Data.Maybe (mapMaybe)
 import Reporting.Annotation
 import Text.JSON hiding (showJSON)
 
+import qualified Data.Indexed as I
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -29,7 +34,7 @@ pleaseReport what details =
     error ("<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >")
 
 
-showModule :: Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])) -> JSValue
+showModule :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK) -> JSValue
 showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
     let
         header =
@@ -56,7 +61,7 @@ showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
             mapNs (fromMatched []) . matchReferences importInfo
 
         normalizedBody =
-            fmap (fmap $ fmap normalizeDecl) body
+            fmap (fmap normalizeDecl) body
     in
     makeObj
         [ ( "moduleName", showJSON name )
@@ -69,30 +74,31 @@ data MergedTopLevelStructure ns
     = MergedDefinition
         { _definitionLocation :: Region.Region
         , _name :: LowercaseIdentifier
-        , _args :: List (C1 Before (FixASTNS Pattern Located ns))
+        , _args :: List (C1 Before (ASTNS Located ns 'PatternNK))
         , _preEquals :: Comments
-        , _expression :: FixASTNS Expression Located ns
+        , _expression :: ASTNS Located ns 'ExpressionNK
         , _doc :: Maybe Comment
-        , _annotation :: Maybe (Comments, Comments, FixASTNS Typ Located ns)
+        , _annotation :: Maybe (Comments, Comments, ASTNS Located ns 'TypeNK)
         }
     | TodoTopLevelStructure String
 
 
-mergeDeclarations :: forall ns. Show ns => List (TopLevelStructure (Located (ASTNS Declaration Located ns))) -> List (MergedTopLevelStructure ns)
+mergeDeclarations :: forall ns. Show ns => List (TopLevelStructure (ASTNS Located ns 'DeclarationNK)) -> List (MergedTopLevelStructure ns)
 mergeDeclarations decls =
     let
+        collectAnnotation :: TopLevelStructure (ASTNS Located ns 'DeclarationNK) -> Maybe (LowercaseIdentifier, (Comments, Comments, ASTNS Located ns 'TypeNK))
         collectAnnotation decl =
-            case decl of
-                Entry (A _ (TypeAnnotation (C preColon (VarRef () name)) (C postColon typ))) -> Just (name, (preColon, postColon, typ))
+            case fmap (extract . I.unFix) decl of
+                Entry (TypeAnnotation (C preColon (VarRef () name)) (C postColon typ)) -> Just (name, (preColon, postColon, typ))
                 _ -> Nothing
 
-        annotations :: Map.Map LowercaseIdentifier (Comments, Comments, FixASTNS Typ Located ns)
+        annotations :: Map.Map LowercaseIdentifier (Comments, Comments, ASTNS Located ns 'TypeNK)
         annotations =
             Map.fromList $ mapMaybe collectAnnotation decls
 
         merge decl =
-            case decl of
-                Entry (A region (Definition (FixAST (A _ (VarPattern name))) args preEquals expr)) ->
+            case fmap I.unFix decl of
+                Entry (A region (Definition (I.Fix (A _ (VarPattern name))) args preEquals expr)) ->
                     Just $ MergedDefinition
                         { _definitionLocation = region
                         , _name = name
@@ -187,13 +193,13 @@ instance ToJSON (MergedTopLevelStructure [UppercaseIdentifier]) where
 --   showJSON _ = JSString $ toJSString "TODO: Decl"
 
 
-instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
-  showJSON (FixAST (A region expr)) =
+instance ToJSON (ASTNS Located [UppercaseIdentifier] 'ExpressionNK) where
+  showJSON (I.Fix (A region expr)) =
       case expr of
           Unit _ ->
               makeObj [ type_ "UnitLiteral" ]
 
-          AST.Expression.Literal (IntNum value repr) ->
+          Literal (IntNum value repr) ->
               makeObj
                   [ type_ "IntLiteral"
                   , ("value", JSRational False $ toRational value)
@@ -204,7 +210,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                     )
                   ]
 
-          AST.Expression.Literal (FloatNum value repr) ->
+          Literal (FloatNum value repr) ->
               makeObj
                   [ type_ "FloatLiteral"
                   , ("value", JSRational False $ toRational value)
@@ -215,7 +221,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                     )
                   ]
 
-          AST.Expression.Literal (Boolean value) ->
+          Literal (Boolean value) ->
             makeObj
                 [ type_ "ExternalReference"
                 , ("module", JSString $ toJSString "Basics")
@@ -223,7 +229,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                 , sourceLocation region
                 ]
 
-          AST.Expression.Literal (Chr chr) ->
+          Literal (Chr chr) ->
               makeObj
                   [ type_ "CharLiteral"
                   , ("module", JSString $ toJSString "Char")
@@ -231,7 +237,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                   , sourceLocation region
                   ]
 
-          AST.Expression.Literal (Str str _) ->
+          Literal (Str str _) ->
               makeObj
                   [ type_ "StringLiteral"
                   , ("module", JSString $ toJSString "String")
@@ -275,7 +281,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                     , JSArray $ map
                         (\(BinopsClause _ op _ expr) ->
                            makeObj
-                               [ ("operator", showJSON $ (FixAST $ noRegion $ VarExpr op :: FixASTNS Expression Located [UppercaseIdentifier]))
+                               [ ("operator", showJSON $ (I.Fix $ noRegion $ VarExpr op :: ASTNS Located [UppercaseIdentifier] 'ExpressionNK))
                                , ("term", showJSON expr)
                                ]
                         )
@@ -296,10 +302,10 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
           ExplicitList terms _ _ ->
               makeObj
                   [ type_ "ListLiteral"
-                  , ("terms", JSArray $ fmap showJSON (map extract terms))
+                  , ("terms", JSArray $ fmap showJSON $ toList terms)
                   ]
 
-          AST.Expression.Tuple exprs _ ->
+          Tuple exprs _ ->
               makeObj
                   [ type_ "TupleLiteral"
                   , ("terms", JSArray $ fmap showJSON (map extract exprs))
@@ -311,22 +317,23 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
           TupleFunction n ->
             variableReference region $ replicate (n-1) ','
 
-          AST.Expression.Record base fields _ _ ->
+          Record base fields _ _ ->
               let
                   fieldsJSON =
                       ( "fields"
                       , makeObj $ fmap
-                          (\(C _ (Pair (C _ (LowercaseIdentifier key)) (C _ value) _)) ->
+                          (\(Pair (C _ (LowercaseIdentifier key)) (C _ value) _) ->
                              (key, showJSON value)
                           )
-                          fields
+                          $ toList fields
                       )
 
                   fieldOrder =
                       ( "fieldOrder"
                       , JSArray $
                             fmap (JSString . toJSString) $
-                            fmap (\(C _ (Pair (C _ (LowercaseIdentifier key)) _ _)) -> key) fields
+                            fmap (\(Pair (C _ (LowercaseIdentifier key)) _ _) -> key) $
+                            toList fields
                       )
               in
               case base of
@@ -400,7 +407,7 @@ instance ToJSON (FixASTNS Expression Located [UppercaseIdentifier]) where
                   , ( "subject", showJSON subject )
                   , ( "branches"
                     , JSArray $ map
-                        (\(CaseBranch _ _ _ pat body) ->
+                        (\(I.Fix (A _ (CaseBranch _ _ _ pat body))) ->
                            makeObj
                                [ ("pattern", showJSON pat)
                                , ("body", showJSON body)
@@ -434,10 +441,10 @@ sourceLocation region =
     ( "sourceLocation", showJSON region )
 
 
-instance ToJSON (ASTNS LetDeclaration Located [UppercaseIdentifier]) where
+instance ToJSON (ASTNS Located [UppercaseIdentifier] 'LetDeclarationNK) where
   showJSON letDeclaration =
-      case letDeclaration of
-          LetDefinition (FixAST (A _ (VarPattern (LowercaseIdentifier var)))) [] _ expr ->
+      case extract $ I.unFix letDeclaration of
+          LetDefinition (I.Fix (A _ (VarPattern (LowercaseIdentifier var)))) [] _ expr ->
               makeObj
                   [ type_ "Definition"
                   , ("name" , JSString $ toJSString var)
@@ -458,14 +465,14 @@ instance ToJSON FloatRepresentation where
     showJSON ExponentFloat = JSString $ toJSString "ExponentFloat"
 
 
-instance ToJSON (FixASTNS Pattern Located [UppercaseIdentifier]) where
+instance ToJSON (ASTNS Located [UppercaseIdentifier] 'PatternNK) where
   showJSON pattern' =
       JSString $ toJSString $ "TODO: Pattern (" ++ show pattern' ++ ")"
 
 
-instance ToJSON (FixASTNS Typ Located [UppercaseIdentifier]) where
+instance ToJSON (ASTNS Located [UppercaseIdentifier] 'TypeNK) where
     showJSON type' =
-        case extract $ unFixAST type' of
+        case extract $ I.unFix type' of
             TypeConstruction (NamedConstructor (namespace, name)) args ->
                 makeObj
                     [ type_ "TypeReference"
@@ -481,7 +488,7 @@ instance ToJSON (FixASTNS Typ Located [UppercaseIdentifier]) where
                     ]
 
             FunctionType first rest _ ->
-                case firstRestToRestLast first rest of
+                case firstRestToRestLast first (sequenceToList rest) of
                     (args, C _ last) ->
                         makeObj
                             [ type_ "FunctionType"
