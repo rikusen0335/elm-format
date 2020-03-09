@@ -2,7 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE PolyKinds #-}
 
 module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, mergeUpgradeImports, MatchedNamespace(..)) where
 
@@ -16,6 +18,7 @@ import AST.Variable
 import Control.Applicative (liftA2)
 import Control.Monad (zipWithM)
 import Data.Coapplicative
+import Data.Foldable
 import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Maybe (fromMaybe)
@@ -59,11 +62,11 @@ data UpgradeDefinition =
         { _replacements ::
             Dict.Map
                 ([UppercaseIdentifier], String)
-                (FixASTNS Expression Identity (MatchedNamespace [UppercaseIdentifier]))
+                (ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
         , _typeReplacements ::
             Dict.Map
                 ([UppercaseIdentifier], UppercaseIdentifier)
-                ([LowercaseIdentifier], FixASTNS Typ Identity (MatchedNamespace [UppercaseIdentifier]))
+                ([LowercaseIdentifier], ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'TypeNK)
         , _imports :: Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
         }
 
@@ -104,13 +107,13 @@ parseUpgradeDefinition definitionText =
                         <$> reverse <$> splitOn '_' <$> List.stripPrefix "Upgrade_" name
 
                 getExpressionReplacement ::
-                    TopLevelStructure (Located (ASTNS Declaration Located [UppercaseIdentifier]))
-                    -> Maybe (([UppercaseIdentifier], String), (FixASTNS Expression Identity [UppercaseIdentifier]))
+                    TopLevelStructure (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)
+                    -> Maybe (([UppercaseIdentifier], String), (ASTNS Identity [UppercaseIdentifier] 'ExpressionNK))
                 getExpressionReplacement def =
                     case def of
                         Entry (A _ (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) [] _ upgradeBody)) ->
                             case makeName name of
-                                Just functionName -> Just (functionName, convertFix (pure . extract) upgradeBody)
+                                Just functionName -> Just (functionName, I.convert (pure . extract) upgradeBody)
                                 Nothing -> Nothing
 
                         Entry (A _ (Definition (I.Fix (A _ (VarPattern (LowercaseIdentifier name)))) args comments upgradeBody)) ->
@@ -118,7 +121,7 @@ parseUpgradeDefinition definitionText =
                                 Just functionName ->
                                     Just
                                         ( functionName
-                                        , I.Fix $ pure $ Lambda (fmap (fmap $ convertFix (pure . extract)) args) comments (convertFix (pure . extract) upgradeBody) False
+                                        , I.Fix $ pure $ Lambda (fmap (fmap $ I.convert (pure . extract)) args) comments (I.convert (pure . extract) upgradeBody) False
                                         )
 
                                 Nothing -> Nothing
@@ -127,13 +130,13 @@ parseUpgradeDefinition definitionText =
                             Nothing
 
                 getTypeReplacement ::
-                    TopLevelStructure (Located (ASTNS Declaration Located [UppercaseIdentifier]))
-                    -> Maybe (([UppercaseIdentifier], UppercaseIdentifier) ,([LowercaseIdentifier], FixASTNS Typ Identity (MatchedNamespace [UppercaseIdentifier])))
+                    TopLevelStructure (ASTNS Located [UppercaseIdentifier] 'DeclarationNK)
+                    -> Maybe (([UppercaseIdentifier], UppercaseIdentifier) ,([LowercaseIdentifier], ASTNS Identity (MatchedNamespace [UppercaseIdentifier] 'TypeNK)))
                 getTypeReplacement = \case
                     Entry (A _ (TypeAlias comments (C _ (name, args)) (C _ typ))) ->
                         case makeTypeName name of
                             Just typeName ->
-                                Just (typeName, (fmap extract args, I.Fix $ fmap (matchReferences importInfo) $ I.unFix $ convertFix (pure . extract) $ typ))
+                                Just (typeName, (fmap extract args, I.Fix $ fmap (matchReferences importInfo) $ I.unFix $ I.convert (pure . extract) $ typ))
 
                             Nothing -> Nothing
 
@@ -173,9 +176,7 @@ instance Ord ns => Monoid (UsageCount ns) where
 
 countUsages ::
     (Ord ns, Coapplicative annf) =>
-    -- NOTE: (FixAST Expression) could be generalized to (Go' fix => fix), but then the return type
-    -- would inconveniently become `Seed fix (UsageCount ns) (UsageCount ns) (UsageCount ns)`
-    FixAST Expression annf (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)
+    ASTNS annf ns 'ExpressionNK
     -> UsageCount ns
 countUsages =
     cataReferences
@@ -192,13 +193,13 @@ countUsages =
 transform ::
     (Coapplicative annf, Applicative annf) => -- TODO: can this be replaced with Functor annf?
     ImportInfo [UppercaseIdentifier]
-    -> FixASTNS Expression annf [UppercaseIdentifier]
-    -> FixASTNS Expression annf [UppercaseIdentifier]
+    -> ASTNS annf [UppercaseIdentifier] 'ExpressionNK
+    -> ASTNS annf [UppercaseIdentifier] 'ExpressionNK
 transform importInfo =
     case parseUpgradeDefinition elm0_19upgrade of
         Right replacements ->
             (I.Fix . fmap (applyReferences importInfo) . I.unFix)
-                . convertFix (pure . extract)
+                . I.convert (pure . extract)
                 . transform' replacements importInfo
                 . (I.Fix . fmap (matchReferences importInfo) . I.unFix)
 
@@ -210,8 +211,8 @@ transformModule ::
     forall annf.
     (Applicative annf, Coapplicative annf) =>
     UpgradeDefinition
-    -> Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier]))
-    -> Module [UppercaseIdentifier] (annf (ASTNS Declaration annf [UppercaseIdentifier]))
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)
 transformModule upgradeDefinition modu =
     let
         (Module a b c (C preImports originalImports) originalBody') =
@@ -224,14 +225,14 @@ transformModule upgradeDefinition modu =
             ImportInfo.fromModule (knownContents upgradeDefinition) modu
 
         transformDeclaration ::
-            ASTNS Declaration annf (MatchedNamespace [UppercaseIdentifier])
-            -> ASTNS Declaration annf (MatchedNamespace [UppercaseIdentifier])
+            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
+            -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
         transformDeclaration =
             -- TODO: should do a single cataAll instead of map with separate cata for type and expr
             mapAll id id id
                 id
                 (cataAll I.Fix (transformType upgradeDefinition . I.Fix) I.Fix)
-                (convertFix (pure . extract) . transform' upgradeDefinition importInfo)
+                (I.convert (pure . extract) . transform' upgradeDefinition importInfo)
 
         expressionFromTopLevelStructure structure =
             case fmap extract structure of
@@ -243,7 +244,7 @@ transformModule upgradeDefinition modu =
 
         usages ::
             Coapplicative annf =>
-            [TopLevelStructure (annf (ASTNS Declaration annf (MatchedNamespace [UppercaseIdentifier])))]
+            [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
             -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
         usages body =
             let
@@ -271,11 +272,11 @@ transformModule upgradeDefinition modu =
             C pre $
                 ImportMethod alias (fmap (removeTypes $ fromMaybe Set.empty $ Dict.lookup ns typeReplacementsByModule) exposing)
 
-        originalBody :: [TopLevelStructure (annf (ASTNS Declaration annf (MatchedNamespace [UppercaseIdentifier])))]
+        originalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
         originalBody =
             fmap (fmap $ fmap $ matchReferences importInfo) originalBody'
 
-        finalBody :: [TopLevelStructure (annf (ASTNS Declaration annf (MatchedNamespace [UppercaseIdentifier])))]
+        finalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
         finalBody =
             fmap (fmap $ fmap transformDeclaration) originalBody
 
@@ -320,18 +321,19 @@ data Source
 NOTE: this uses `Compose Identity ((,) Source)` instead of just `(,) Source` with the thought that maybe `Identity` could be extracted as a parameter
 
 -}
-type UExpr = FixASTNS Expression (Compose Identity ((,) Source)) (MatchedNamespace [UppercaseIdentifier])
+type UAST kind = ASTNS (Compose Identity ((,) Source)) (MatchedNamespace [UppercaseIdentifier]) kind
+type UExpr = UAST 'ExpressionNK
 
 
 transform' ::
     Coapplicative annf =>
     UpgradeDefinition
     -> ImportInfo [UppercaseIdentifier]
-    -> FixASTNS Expression annf (MatchedNamespace [UppercaseIdentifier])
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK
     -> UExpr -- TODO: refactor to retain the original annf around ((,) Source)?
 transform' upgradeDefinition importInfo =
-    cataAll I.Fix I.Fix (simplify . applyUpgrades upgradeDefinition importInfo . I.Fix)
-        . convertFix (Compose . Identity . (,) FromSource . extract)
+    I.cata (simplify . applyUpgrades upgradeDefinition importInfo . I.Fix)
+        . I.convert (Compose . Identity . (,) FromSource . extract)
         -- TODO: get rid of extract and keep the original annf
 
 
@@ -339,8 +341,8 @@ transformType ::
     -- TODO: can (Coapplicative annf, Applicative annf) be reduced to Functor annf?
     (Coapplicative annf, Applicative annf) =>
     UpgradeDefinition
-    -> FixASTNS Typ annf (MatchedNamespace [UppercaseIdentifier])
-    -> FixASTNS Typ annf (MatchedNamespace [UppercaseIdentifier]) -- TODO: should return ((,) Source) instead of annf
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TypeNK
+    -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TypeNK -- TODO: should return ((,) Source) instead of annf
 transformType upgradeDefinition typ =
     case extract $ I.unFix typ of
         TypeConstruction (NamedConstructor (MatchedImport ctorNs, ctorName)) args ->
@@ -350,20 +352,20 @@ transformType upgradeDefinition typ =
                         inlines =
                             Dict.fromList $ zip argOrder (fmap extract args)
                     in
-                    cataAll I.Fix (inlineTypeVars inlines . I.Fix) I.Fix (convertFix (pure . extract) newTyp)
+                    I.cata (inlineTypeVars inlines . I.Fix) (I.convert (pure . extract) newTyp)
 
                 Nothing -> typ
 
         _ -> typ
 
 
-applyUpgrades :: UpgradeDefinition -> ImportInfo [UppercaseIdentifier] -> UExpr -> UExpr
+applyUpgrades :: UpgradeDefinition -> ImportInfo [UppercaseIdentifier] -> UAST kind -> UAST kind
 applyUpgrades upgradeDefinition importInfo expr =
     let
         exposed = ImportInfo._exposed importInfo
         replacements = _replacements upgradeDefinition
 
-        replace :: Ref (MatchedNamespace [UppercaseIdentifier]) -> Maybe (FixASTNS Expression Identity (MatchedNamespace [UppercaseIdentifier]))
+        replace :: Ref (MatchedNamespace [UppercaseIdentifier]) -> Maybe (ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
         replace var =
             case var of
                 VarRef NoNamespace (LowercaseIdentifier name) ->
@@ -401,7 +403,7 @@ applyUpgrades upgradeDefinition importInfo expr =
 
                 _ -> Nothing
 
-        makeTuple :: Applicative annf => Int -> FixASTNS Expression annf (MatchedNamespace ns)
+        makeTuple :: Applicative annf => Int -> ASTNS annf (MatchedNamespace ns) 'ExpressionNK
         makeTuple n =
             let
                 vars =
@@ -417,25 +419,26 @@ applyUpgrades upgradeDefinition importInfo expr =
     in
     case runIdentity $ getCompose $ I.unFix expr of
         (_, VarExpr var) ->
-            Maybe.fromMaybe expr $ fmap (convertFix (Compose . pure . (,) FromUpgradeDefinition . extract)) $ replace var
+            Maybe.fromMaybe expr $ fmap (I.convert (Compose . pure . (,) FromUpgradeDefinition . extract)) $ replace var
 
         (_, TupleFunction n) ->
-            convertFix (Compose . pure . (,) FromUpgradeDefinition . runIdentity) $ makeTuple n
+            I.convert (Compose . pure . (,) FromUpgradeDefinition . runIdentity) $ makeTuple n
 
         (ann, ExplicitList terms' trailing multiline) ->
             let
                 ha = (fmap UppercaseIdentifier ["Html", "Attributes"])
                 styleExposed = Dict.lookup (LowercaseIdentifier "style") exposed == Just ha
             in
-            I.Fix $ Compose $ pure $ (,) ann $ ExplicitList (concat $ fmap (expandHtmlStyle styleExposed) $ terms') trailing multiline
+            I.Fix $ Compose $ pure $ (,) ann $ ExplicitList (Sequence $ concat $ fmap (expandHtmlStyle styleExposed) $ sequenceToList terms') trailing multiline
 
         _ ->
             expr
 
 
-simplify :: UExpr -> UExpr
+simplify :: UAST kind -> UAST kind
 simplify expr =
     let
+        isElmFixRemove :: (Source, AST typeRef ctorRef (Ref (MatchedNamespace [UppercaseIdentifier])) getType 'ExpressionNK) -> Bool
         isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
         isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
         isElmFixRemove _ = False
@@ -448,7 +451,7 @@ simplify expr =
         -- Remove ElmFix.remove from lists
         (source, ExplicitList terms' trailing multiline) ->
             I.Fix $ Compose $ Identity $ (,) source $ ExplicitList
-                (filter (not . isElmFixRemove . runIdentity . getCompose. I.unFix . extract) terms')
+                (Sequence $ filter (not . isElmFixRemove . runIdentity . getCompose. I.unFix . extract) $ sequenceToList terms')
                 trailing
                 multiline
 
@@ -456,10 +459,10 @@ simplify expr =
         (FromUpgradeDefinition, Access e field) ->
             case runIdentity $ getCompose $ I.unFix e of
                 (_, Record _ fs _ _) ->
-                    case List.find (\(C _ (Pair (C _ f) _ _)) -> f == field) fs of
+                    case find (\(Pair (C _ f) _ _) -> f == field) fs of
                         Nothing ->
                             expr
-                        Just (C _ (Pair _ (C _ fieldValue) _)) ->
+                        Just (Pair _ (C _ fieldValue) _) ->
                             fieldValue
                 _ ->
                     expr
@@ -475,8 +478,11 @@ simplify expr =
         -- reduce case expressions
         (FromUpgradeDefinition, Case (C (pre, post) term, _) branches) ->
             let
-                makeBranch (CaseBranch prePattern postPattern _ p1 b1) =
-                    (C prePattern p1, b1)
+                makeBranch :: UAST 'CaseBranchNK -> (C1 jj (UAST 'PatternNK), UExpr)
+                makeBranch branch =
+                    case extract $ I.unFix branch of
+                        (CaseBranch prePattern postPattern _ p1 b1) ->
+                            (C prePattern p1, b1)
             in
             destructureFirstMatch (C pre term)
                 (fmap makeBranch branches)
@@ -490,7 +496,7 @@ expandHtmlStyle :: Bool -> C2Eol preComma pre UExpr -> [C2Eol preComma pre UExpr
 expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
     let
         lambda fRef =
-            convertFix (Compose . Identity . (,) FromUpgradeDefinition . runIdentity) $
+            I.convert (Compose . Identity . (,) FromUpgradeDefinition . runIdentity) $
             I.Fix $ pure $
             Lambda
                 [(C [] $ I.Fix $ pure $ TuplePattern [makeArg' "a", makeArg' "b"]) ] []
@@ -509,7 +515,7 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
                 VarRef NoNamespace (LowercaseIdentifier "style") -> styleExposed
                 _ -> False
     in
-    case extract $ I.unFix $ convertFix (runIdentity . getCompose) term of
+    case extract $ I.unFix $ I.convert (runIdentity . getCompose) term of
         App (I.Fix (_, VarExpr var)) [C preStyle (I.Fix (_, ExplicitList styles trailing _))] _
           | isHtmlAttributesStyle var
           ->
@@ -520,9 +526,9 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
                         , pre ++ preStyle ++ pre' ++ trailing ++ (Maybe.maybeToList $ fmap LineComment eol)
                         , eol'
                         )
-                        (I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ App (lambda var) [C [] $ convertFix (Compose . Identity) style] (FAJoinFirst JoinAll))
+                        (I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ App (lambda var) [C [] $ I.convert (Compose . Identity) style] (FAJoinFirst JoinAll))
             in
-            fmap convert styles
+            fmap convert $ sequenceToList styles
 
         _ ->
             [C (preComma, pre, eol) term]
@@ -553,36 +559,36 @@ noRegion =
     RA.at nowhere nowhere
 
 
-makeArg :: Applicative annf => String -> C1 before (FixASTNS Pattern annf ns)
+makeArg :: Applicative annf => String -> C1 before (ASTNS annf ns 'PatternNK)
 makeArg varName =
     C [] $ I.Fix $ pure $ VarPattern $ LowercaseIdentifier varName
 
 
-makeArg' :: Applicative annf => String -> C2 before after (FixASTNS Pattern annf ns)
+makeArg' :: Applicative annf => String -> C2 before after (ASTNS annf ns 'PatternNK)
 makeArg' varName =
     C ([], []) (I.Fix $ pure $ VarPattern $ LowercaseIdentifier varName)
 
 
-makeVarRef :: Applicative annf => String -> FixASTNS Expression annf (MatchedNamespace any)
+makeVarRef :: Applicative annf => String -> ASTNS annf (MatchedNamespace any) 'ExpressionNK
 makeVarRef varName =
     I.Fix $ pure $ VarExpr $ VarRef NoNamespace $ LowercaseIdentifier varName
 
 
 applyMappings :: Bool -> Dict.Map LowercaseIdentifier UExpr -> UExpr -> UExpr
 applyMappings insertMultiline mappings =
-    cataAll I.Fix I.Fix (simplify . I.Fix)
-        . convertFix (Compose . Identity . fmap snd . getCompose)
-        . cataAll I.Fix I.Fix (inlineVars ((==) NoNamespace) insertMultiline mappings . I.Fix)
-        . convertFix (Compose . fmap ((,) False) . runIdentity . getCompose)
+    I.cata (simplify . I.Fix)
+        . I.convert (Compose . Identity . fmap snd . getCompose)
+        . I.cata (inlineVars ((==) NoNamespace) insertMultiline mappings . I.Fix)
+        . I.convert (Compose . fmap ((,) False) . runIdentity . getCompose)
 
 
 inlineVars ::
-    forall ns ann.
+    forall ns ann kind.
     (ns -> Bool)
     -> Bool
-    -> Dict.Map LowercaseIdentifier (FixASTNS Expression (Compose Identity ((,) ann)) ns)
-    -> FixASTNS Expression (Compose ((,) ann) ((,) Bool)) ns
-    -> FixASTNS Expression (Compose ((,) ann) ((,) Bool)) ns
+    -> Dict.Map LowercaseIdentifier (ASTNS (Compose Identity ((,) ann)) ns 'ExpressionNK)
+    -> ASTNS (Compose ((,) ann) ((,) Bool)) ns kind
+    -> ASTNS (Compose ((,) ann) ((,) Bool)) ns kind
 inlineVars isLocal insertMultiline mappings expr =
     let
         mapFst f (a, b) = (f a, b)
@@ -592,7 +598,7 @@ inlineVars isLocal insertMultiline mappings expr =
             case Dict.lookup n mappings of
                 Just e ->
                     I.Fix $ Compose $ fmap (mapFst $ const insertMultiline) $ getCompose $ I.unFix
-                    $ convertFix (Compose . fmap ((,) False) . runIdentity . getCompose) e
+                    $ I.convert (Compose . fmap ((,) False) . runIdentity . getCompose) e
 
                 Nothing ->
                     expr
@@ -612,14 +618,14 @@ inlineVars isLocal insertMultiline mappings expr =
 inlineTypeVars ::
     -- TODO: can Coapplciative annf, Applicative annf be reduced to Functor annf?
     (Coapplicative annf, Applicative annf, Coapplicative annf') =>
-    Dict.Map LowercaseIdentifier (FixASTNS Typ annf' ns)
-    -> FixASTNS Typ annf ns
-    -> FixASTNS Typ annf ns
+    Dict.Map LowercaseIdentifier (ASTNS annf' ns 'TypeNK)
+    -> ASTNS annf ns kind
+    -> ASTNS annf ns kind
 inlineTypeVars mappings typ =
     case extract $ I.unFix typ of
         TypeVariable ref ->
             case Dict.lookup ref mappings of
-                Just replacement -> convertFix (pure . extract) replacement
+                Just replacement -> I.convert (pure . extract) replacement
                 Nothing -> typ
 
         _ -> typ
@@ -628,12 +634,12 @@ inlineTypeVars mappings typ =
 destructureFirstMatch ::
     Coapplicative annf =>
     C1 before UExpr
-    -> [ ( C1 before (FixASTNS Pattern annf (MatchedNamespace [UppercaseIdentifier]))
-         , UExpr
+    -> [ ( C1 before (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'PatternNK)
+         , UAST 'ExpressionNK
          )
        ]
-    -> UExpr
-    -> UExpr
+    -> UAST 'ExpressionNK
+    -> UAST 'ExpressionNK
 destructureFirstMatch value choices fallback =
     -- If we find an option that Matches, use the first one we find.
     -- Otherwise, keep track of which ones *could* match -- if there is only one remaining, we can use that
@@ -689,7 +695,7 @@ instance Monad DestructureResult where
 {-| Returns `Nothing` if the pattern doesn't match, or `Just` with a list of bound variables if the pattern does match. -}
 destructure ::
     Coapplicative annf =>
-    C1 before (FixASTNS Pattern annf (MatchedNamespace [UppercaseIdentifier]))
+    C1 before (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'PatternNK)
     -> C1 before UExpr
     -> DestructureResult (Dict.Map LowercaseIdentifier UExpr)
 destructure pat arg =
@@ -795,9 +801,7 @@ destructure pat arg =
                 args :: Dict.Map LowercaseIdentifier UExpr
                 args =
                     argFields
-                        |> fmap extract
-                        |> fmap (\(Pair (C _ k) (C _ v) _) -> (k, v))
-                        |> Dict.fromList
+                        |> foldMap (\(Pair (C _ k) (C _ v) _) -> Dict.singleton k v)
 
                 fieldMapping :: C2 before after LowercaseIdentifier -> Maybe (LowercaseIdentifier, UExpr)
                 fieldMapping (C _ var) =

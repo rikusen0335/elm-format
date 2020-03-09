@@ -12,7 +12,6 @@ module AST.Module
     , BeforeExposing, AfterExposing, BeforeAs, AfterAs
     ) where
 
-import AST.Structure
 import qualified AST.Variable as Var
 import qualified Cheapskate.Types as Markdown
 import Data.Map.Strict (Map)

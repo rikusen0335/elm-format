@@ -80,6 +80,9 @@ newtype Sequence a =
 instance Foldable Sequence where
     foldMap f (Sequence items) = foldMap (f . extract) items
 
+sequenceToList :: Sequence a -> List (C2Eol BeforeSeparator AfterSeparator a)
+sequenceToList (Sequence items) = items
+
 
 {-| This represents a list of things between clear start and end delimiters.
 Comments can appear before and after any item, or alone if there are no items.

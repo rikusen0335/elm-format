@@ -6,6 +6,9 @@
 
 module Data.Indexed where
 
+
+-- Common typeclasses
+
 class IFunctor (f :: (k -> *) -> k -> *) where
    imap :: (forall i. a i -> b i) -> (forall i. f a i -> f b i)
 
@@ -14,7 +17,10 @@ class Foldable (t :: (k -> *) -> k -> *) where
     foldMap :: Monoid m => (forall i. f i -> m) -> t f a -> m
 
 
-newtype Fix ann f i = Fix { unFix :: ann (f (Fix ann f) i) }
+-- Recursion schemes
+
+newtype Fix (ann :: * -> *) (f :: (k -> *) -> k -> *) (i :: k)
+    = Fix { unFix :: ann (f (Fix ann f) i) }
 
 deriving instance Show (ann (f (Fix ann f) i)) => Show (Fix ann f i)
 deriving instance Eq (ann (f (Fix ann f) i)) => Eq (Fix ann f i)
@@ -27,8 +33,6 @@ cata ::
   (forall i. Fix ann f i -> a i)
 cata f = f . fmap (imap $ cata f) . unFix
 
-
--- Converting annotations
 
 convert ::
   Functor ann1 =>
