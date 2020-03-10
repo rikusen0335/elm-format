@@ -313,7 +313,7 @@ formatModuleHeader elmVersion addDefaultHeader modu =
 
       extractVarName :: Coapplicative annf => TopLevelStructure (ASTNS annf ns 'DeclarationNK) -> [AST.Variable.Value]
       extractVarName decl =
-          case fmap extract decl of
+          case fmap (extract . I.unFix) decl of
               DocComment _ -> []
               BodyComment _ -> []
               Entry (PortAnnotation (C _ (LowercaseIdentifier name)) _ _) -> [ AST.Variable.Value (LowercaseIdentifier name) ]
@@ -540,8 +540,9 @@ formatModule elmVersion addDefaultHeader spacing modu =
 formatModuleBody :: Coapplicative annf => Int -> ElmVersion -> ImportInfo [UppercaseIdentifier] -> [TopLevelStructure (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)] -> Maybe Box
 formatModuleBody linesBetween elmVersion importInfo body =
     let
+        entryType :: ASTNS annf ns 'DeclarationNK -> BodyEntryType
         entryType adecl =
-            case adecl of
+            case extract $ I.unFix adecl of
                 Definition pat _ _ _ ->
                     case extract $ I.unFix pat of
                         VarPattern name ->
@@ -553,10 +554,10 @@ formatModuleBody linesBetween elmVersion importInfo body =
                         _ ->
                             BodyUnnamed
 
-                Datatype (C _ (name, _)) _ ->
+                Datatype (C _ (NameWithArgs name _)) _ ->
                     BodyNamed $ TagRef () name
 
-                TypeAlias _ (C _ (name, _)) _ ->
+                TypeAlias _ (C _ (NameWithArgs name _)) _ ->
                     BodyNamed $ TagRef () name
 
                 PortDefinition (C _ name) _ _ ->
@@ -574,7 +575,7 @@ formatModuleBody linesBetween elmVersion importInfo body =
                 Fixity_0_19 _ _ _ _ ->
                     BodyFixity
     in
-    formatTopLevelBody linesBetween elmVersion importInfo entryType (formatDeclaration elmVersion importInfo) (fmap (fmap extract) body)
+    formatTopLevelBody linesBetween elmVersion importInfo entryType (formatDeclaration elmVersion importInfo) body
 
 
 data BodyEntryType
@@ -636,8 +637,8 @@ data ElmCodeBlock annf ns
 
 convertElmCodeBlock :: (forall x. ann x -> ann' x) -> ElmCodeBlock ann ns -> ElmCodeBlock ann' ns
 convertElmCodeBlock f = \case
-    DeclarationsCode decls -> DeclarationsCode (fmap (fmap $ convertFix f) decls)
-    ExpressionsCode exprs -> ExpressionsCode (fmap (fmap $ fmap $ convertFix f) exprs)
+    DeclarationsCode decls -> DeclarationsCode (fmap (fmap $ I.convert f) decls)
+    ExpressionsCode exprs -> ExpressionsCode (fmap (fmap $ fmap $ I.convert f) exprs)
     ModuleCode mod -> ModuleCode (convertFix f mod)
 
 
@@ -663,7 +664,7 @@ formatDocComment elmVersion importInfo blocks =
                     , fmap ExpressionsCode . Result.toMaybe . Parse.parseExpressions elmVersion
                     , fmap ModuleCode . Result.toMaybe . Parse.parseModule elmVersion
                     ]
-                |> fmap (convertFix (pure . extract))
+                |> fmap (convertElmCodeBlock (pure . extract))
 
         format ::
             (Applicative annf, Coapplicative annf) =>
@@ -675,7 +676,7 @@ formatDocComment elmVersion importInfo blocks =
                         |> (Text.unpack . Box.render)
 
                 DeclarationsCode declarations ->
-                    formatModuleBody 1 elmVersion importInfo (fmap (fmap pure) declarations)
+                    formatModuleBody 1 elmVersion importInfo declarations
                         |> fmap (Text.unpack . Box.render)
                         |> fromMaybe ""
 
@@ -981,7 +982,7 @@ formatDeclaration ::
     Coapplicative annf =>
     ElmVersion -> ImportInfo [UppercaseIdentifier] -> ASTNS annf [UppercaseIdentifier] 'DeclarationNK -> Box
 formatDeclaration elmVersion importInfo decl =
-    case decl of
+    case extract $ I.unFix decl of
         Definition name args comments expr ->
             formatDefinition elmVersion importInfo name args comments expr
 
@@ -990,7 +991,7 @@ formatDeclaration elmVersion importInfo decl =
 
         Datatype nameWithArgs tags ->
             let
-                ctor (tag,args') =
+                ctor (NameWithArgs tag args') =
                     case allSingles $ map (formatHeadCommented $ formatType' elmVersion ForCtor) args' of
                         Right args'' ->
                             line $ row $ List.intersperse space $ (formatUppercaseIdentifier elmVersion tag):args''
@@ -1089,8 +1090,8 @@ formatDeclaration elmVersion importInfo decl =
                 ]
 
 
-formatNameWithArgs :: ElmVersion -> (UppercaseIdentifier, [C1 before LowercaseIdentifier]) -> Box
-formatNameWithArgs elmVersion (name, args) =
+formatNameWithArgs :: ElmVersion -> NameWithArgs UppercaseIdentifier LowercaseIdentifier -> Box
+formatNameWithArgs elmVersion (NameWithArgs name args) =
   case allSingles $ map (formatHeadCommented (line . formatLowercaseIdentifier elmVersion [])) args of
     Right args' ->
       line $ row $ List.intersperse space $ ((formatUppercaseIdentifier elmVersion name):args')
@@ -1166,7 +1167,7 @@ formatPattern elmVersion parensRequired apattern =
             in
                 formatBinary False
                     (formatEolCommented (formatPattern elmVersion True) first)
-                    (map formatRight rest)
+                    (fmap formatRight $ sequenceToList rest)
                 |> if parensRequired then parens else id
 
         DataPattern (ns, tag) [] ->
@@ -1288,7 +1289,7 @@ formatExpression ::
     -> Box
 formatExpression elmVersion importInfo context aexpr =
     case elmVersion of
-        Elm_0_19_Upgrade -> formatExpression' elmVersion importInfo context (Upgrade_0_19.transform importInfo $ convertFix (Identity . extract) aexpr)
+        Elm_0_19_Upgrade -> formatExpression' elmVersion importInfo context (Upgrade_0_19.transform importInfo $ I.convert (Identity . extract) aexpr)
         _ -> formatExpression' elmVersion importInfo context aexpr
 
 
@@ -1439,6 +1440,7 @@ formatExpression' elmVersion importInfo context aexpr =
 
         Let defs bodyComments expr ->
             let
+                spacer :: AST typeRef ctorRef varRef getType 'LetDeclarationNK -> AST typeRef ctorRef varRef getType 'LetDeclarationNK -> [Box]
                 spacer first _ =
                     case first of
                         LetDefinition _ _ _ _ ->
@@ -1460,6 +1462,7 @@ formatExpression' elmVersion importInfo context aexpr =
                 (line $ keyword "let")
                     |> andThen
                         (defs
+                            |> fmap (extract . I.unFix)
                             |> intersperseMap spacer formatDefinition'
                             |> map indent
                         )
@@ -1525,7 +1528,7 @@ formatExpression' elmVersion importInfo context aexpr =
                 opening
                     |> andThen
                         (clauses
-                            |> map clause
+                            |> fmap (clause . extract . I.unFix)
                             |> List.intersperse blankLine
                             |> map indent
                         )
@@ -1630,7 +1633,7 @@ formatRecordLike formatBase formatKey fieldSep formatValue base' fields trailing
 
 
 formatSequence :: Char -> Char -> Maybe Char -> (a -> Box) -> ForceMultiline -> Comments -> Sequence a -> Box
-formatSequence left delim right formatA (ForceMultiline multiline) trailing (first:rest) =
+formatSequence left delim right formatA (ForceMultiline multiline) trailing (Sequence (first:rest)) =
     let
         formatItem delim_ (C (pre, post, eol) item) =
             maybe id (stack' . stack' blankLine) (formatComments pre) $
@@ -1643,9 +1646,9 @@ formatSequence left delim right formatA (ForceMultiline multiline) trailing (fir
                 (map (formatItem delim) rest)
             )
             (maybe [] (flip (:) [] . stack' blankLine) (formatComments trailing) ++ (Maybe.maybeToList $ fmap (line . punc . flip (:) []) right))
-formatSequence left _ (Just right) _ _ trailing [] =
+formatSequence left _ (Just right) _ _ trailing (Sequence []) =
     formatUnit left right trailing
-formatSequence left _ Nothing _ _ trailing [] =
+formatSequence left _ Nothing _ _ trailing (Sequence []) =
     formatUnit left ' ' trailing
 
 
@@ -1712,8 +1715,8 @@ formatBinops_common transform elmVersion importInfo left ops multiline =
     let
         (left', ops') =
             transform
-                (convertFix (pure . extract) left)
-                (fmap (fmap $ convertFix (pure . extract)) ops)
+                (I.convert (pure . extract) left)
+                (fmap (fmap $ I.convert (pure . extract)) ops)
 
         formatPair_ isLast (BinopsClause po o pe e) =
             let
@@ -1791,11 +1794,11 @@ removeBangs left ops =
     let
         cmds' post cmds =
             case extract $ I.unFix cmds of
-                ExplicitList [] innerComments _ ->
+                ExplicitList (Sequence []) innerComments _ ->
                     C (post, innerComments) $
                         I.Fix $ pure $ VarExpr (VarRef [UppercaseIdentifier "Cmd"] (LowercaseIdentifier "none"))
 
-                ExplicitList [C (extraPre, pre', eol) cmd] trailing _ ->
+                ExplicitList (Sequence [C (extraPre, pre', eol) cmd]) trailing _ ->
                     let
                         eolComment =
                             case eol of
@@ -1934,9 +1937,9 @@ collectRight shouldFold leftMost collectedLeft rest =
         _ ->
             -- terminate if either rest is empty, or the next op fails the shouldFold test
             ( case ReversedList.isEmpty collectedLeft of
-                True -> convertFix (pure . extract) leftMost
-                False -> I.Fix $ pure $ Binops (convertFix (pure . extract) leftMost) (fmap (fmap $ convertFix (pure . extract)) $ ReversedList.toList collectedLeft) False
-            , fmap (fmap $ convertFix (pure . extract)) rest
+                True -> I.convert (pure . extract) leftMost
+                False -> I.Fix $ pure $ Binops (I.convert (pure . extract) leftMost) (fmap (fmap $ I.convert (pure . extract)) $ ReversedList.toList collectedLeft) False
+            , fmap (fmap $ I.convert (pure . extract)) rest
             )
 
 formatRange_0_17 ::
@@ -1990,8 +1993,8 @@ formatRange_0_18 elmVersion importInfo context left right =
         (C (preLeft, []) left', C (preRight, []) right') ->
             App
                 (I.Fix $ Identity $ VarExpr $ VarRef [UppercaseIdentifier "List"] $ LowercaseIdentifier "range")
-                [ C preLeft $ convertFix (pure . extract) left'
-                , C preRight $ convertFix (pure . extract) right'
+                [ C preLeft $ I.convert (pure . extract) left'
+                , C preRight $ I.convert (pure . extract) right'
                 ]
                 (FAJoinFirst JoinAll)
                 |> (I.Fix . pure)
@@ -2000,8 +2003,8 @@ formatRange_0_18 elmVersion importInfo context left right =
         _ ->
             App
                 (I.Fix $ Identity $ VarExpr $ VarRef [UppercaseIdentifier "List"] $ LowercaseIdentifier "range")
-                [ C [] $ I.Fix $ pure $ Parens $ fmap (convertFix (pure . extract)) left
-                , C [] $ I.Fix $ pure $ Parens $ fmap (convertFix (pure . extract)) right
+                [ C [] $ I.Fix $ pure $ Parens $ fmap (I.convert (pure . extract)) left
+                , C [] $ I.Fix $ pure $ Parens $ fmap (I.convert (pure . extract)) right
                 ]
                 (FAJoinFirst JoinAll)
                 |> (I.Fix . pure)
@@ -2313,7 +2316,7 @@ formatType' elmVersion requireParens atype =
                 ElmStructure.forceableSpaceSepOrStack
                     forceMultiline
                     (formatEolCommented (formatType' elmVersion ForLambda) first)
-                    (map formatRight rest)
+                    (fmap formatRight $ sequenceToList rest)
                 |> if requireParens /= NotRequired then parens else id
 
         TypeVariable var ->
