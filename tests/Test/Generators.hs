@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DataKinds #-}
 
 module Test.Generators where
 
@@ -7,15 +8,12 @@ import Data.Map.Strict
 import Test.QuickCheck
 
 import AST.V0_16
-import AST.Declaration (Declaration)
-import qualified AST.Declaration
-import qualified AST.Expression
 import AST.Module (Module)
 import qualified AST.Module
-import qualified AST.Pattern
 import AST.Structure
-import qualified AST.Variable
+import qualified AST.Listing
 import Data.Functor.Identity
+import qualified Data.Indexed as I
 import qualified Reporting.Annotation
 import qualified Reporting.Region
 
@@ -62,19 +60,19 @@ commented inner =
     C ([], []) <$> inner
 
 
-instance Arbitrary AST.Variable.Value where
+instance Arbitrary AST.Listing.Value where
     arbitrary =
         do
             name <- capIdentifier
-            return $ AST.Variable.Union (C [] name) AST.Variable.ClosedListing
+            return $ AST.Listing.Union (C [] name) AST.Listing.ClosedListing
 
 
-listing :: Gen (AST.Variable.Listing a)
+listing :: Gen (AST.Listing.Listing a)
 listing =
-    return $ AST.Variable.OpenListing (C ([], []) ())
+    return $ AST.Listing.OpenListing (C ([], []) ())
 
 
-instance Arbitrary (Module [UppercaseIdentifier] (Identity (ASTNS Declaration Identity [UppercaseIdentifier]))) where
+instance Arbitrary (Module [UppercaseIdentifier] (ASTNS Identity [UppercaseIdentifier] 'DeclarationNK)) where
     arbitrary =
         do
             name <- listOf1 $ capIdentifier
@@ -90,4 +88,4 @@ instance Arbitrary (Module [UppercaseIdentifier] (Identity (ASTNS Declaration Id
                 )
                 (Reporting.Annotation.at (Reporting.Region.Position 0 0) (Reporting.Region.Position 0 0) Nothing)
                 (C [] empty)
-                [ AST.Declaration.Entry $ pure $ AST.Declaration.Definition (FixAST $ pure $ AST.Pattern.Anything) [] [] (FixAST $ pure $ AST.Expression.TupleFunction 2)]
+                [ Entry $ I.Fix $ pure $ Definition (I.Fix $ pure $ Anything) [] [] (I.Fix $ pure $ TupleFunction 2)]

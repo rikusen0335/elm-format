@@ -7,11 +7,11 @@ module AST.Json where
 
 import Elm.Utils ((|>))
 
+import AST.Listing
 import AST.MatchReferences (fromMatched, matchReferences)
 import AST.Module
 import AST.Structure
 import AST.V0_16
-import AST.Variable
 import Data.Coapplicative
 import Data.Foldable
 import Data.Maybe (mapMaybe)

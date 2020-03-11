@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Parse.ExpressionTest where
 
 import Test.Tasty
@@ -5,11 +6,8 @@ import Test.Tasty.HUnit
 
 import Parse.Expression
 import AST.V0_16
-import AST.Expression
-import AST.Pattern (Pattern(Anything))
-import qualified AST.Pattern as P
 import AST.Structure
-import AST.Variable
+import AST.Listing
 import qualified Box
 import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Map
@@ -23,11 +21,11 @@ import Parse.TestHelpers
 import Reporting.Annotation (Located)
 
 
-pending :: FixASTNS Expression Located [UppercaseIdentifier]
+pending :: ASTNS Located [UppercaseIdentifier] 'ExpressionNK
 pending = at 0 0 0 0 $ Unit []
 
 
-example :: String -> String -> FixASTNS Expression Located [UppercaseIdentifier] -> TestTree
+example :: String -> String -> ASTNS Located [UppercaseIdentifier] 'ExpressionNK -> TestTree
 example name input expected =
     testCase name $
         assertParse (expr Elm_0_19) input expected
@@ -254,11 +252,11 @@ tests =
         ]
 
     , testGroup "lambda"
-        [ example "" "\\x y->9" $ at 1 1 1 8 $ Lambda [C [] ( at 1 2 1 3 $ P.VarPattern $ LowercaseIdentifier "x"), C [] ( at 1 4 1 5 $ P.VarPattern $ LowercaseIdentifier "y")] [] (intExpr (1,7,1,8) 9) False
-        , example "single parameter" "\\x->9" $ at 1 1 1 6 $ Lambda [C [] ( at 1 2 1 3 $ P.VarPattern $ LowercaseIdentifier "x")] [] (intExpr (1,5,1,6) 9) False
-        , example "whitespace" "\\ x y -> 9" $ at 1 1 1 11 $ Lambda [C [] ( at 1 3 1 4 $ P.VarPattern $ LowercaseIdentifier "x"), C [] ( at 1 5 1 6 $ P.VarPattern $ LowercaseIdentifier "y")] [] (intExpr (1,10,1,11) 9) False
-        , example "comments" "\\{-A-}x{-B-}y{-C-}->{-D-}9" $ at 1 1 1 27 $ Lambda [C [BlockComment ["A"]] ( at 1 7 1 8 $ P.VarPattern $ LowercaseIdentifier "x"), C [BlockComment ["B"]] ( at 1 13 1 14 $ P.VarPattern $ LowercaseIdentifier "y")] [BlockComment ["C"], BlockComment ["D"]] (intExpr (1,26,1,27) 9) False
-        , example "newlines" "\\\n x\n y\n ->\n 9" $ at 1 1 5 3 $ Lambda [C [] ( at 2 2 2 3 $ P.VarPattern $ LowercaseIdentifier "x"), C [] ( at 3 2 3 3 $ P.VarPattern $ LowercaseIdentifier "y")] [] (intExpr (5,2,5,3) 9) True
+        [ example "" "\\x y->9" $ at 1 1 1 8 $ Lambda [C [] ( at 1 2 1 3 $ VarPattern $ LowercaseIdentifier "x"), C [] ( at 1 4 1 5 $ VarPattern $ LowercaseIdentifier "y")] [] (intExpr (1,7,1,8) 9) False
+        , example "single parameter" "\\x->9" $ at 1 1 1 6 $ Lambda [C [] ( at 1 2 1 3 $ VarPattern $ LowercaseIdentifier "x")] [] (intExpr (1,5,1,6) 9) False
+        , example "whitespace" "\\ x y -> 9" $ at 1 1 1 11 $ Lambda [C [] ( at 1 3 1 4 $ VarPattern $ LowercaseIdentifier "x"), C [] ( at 1 5 1 6 $ VarPattern $ LowercaseIdentifier "y")] [] (intExpr (1,10,1,11) 9) False
+        , example "comments" "\\{-A-}x{-B-}y{-C-}->{-D-}9" $ at 1 1 1 27 $ Lambda [C [BlockComment ["A"]] ( at 1 7 1 8 $ VarPattern $ LowercaseIdentifier "x"), C [BlockComment ["B"]] ( at 1 13 1 14 $ VarPattern $ LowercaseIdentifier "y")] [BlockComment ["C"], BlockComment ["D"]] (intExpr (1,26,1,27) 9) False
+        , example "newlines" "\\\n x\n y\n ->\n 9" $ at 1 1 5 3 $ Lambda [C [] ( at 2 2 2 3 $ VarPattern $ LowercaseIdentifier "x"), C [] ( at 3 2 3 3 $ VarPattern $ LowercaseIdentifier "y")] [] (intExpr (5,2,5,3) 9) True
         , testCase "arrow must not contain whitespace" $
             assertParseFailure (expr Elm_0_19) "\\x y - > 9"
         ]
@@ -271,12 +269,12 @@ tests =
         ]
 
     , testGroup "let statement"
-        [ example "" "let a=b in z" $ at 1 1 1 13 (Let [LetDefinition (at 1 5 1 6 (P.VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 7 1 8 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 1 12 1 13 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
-        , example "multiple declarations" "let a=b\n    c=d\nin z" $ at 1 1 3 5 (Let [LetDefinition (at 1 5 1 6 (P.VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 7 1 8 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),LetDefinition (at 2 5 2 6 (P.VarPattern (LowercaseIdentifier "c"))) [] [] (at 2 7 2 8 (VarExpr (VarRef [] $ LowercaseIdentifier "d")))] [] (at 3 4 3 5 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
-        , example "multiple declarations" "let\n a=b\n c=d\nin z" $ at 1 1 4 5 (Let [LetDefinition (at 2 2 2 3 (P.VarPattern (LowercaseIdentifier "a"))) [] [] (at 2 4 2 5 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),LetDefinition (at 3 2 3 3 (P.VarPattern (LowercaseIdentifier "c"))) [] [] (at 3 4 3 5 (VarExpr (VarRef [] $ LowercaseIdentifier "d")))] [] (at 4 4 4 5 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
-        , example "whitespace" "let a = b in z" $ at 1 1 1 15 (Let [LetDefinition (at 1 5 1 6 (P.VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 9 1 10 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 1 14 1 15 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
-        , example "comments" "let{-A-}a{-B-}={-C-}b{-D-}in{-E-}z" $ at 1 1 1 35 (Let [LetComment (BlockComment ["A"]),LetDefinition (at 1 9 1 10 (P.VarPattern (LowercaseIdentifier "a"))) [] [BlockComment ["B"],BlockComment ["C"]] (at 1 21 1 22 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),LetComment (BlockComment ["D"])] [BlockComment ["E"]] (at 1 34 1 35 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
-        , example "newlines" "let\n a\n =\n b\nin\n z" $ at 1 1 6 3 (Let [LetDefinition (at 2 2 2 3 (P.VarPattern (LowercaseIdentifier "a"))) [] [] (at 4 2 4 3 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 6 2 6 3 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        [ example "" "let a=b in z" $ at 1 1 1 13 (Let [at 1 5 1 8 $ LetDefinition (at 1 5 1 6 (VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 7 1 8 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 1 12 1 13 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        , example "multiple declarations" "let a=b\n    c=d\nin z" $ at 1 1 3 5 (Let [at 1 5 1 8 $ LetDefinition (at 1 5 1 6 (VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 7 1 8 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),at 2 5 2 8 $ LetDefinition (at 2 5 2 6 (VarPattern (LowercaseIdentifier "c"))) [] [] (at 2 7 2 8 (VarExpr (VarRef [] $ LowercaseIdentifier "d")))] [] (at 3 4 3 5 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        , example "multiple declarations" "let\n a=b\n c=d\nin z" $ at 1 1 4 5 (Let [at 2 2 2 5 $ LetDefinition (at 2 2 2 3 (VarPattern (LowercaseIdentifier "a"))) [] [] (at 2 4 2 5 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),at 3 2 3 5 $ LetDefinition (at 3 2 3 3 (VarPattern (LowercaseIdentifier "c"))) [] [] (at 3 4 3 5 (VarExpr (VarRef [] $ LowercaseIdentifier "d")))] [] (at 4 4 4 5 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        , example "whitespace" "let a = b in z" $ at 1 1 1 15 (Let [at 1 5 1 10 $ LetDefinition (at 1 5 1 6 (VarPattern (LowercaseIdentifier "a"))) [] [] (at 1 9 1 10 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 1 14 1 15 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        , example "comments" "let{-A-}a{-B-}={-C-}b{-D-}in{-E-}z" $ at 1 1 1 35 (Let [at 1 4 1 9 $ LetComment (BlockComment ["A"]),at 1 9 1 22 $ LetDefinition (at 1 9 1 10 (VarPattern (LowercaseIdentifier "a"))) [] [BlockComment ["B"],BlockComment ["C"]] (at 1 21 1 22 (VarExpr (VarRef [] $ LowercaseIdentifier "b"))),at 1 22 1 27 $ LetComment (BlockComment ["D"])] [BlockComment ["E"]] (at 1 34 1 35 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
+        , example "newlines" "let\n a\n =\n b\nin\n z" $ at 1 1 6 3 (Let [at 2 2 4 3 $ LetDefinition (at 2 2 2 3 (VarPattern (LowercaseIdentifier "a"))) [] [] (at 4 2 4 3 (VarExpr (VarRef [] $ LowercaseIdentifier "b")))] [] (at 6 2 6 3 (VarExpr (VarRef [] $ LowercaseIdentifier "z"))))
         , testCase "must have at least one definition" $
             assertParseFailure (expr Elm_0_19) "let in z"
         , testGroup "declarations must start at the same column" $
@@ -287,11 +285,11 @@ tests =
         ]
 
     , testGroup "case statement"
-        [ example "" "case 9 of\n 1->10\n _->20" $ at 1 1 3 7 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [CaseBranch [] [] [] (at 2 2 2 3 $ P.Literal $ IntNum 1 DecimalInt) (at 2 5 2 7 $ Literal $ IntNum 10 DecimalInt), CaseBranch [] [] [] (at 3 2 3 3 Anything) (at 3 5 3 7 $ Literal $ IntNum 20 DecimalInt)])
-        , example "no newline after 'of'" "case 9 of 1->10\n          _->20" $ at 1 1 2 16 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [CaseBranch []  [] [] (at 1 11 1 12 $ P.Literal $ IntNum 1 DecimalInt) (at 1 14 1 16 $ Literal $ IntNum 10 DecimalInt), CaseBranch [] [] [] (at 2 11 2 12 Anything) (at 2 14 2 16 $ Literal $ IntNum 20 DecimalInt)])
-        , example "whitespace" "case 9 of\n 1 -> 10\n _ -> 20" $ at 1 1 3 9 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [CaseBranch [] [] [] (at 2 2 2 3 $ P.Literal $ IntNum 1 DecimalInt) (at 2 7 2 9 $ Literal $ IntNum 10 DecimalInt), CaseBranch [] [] [] (at 3 2 3 3 Anything) (at 3 7 3 9 $ Literal $ IntNum 20 DecimalInt)])
-        , example "comments" "case{-A-}9{-B-}of{-C-}\n{-D-}1{-E-}->{-F-}10{-G-}\n{-H-}_{-I-}->{-J-}20" $ at 1 1 3 21 (Case (C ([BlockComment ["A"]], [BlockComment ["B"]]) (at 1 10 1 11 (Literal (IntNum 9 DecimalInt))),False) [CaseBranch [BlockComment ["C"],BlockComment ["D"]] [BlockComment ["E"]] [BlockComment ["F"]] (at 2 6 2 7 $ P.Literal $ IntNum 1 DecimalInt) (at 2 19 2 21 $ Literal $ IntNum 10 DecimalInt), CaseBranch [BlockComment ["G"],BlockComment ["H"]] [BlockComment ["I"]] [BlockComment ["J"]] (at 3 6 3 7 Anything) (at 3 19 3 21 $ Literal $ IntNum 20 DecimalInt)])
-        , example "newlines" "case\n 9\n of\n 1\n ->\n 10\n _\n ->\n 20" $ at 1 1 9 4 (Case (C ([], []) (at 2 2 2 3 (Literal (IntNum 9 DecimalInt))),True) [CaseBranch [] [] [] (at 4 2 4 3 $ P.Literal $ IntNum 1 DecimalInt) (at 6 2 6 4 $ Literal $ IntNum 10 DecimalInt), CaseBranch [] [] [] (at 7 2 7 3 Anything) (at 9 2 9 4 $ Literal $ IntNum 20 DecimalInt)])
+        [ example "" "case 9 of\n 1->10\n _->20" $ at 1 1 3 7 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [at 2 2 2 7 $ CaseBranch [] [] [] (at 2 2 2 3 $ LiteralPattern $ IntNum 1 DecimalInt) (at 2 5 2 7 $ Literal $ IntNum 10 DecimalInt), at 2 7 3 7 $ CaseBranch [] [] [] (at 3 2 3 3 Anything) (at 3 5 3 7 $ Literal $ IntNum 20 DecimalInt)])
+        , example "no newline after 'of'" "case 9 of 1->10\n          _->20" $ at 1 1 2 16 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [at 1 11 1 16 $ CaseBranch []  [] [] (at 1 11 1 12 $ LiteralPattern $ IntNum 1 DecimalInt) (at 1 14 1 16 $ Literal $ IntNum 10 DecimalInt), at 1 16 2 16 $ CaseBranch [] [] [] (at 2 11 2 12 Anything) (at 2 14 2 16 $ Literal $ IntNum 20 DecimalInt)])
+        , example "whitespace" "case 9 of\n 1 -> 10\n _ -> 20" $ at 1 1 3 9 (Case (C ([], []) (at 1 6 1 7 (Literal (IntNum 9 DecimalInt))),False) [at 2 2 2 9 $ CaseBranch [] [] [] (at 2 2 2 3 $ LiteralPattern $ IntNum 1 DecimalInt) (at 2 7 2 9 $ Literal $ IntNum 10 DecimalInt), at 2 9 3 9 $ CaseBranch [] [] [] (at 3 2 3 3 Anything) (at 3 7 3 9 $ Literal $ IntNum 20 DecimalInt)])
+        , example "comments" "case{-A-}9{-B-}of{-C-}\n{-D-}1{-E-}->{-F-}10{-G-}\n{-H-}_{-I-}->{-J-}20" $ at 1 1 3 21 (Case (C ([BlockComment ["A"]], [BlockComment ["B"]]) (at 1 10 1 11 (Literal (IntNum 9 DecimalInt))),False) [at 2 6 2 21 $ CaseBranch [BlockComment ["C"],BlockComment ["D"]] [BlockComment ["E"]] [BlockComment ["F"]] (at 2 6 2 7 $ LiteralPattern $ IntNum 1 DecimalInt) (at 2 19 2 21 $ Literal $ IntNum 10 DecimalInt), at 2 21 3 21 $ CaseBranch [BlockComment ["G"],BlockComment ["H"]] [BlockComment ["I"]] [BlockComment ["J"]] (at 3 6 3 7 Anything) (at 3 19 3 21 $ Literal $ IntNum 20 DecimalInt)])
+        , example "newlines" "case\n 9\n of\n 1\n ->\n 10\n _\n ->\n 20" $ at 1 1 9 4 (Case (C ([], []) (at 2 2 2 3 (Literal (IntNum 9 DecimalInt))),True) [at 4 2 6 4 $ CaseBranch [] [] [] (at 4 2 4 3 $ LiteralPattern $ IntNum 1 DecimalInt) (at 6 2 6 4 $ Literal $ IntNum 10 DecimalInt), at 6 4 9 4 $ CaseBranch [] [] [] (at 7 2 7 3 Anything) (at 9 2 9 4 $ Literal $ IntNum 20 DecimalInt)])
         , testCase "should not consume trailing whitespace" $
             assertParse (expr Elm_0_19>> string "\nX") "case 9 of\n 1->10\n _->20\nX" $ "\nX"
         , testGroup "clauses must start at the same column"

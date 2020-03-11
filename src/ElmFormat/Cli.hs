@@ -1,9 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 module ElmFormat.Cli (main, main') where
 
 import Prelude ()
 import Relude hiding (exitFailure, exitSuccess, putStr, putStrLn)
 
-import AST.Declaration (Declaration)
 import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
@@ -190,7 +190,10 @@ validate elmVersion (inputFile, inputText) =
             Left $ ParseError inputFile (toString inputText) errs
 
 
-parseModule :: ElmVersion -> (FilePath, Text.Text) -> Either InfoMessage (Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])))
+parseModule ::
+    ElmVersion
+    -> (FilePath, Text.Text)
+    -> Either InfoMessage (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK))
 parseModule elmVersion (inputFile, inputText) =
     case Parse.parse elmVersion inputText of
         Result.Result _ (Result.Ok modu) ->

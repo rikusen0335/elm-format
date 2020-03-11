@@ -264,8 +264,7 @@ data TopLevelStructure a
 
 
 data NodeKind
-    = ModuleNK
-    | DeclarationNK
+    = DeclarationNK
     | ExpressionNK
     | LetDeclarationNK
     | CaseBranchNK

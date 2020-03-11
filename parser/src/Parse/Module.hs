@@ -8,10 +8,11 @@ import Text.Parsec hiding (newline, spaces)
 
 import Parse.Helpers
 import qualified Parse.Declaration as Decl
+import AST.Listing (Listing(..), mergeCommentedMap, mergeListing)
+import qualified AST.Listing as Listing
 import AST.Module (Module, BeforeExposing, AfterExposing, BeforeAs, AfterAs, ImportMethod)
 import qualified AST.Module as Module
 import AST.Structure
-import qualified AST.Variable as Var
 import AST.V0_16
 import ElmVersion
 import Parse.IParser
@@ -76,7 +77,7 @@ moduleDecl_0_16 elmVersion =
       preName <- whitespace
       names <- dotSep1 (capVar elmVersion) <?> "the name of this module"
       postName <- whitespace
-      exports <- option (Var.OpenListing (C ([], []) ())) (listing $ detailedListing elmVersion)
+      exports <- option (OpenListing (C ([], []) ())) (listing $ detailedListing elmVersion)
       preWhere <- whitespace
       reserved elmVersion "where"
       return $
@@ -131,9 +132,9 @@ mergeC2 merge (C (pre1, post1) left) (C (pre2, post2) right) =
 mergeDetailedListing :: Module.DetailedListing -> Module.DetailedListing -> Module.DetailedListing
 mergeDetailedListing left right =
     Module.DetailedListing
-        (mergeCommentedMap (\() () -> ()) (Module.values left) (Module.values right))
-        (mergeCommentedMap (\() () -> ()) (Module.operators left) (Module.operators right))
-        (mergeCommentedMap (mergePreCommented $ mergeListing $ mergeCommentedMap (\() () -> ())) (Module.types left) (Module.types right))
+        (mergeCommentedMap (<>) (Module.values left) (Module.values right))
+        (mergeCommentedMap (<>) (Module.operators left) (Module.operators right))
+        (mergeCommentedMap (mergePreCommented $ mergeListing $ mergeCommentedMap (<>)) (Module.types left) (Module.types right))
 
 
 imports :: ElmVersion -> IParser (Comments, Map [UppercaseIdentifier] (C1 Before ImportMethod), Comments)
@@ -172,7 +173,7 @@ import' elmVersion =
     method originalName =
       Module.ImportMethod
         <$> option Nothing (Just <$> as' originalName)
-        <*> option (C ([], []) Var.ClosedListing) exposing
+        <*> option (C ([], []) ClosedListing) exposing
 
     as' :: [UppercaseIdentifier] -> IParser (C2 BeforeAs AfterAs UppercaseIdentifier)
     as' moduleName =
@@ -180,7 +181,7 @@ import' elmVersion =
           postAs <- whitespace
           C (preAs, postAs) <$> capVar elmVersion <?> ("an alias for module `" ++ show moduleName ++ "`") -- TODO: do something correct instead of show
 
-    exposing :: IParser (C2 BeforeExposing AfterExposing (Var.Listing Module.DetailedListing))
+    exposing :: IParser (C2 BeforeExposing AfterExposing (Listing Module.DetailedListing))
     exposing =
       do  preExposing <- try (whitespace <* reserved elmVersion "exposing")
           postExposing <- whitespace
@@ -192,12 +193,12 @@ import' elmVersion =
           return $ C (preExposing, postExposing) imports
 
 
-listing :: IParser (Comments -> Comments -> a) -> IParser (Var.Listing a)
+listing :: IParser (Comments -> Comments -> a) -> IParser (Listing a)
 listing explicit =
   let
     subparser = choice
-        [ (\_ pre post _ -> (Var.OpenListing (C (pre, post) ()))) <$> string ".."
-        , (\x pre post sawNewline -> (Var.ExplicitListing (x pre post) sawNewline)) <$>
+        [ (\_ pre post _ -> (OpenListing (C (pre, post) ()))) <$> string ".."
+        , (\x pre post sawNewline -> (ExplicitListing (x pre post) sawNewline)) <$>
             explicit
         ]
   in
@@ -208,16 +209,16 @@ listing explicit =
         return $ listing pre post $ multilineToBool multiline
 
 
-listingWithoutParens :: ElmVersion -> IParser (Var.Listing Module.DetailedListing)
+listingWithoutParens :: ElmVersion -> IParser (Listing Module.DetailedListing)
 listingWithoutParens elmVersion =
   expecting "a listing of values and types to expose, but with missing parentheses" $
   choice
-    [ (\_ -> (Var.OpenListing (C ([], []) ()))) <$> string ".."
-    , (\x -> (Var.ExplicitListing (x [] []) False)) <$> detailedListing elmVersion
+    [ (\_ -> (OpenListing (C ([], []) ()))) <$> string ".."
+    , (\x -> (ExplicitListing (x [] []) False)) <$> detailedListing elmVersion
     ]
 
 
-commentedSet :: Ord a => IParser a -> IParser (Comments -> Comments -> Var.CommentedMap a ())
+commentedSet :: Ord a => IParser a -> IParser (Comments -> Comments -> Listing.CommentedMap a ())
 commentedSet item =
     commaSep1Set' ((\x -> (x, ())) <$> item) (\() () -> ())
 
@@ -229,30 +230,7 @@ detailedListing elmVersion =
       return $ \pre post -> toDetailedListing $ values pre post
 
 
-mergeCommentedMap :: Ord k => (v -> v -> v) -> Var.CommentedMap k v -> Var.CommentedMap k v -> Var.CommentedMap k v
-mergeCommentedMap merge left right =
-    let
-        merge' (C (pre1, post1) a) (C (pre2, post2) b) =
-            C (pre1 ++ pre2, post1 ++ post2) (merge a b)
-    in
-    unionWith merge' left right
-
-
-mergeListing :: (a -> a -> a) -> Var.Listing a -> Var.Listing a -> Var.Listing a
-mergeListing merge left right =
-    case (left, right) of
-        (Var.ClosedListing, Var.ClosedListing) -> Var.ClosedListing
-        (Var.ClosedListing, Var.OpenListing comments) -> Var.OpenListing comments
-        (Var.OpenListing comments, Var.ClosedListing) -> Var.OpenListing comments
-        (Var.OpenListing (C (pre1, post1) ()), Var.OpenListing (C (pre2, post2) ())) -> Var.OpenListing (C (pre1 ++ pre2, post1 ++ post2) ())
-        (Var.ClosedListing, Var.ExplicitListing a multiline) -> Var.ExplicitListing a multiline
-        (Var.ExplicitListing a multiline, Var.ClosedListing) -> Var.ExplicitListing a multiline
-        (Var.OpenListing comments, Var.ExplicitListing _a _multiline) -> Var.OpenListing comments
-        (Var.ExplicitListing _a _multiline, Var.OpenListing comments) -> Var.OpenListing comments
-        (Var.ExplicitListing a multiline1, Var.ExplicitListing b multiline2) -> Var.ExplicitListing (merge a b) (multiline1 || multiline2)
-
-
-toDetailedListing :: [C2 before after Var.Value] -> Module.DetailedListing
+toDetailedListing :: [C2 before after Listing.Value] -> Module.DetailedListing
 toDetailedListing values =
     let
         merge
@@ -261,15 +239,15 @@ toDetailedListing values =
             =
             C (pre1 ++ pre2, post1 ++ post2) $
                 C (inner1 ++ inner2) $
-                    mergeListing (mergeCommentedMap (\() () -> ())) tags1 tags2
+                    mergeListing (mergeCommentedMap (<>)) tags1 tags2
 
         step (vs, os, ts) (C (pre, post) val) =
             case val of
-                Var.Value name ->
+                Listing.Value name ->
                     (insert name (C (pre, post) ()) vs, os, ts)
-                Var.OpValue name ->
+                Listing.OpValue name ->
                     (vs, insert name (C (pre, post) ()) os, ts)
-                Var.Union (C inner name) tags ->
+                Listing.Union (C inner name) tags ->
                     (vs, os, insertWith merge name (C (pre, post) (C inner tags)) ts)
 
         done (vs, os, ts) =
@@ -279,16 +257,16 @@ toDetailedListing values =
         |> done
 
 
-value :: ElmVersion -> IParser Var.Value
+value :: ElmVersion -> IParser Listing.Value
 value elmVersion =
     val <|> tipe <?> "a value or type to expose"
   where
     val =
-      (Var.Value <$> lowVar elmVersion) <|> (Var.OpValue <$> parens' symOp)
+      (Listing.Value <$> lowVar elmVersion) <|> (Listing.OpValue <$> parens' symOp)
 
     tipe =
       do  name <- capVar elmVersion
           maybeCtors <- optionMaybe (try $ (,) <$> whitespace <*> listing (commentedSet $ capVar elmVersion))
           case maybeCtors of
-            Nothing -> return $ Var.Union (C [] name) Var.ClosedListing
-            Just (pre, ctors) -> return (Var.Union (C pre name) ctors)
+            Nothing -> return $ Listing.Union (C [] name) Listing.ClosedListing
+            Just (pre, ctors) -> return (Listing.Union (C pre name) ctors)

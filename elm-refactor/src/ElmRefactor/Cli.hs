@@ -2,7 +2,6 @@ module ElmRefactor.Cli (main) where
 
 import Elm.Utils ((|>))
 
-import AST.Structure
 import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))
 import Data.Coapplicative
@@ -15,6 +14,7 @@ import Messages.Types
 
 import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles
+import qualified Data.Indexed as I
 import qualified ElmFormat.Execute as Execute
 import qualified ElmFormat.Parse as Parse
 import qualified ElmFormat.Render.Text as Render
@@ -29,7 +29,7 @@ upgrade upgradeDefinition (_, inputText) =
     case Parse.parse elmVersion inputText of
         Result.Result _ (Result.Ok ast) ->
             ast
-                |> convertFix (Identity . extract)
+                |> fmap (I.convert (Identity . extract))
                 |> transformModule upgradeDefinition
                 |> Render.render elmVersion
                 |> Right

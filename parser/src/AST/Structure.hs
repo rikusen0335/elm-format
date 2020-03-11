@@ -23,12 +23,13 @@ import AST.V0_16
 import qualified Data.Indexed as I
 
 
-type FixAST annf typeRef ctorRef varRef (kind :: NodeKind) =
-    I.Fix annf (AST typeRef ctorRef varRef) kind
+-- FixAST :: (* -> *) -> * -> * -> * -> NodeKind -> *
+type FixAST annf typeRef ctorRef varRef =
+    I.Fix annf (AST typeRef ctorRef varRef)
 
-
-type ASTNS annf ns (kind :: NodeKind) =
-    FixAST annf (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns) kind
+-- ASTNS :: (* -> *) -> * -> NodeKind -> *
+type ASTNS annf ns =
+    FixAST annf (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)
 
 
 bottomUpReferences ::

@@ -11,10 +11,10 @@ module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinit
 import Elm.Utils ((|>))
 
 import AST.V0_16
+import AST.Listing
 import AST.MatchReferences
 import AST.Module (Module(Module), ImportMethod(..), DetailedListing(..))
 import AST.Structure
-import AST.Variable
 import Control.Applicative (liftA2)
 import Control.Monad (zipWithM)
 import Data.Coapplicative

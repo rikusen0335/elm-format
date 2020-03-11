@@ -1,14 +1,14 @@
+{-# LANGUAGE DataKinds #-}
 module AST.MatchReferencesTest (tests) where
 
 import Elm.Utils ((|>))
 
 import AST.V0_16
-import AST.Expression (Expression(..))
 import AST.MatchReferences
 import AST.Module (ImportMethod(..), DetailedListing(..))
-import AST.Structure
-import AST.Variable (Listing(..), Ref(..))
+import AST.Listing (Listing(..))
 import Data.Functor.Identity
+import qualified Data.Indexed as I
 import Expect
 import ElmFormat.ImportInfo (ImportInfo)
 import qualified ElmFormat.ImportInfo as ImportInfo
@@ -16,7 +16,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Map as Dict
-import qualified Data.Set as Set
 import Data.List.Split (splitOn)
 import Data.Maybe (fromMaybe)
 
@@ -55,24 +54,24 @@ tests =
             test ::
                 String
                 -> [(String, List String, Maybe String, Listing DetailedListing)]
-                -> ASTNS Expression Identity [UppercaseIdentifier]
-                -> ASTNS Expression Identity (MatchedNamespace [UppercaseIdentifier])
+                -> Ref [UppercaseIdentifier]
+                -> Ref (MatchedNamespace [UppercaseIdentifier])
                 -> TestTree
             test name imports sourceAst matchedAst =
                 testCase name $
-                    matchReferences (makeImportInfo imports) sourceAst
-                        |> Expect.equals matchedAst
+                    matchReferences (makeImportInfo imports) (I.Fix $ Identity $ VarExpr sourceAst)
+                        |> Expect.equals (I.Fix $ Identity $ VarExpr matchedAst)
         in
         [ test "identifies unknown references" []
-            (VarExpr (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a")))
-            (VarExpr (VarRef (Unmatched [UppercaseIdentifier "A"]) (LowercaseIdentifier "a")))
+            (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a"))
+            (VarRef (Unmatched [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
         , test "matches references from an import"
             [ ("A", [], Nothing, closedListing) ]
-            (VarExpr (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a")))
-            (VarExpr (VarRef (MatchedImport [UppercaseIdentifier "A"]) (LowercaseIdentifier "a")))
+            (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a"))
+            (VarRef (MatchedImport [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
         , test "matches reference to a known value via exposing(..)"
             [ ("Html", [ "div" ], Nothing, openListing) ]
-            (VarExpr (VarRef [] (LowercaseIdentifier "div")))
-            (VarExpr (VarRef (MatchedImport [UppercaseIdentifier "Html"]) (LowercaseIdentifier "div")))
+            (VarRef [] (LowercaseIdentifier "div"))
+            (VarRef (MatchedImport [UppercaseIdentifier "Html"]) (LowercaseIdentifier "div"))
         ]
     ]

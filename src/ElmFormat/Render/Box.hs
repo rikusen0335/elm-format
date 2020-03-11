@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module ElmFormat.Render.Box where
 
@@ -14,7 +15,7 @@ import ElmVersion (ElmVersion(..))
 import AST.V0_16
 import qualified AST.Module
 import AST.Structure
-import qualified AST.Variable
+import qualified AST.Listing
 import qualified Cheapskate.Types as Markdown
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
@@ -174,13 +175,13 @@ removeDuplicates input =
                 else (ReversedList.push next acc, Set.insert next seen)
 
 
-sortVars :: Bool -> Set (C2 before after AST.Variable.Value) -> [[String]] -> ([[C2 before after AST.Variable.Value]], Comments)
+sortVars :: Bool -> Set (C2 before after AST.Listing.Value) -> [[String]] -> ([[C2 before after AST.Listing.Value]], Comments)
 sortVars forceMultiline fromExposing fromDocs =
     let
-        varOrder :: Commented c AST.Variable.Value -> (Int, String)
-        varOrder (C _ (AST.Variable.OpValue (SymbolIdentifier name))) = (1, name)
-        varOrder (C _ (AST.Variable.Union (C _ (UppercaseIdentifier name)) _)) = (2, name)
-        varOrder (C _ (AST.Variable.Value (LowercaseIdentifier name))) = (3, name)
+        varOrder :: Commented c AST.Listing.Value -> (Int, String)
+        varOrder (C _ (AST.Listing.OpValue (SymbolIdentifier name))) = (1, name)
+        varOrder (C _ (AST.Listing.Union (C _ (UppercaseIdentifier name)) _)) = (2, name)
+        varOrder (C _ (AST.Listing.Value (LowercaseIdentifier name))) = (3, name)
 
         listedInDocs =
             fromDocs
@@ -194,9 +195,9 @@ sortVars forceMultiline fromExposing fromDocs =
                 |> Set.toList
                 |> List.sortOn varOrder
 
-        varName (C _ (AST.Variable.Value (LowercaseIdentifier name))) = name
-        varName (C _ (AST.Variable.OpValue (SymbolIdentifier name))) = name
-        varName (C _ (AST.Variable.Union (C _ (UppercaseIdentifier name)) _)) = name
+        varName (C _ (AST.Listing.Value (LowercaseIdentifier name))) = name
+        varName (C _ (AST.Listing.OpValue (SymbolIdentifier name))) = name
+        varName (C _ (AST.Listing.Union (C _ (UppercaseIdentifier name)) _)) = name
 
         varSetToMap set =
             Set.toList set
@@ -239,9 +240,9 @@ formatModuleHeader elmVersion addDefaultHeader modu =
       refName (TagRef _ (UppercaseIdentifier name)) = name
       refName (OpRef (SymbolIdentifier name)) = name
 
-      varName (C _ (AST.Variable.Value (LowercaseIdentifier name))) = name
-      varName (C _ (AST.Variable.OpValue (SymbolIdentifier name))) = name
-      varName (C _ (AST.Variable.Union (C _ (UppercaseIdentifier name)) _)) = name
+      varName (C _ (AST.Listing.Value (LowercaseIdentifier name))) = name
+      varName (C _ (AST.Listing.OpValue (SymbolIdentifier name))) = name
+      varName (C _ (AST.Listing.Union (C _ (UppercaseIdentifier name)) _)) = name
 
       documentedVars :: [[String]]
       documentedVars =
@@ -269,7 +270,7 @@ formatModuleHeader elmVersion addDefaultHeader modu =
               '(':a:b:')':[] -> OpRef (SymbolIdentifier $ a:b:[])
               s -> VarRef [] (LowercaseIdentifier s)
 
-      definedVars :: Set (C2 before after AST.Variable.Value)
+      definedVars :: Set (C2 before after AST.Listing.Value)
       definedVars =
           AST.Module.body modu
               |> concatMap extractVarName
@@ -281,20 +282,20 @@ formatModuleHeader elmVersion addDefaultHeader modu =
               AST.Module.exports (maybeHeader |> Maybe.fromMaybe AST.Module.defaultHeader)
           of
               Just (C _ e) -> e
-              Nothing -> AST.Variable.ClosedListing
+              Nothing -> AST.Listing.ClosedListing
 
-      detailedListingToSet :: AST.Variable.Listing AST.Module.DetailedListing -> Set (C2 before after AST.Variable.Value)
-      detailedListingToSet (AST.Variable.OpenListing _) = Set.empty
-      detailedListingToSet AST.Variable.ClosedListing = Set.empty
-      detailedListingToSet (AST.Variable.ExplicitListing (AST.Module.DetailedListing values operators types) _) =
+      detailedListingToSet :: AST.Listing.Listing AST.Module.DetailedListing -> Set (C2 before after AST.Listing.Value)
+      detailedListingToSet (AST.Listing.OpenListing _) = Set.empty
+      detailedListingToSet AST.Listing.ClosedListing = Set.empty
+      detailedListingToSet (AST.Listing.ExplicitListing (AST.Module.DetailedListing values operators types) _) =
           Set.unions
-              [ Map.assocs values |> fmap (\(name, C c ()) -> C c (AST.Variable.Value name)) |> Set.fromList
-              , Map.assocs operators |> fmap (\(name, C c ()) -> C c (AST.Variable.OpValue name)) |> Set.fromList
-              , Map.assocs types |> fmap (\(name, C c (C preListing listing)) -> C c (AST.Variable.Union (C preListing name) listing)) |> Set.fromList
+              [ Map.assocs values |> fmap (\(name, C c ()) -> C c (AST.Listing.Value name)) |> Set.fromList
+              , Map.assocs operators |> fmap (\(name, C c ()) -> C c (AST.Listing.OpValue name)) |> Set.fromList
+              , Map.assocs types |> fmap (\(name, C c (C preListing listing)) -> C c (AST.Listing.Union (C preListing name) listing)) |> Set.fromList
               ]
 
-      detailedListingIsMultiline :: AST.Variable.Listing a -> Bool
-      detailedListingIsMultiline (AST.Variable.ExplicitListing _ isMultiline) = isMultiline
+      detailedListingIsMultiline :: AST.Listing.Listing a -> Bool
+      detailedListingIsMultiline (AST.Listing.ExplicitListing _ isMultiline) = isMultiline
       detailedListingIsMultiline _ = False
 
       varsToExpose =
@@ -311,19 +312,19 @@ formatModuleHeader elmVersion addDefaultHeader modu =
               varsToExpose
               documentedVars
 
-      extractVarName :: Coapplicative annf => TopLevelStructure (ASTNS annf ns 'DeclarationNK) -> [AST.Variable.Value]
+      extractVarName :: Coapplicative annf => TopLevelStructure (ASTNS annf ns 'DeclarationNK) -> [AST.Listing.Value]
       extractVarName decl =
           case fmap (extract . I.unFix) decl of
               DocComment _ -> []
               BodyComment _ -> []
-              Entry (PortAnnotation (C _ (LowercaseIdentifier name)) _ _) -> [ AST.Variable.Value (LowercaseIdentifier name) ]
+              Entry (PortAnnotation (C _ (LowercaseIdentifier name)) _ _) -> [ AST.Listing.Value (LowercaseIdentifier name) ]
               Entry (Definition pat _ _ _) ->
                   case extract $ I.unFix pat of
-                      VarPattern (LowercaseIdentifier name) -> [ AST.Variable.Value (LowercaseIdentifier name) ]
-                      RecordPattern fields -> fmap (AST.Variable.Value . extract) fields
+                      VarPattern (LowercaseIdentifier name) -> [ AST.Listing.Value (LowercaseIdentifier name) ]
+                      RecordPattern fields -> fmap (AST.Listing.Value . extract) fields
                       _ -> []
-              Entry (Datatype (C _ (UppercaseIdentifier name, _)) _) -> [ AST.Variable.Union (C [] (UppercaseIdentifier name)) (OpenListing (C ([], []) ()))]
-              Entry (TypeAlias _ (C _ (UppercaseIdentifier name, _)) _) -> [ AST.Variable.Union (C [] (UppercaseIdentifier name)) ClosedListing ]
+              Entry (Datatype (C _ (NameWithArgs (UppercaseIdentifier name) _)) _) -> [ AST.Listing.Union (C [] (UppercaseIdentifier name)) (AST.Listing.OpenListing (C ([], []) ()))]
+              Entry (TypeAlias _ (C _ (NameWithArgs (UppercaseIdentifier name) _)) _) -> [ AST.Listing.Union (C [] (UppercaseIdentifier name)) AST.Listing.ClosedListing ]
               Entry _ -> []
 
       formatModuleLine' header@(AST.Module.Header srcTag name moduleSettings exports) =
@@ -392,7 +393,7 @@ formatModuleLine_0_16 header =
     exports =
         case AST.Module.exports header of
             Just (C _ value) -> value
-            Nothing -> OpenListing (C ([], []) ())
+            Nothing -> AST.Listing.OpenListing (C ([], []) ())
 
     formatExports =
         case formatListing (formatDetailedListing elmVersion) exports of
@@ -435,7 +436,7 @@ formatModuleLine_0_16 header =
 
 formatModuleLine ::
     ElmVersion
-    -> ([[C2 before after AST.Variable.Value]], Comments)
+    -> ([[C2 before after AST.Listing.Value]], Comments)
     -> AST.Module.SourceTag
     -> C2 before after [UppercaseIdentifier]
     -> Maybe (C2 before after AST.Module.SourceSettings)
@@ -537,7 +538,7 @@ formatModule elmVersion addDefaultHeader spacing modu =
               ]
 
 
-formatModuleBody :: Coapplicative annf => Int -> ElmVersion -> ImportInfo [UppercaseIdentifier] -> [TopLevelStructure (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)] -> Maybe Box
+formatModuleBody :: forall annf. Coapplicative annf => Int -> ElmVersion -> ImportInfo [UppercaseIdentifier] -> [TopLevelStructure (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)] -> Maybe Box
 formatModuleBody linesBetween elmVersion importInfo body =
     let
         entryType :: ASTNS annf ns 'DeclarationNK -> BodyEntryType
@@ -635,11 +636,11 @@ data ElmCodeBlock annf ns
     | ExpressionsCode [TopLevelStructure (C0Eol (ASTNS annf ns 'ExpressionNK))]
     | ModuleCode (AST.Module.Module ns (ASTNS annf ns 'DeclarationNK))
 
-convertElmCodeBlock :: (forall x. ann x -> ann' x) -> ElmCodeBlock ann ns -> ElmCodeBlock ann' ns
+convertElmCodeBlock :: Functor ann => (forall x. ann x -> ann' x) -> ElmCodeBlock ann ns -> ElmCodeBlock ann' ns
 convertElmCodeBlock f = \case
     DeclarationsCode decls -> DeclarationsCode (fmap (fmap $ I.convert f) decls)
     ExpressionsCode exprs -> ExpressionsCode (fmap (fmap $ fmap $ I.convert f) exprs)
-    ModuleCode mod -> ModuleCode (convertFix f mod)
+    ModuleCode mod -> ModuleCode (fmap (I.convert f) mod)
 
 
 -- TODO: there must be an existing haskell function that does this, right?
@@ -871,16 +872,16 @@ formatImport elmVersion (name, method) =
             ]
 
 
-formatListing :: (a -> [Box]) -> AST.Variable.Listing a -> Maybe Box
+formatListing :: (a -> [Box]) -> AST.Listing.Listing a -> Maybe Box
 formatListing format listing =
     case listing of
-        AST.Variable.ClosedListing ->
+        AST.Listing.ClosedListing ->
             Nothing
 
-        AST.Variable.OpenListing comments ->
+        AST.Listing.OpenListing comments ->
             Just $ parens $ formatCommented (line . keyword) $ fmap (const "..") comments
 
-        AST.Variable.ExplicitListing vars multiline ->
+        AST.Listing.ExplicitListing vars multiline ->
             case format vars of
                 [] -> Nothing
                 vars' -> Just $ ElmStructure.group False "(" "," ")" multiline vars'
@@ -890,21 +891,21 @@ formatDetailedListing :: ElmVersion -> AST.Module.DetailedListing -> [Box]
 formatDetailedListing elmVersion listing =
     concat
         [ formatCommentedMap
-            (\name () -> AST.Variable.OpValue name)
+            (\name () -> AST.Listing.OpValue name)
             (formatVarValue elmVersion)
             (AST.Module.operators listing)
         , formatCommentedMap
-            (\name (C inner listing_) -> AST.Variable.Union (C inner name) listing_)
+            (\name (C inner listing_) -> AST.Listing.Union (C inner name) listing_)
             (formatVarValue elmVersion)
             (AST.Module.types listing)
         , formatCommentedMap
-            (\name () -> AST.Variable.Value name)
+            (\name () -> AST.Listing.Value name)
             (formatVarValue elmVersion)
             (AST.Module.values listing)
         ]
 
 
-formatCommentedMap :: (k -> v -> a) -> (a -> Box) ->  AST.Variable.CommentedMap k v -> [Box]
+formatCommentedMap :: (k -> v -> a) -> (a -> Box) ->  AST.Listing.CommentedMap k v -> [Box]
 formatCommentedMap construct format values =
     let
         format' (k, C c v)
@@ -915,16 +916,16 @@ formatCommentedMap construct format values =
         |> map format'
 
 
-formatVarValue :: ElmVersion -> AST.Variable.Value -> Box
+formatVarValue :: ElmVersion -> AST.Listing.Value -> Box
 formatVarValue elmVersion aval =
     case aval of
-        AST.Variable.Value val ->
+        AST.Listing.Value val ->
             line $ formatLowercaseIdentifier elmVersion [] val
 
-        AST.Variable.OpValue (SymbolIdentifier name) ->
+        AST.Listing.OpValue (SymbolIdentifier name) ->
             line $ identifier $ "(" ++ name ++ ")"
 
-        AST.Variable.Union name listing ->
+        AST.Listing.Union name listing ->
             case
               ( formatListing
                   (formatCommentedMap

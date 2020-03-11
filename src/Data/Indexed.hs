@@ -36,7 +36,6 @@ cata f = f . fmap (imap $ cata f) . unFix
 
 convert ::
   Functor ann1 =>
-  Functor ann2 =>
   IFunctor f =>
   (forall x. ann1 x -> ann2 x) ->
   (forall i. Fix ann1 f i -> Fix ann2 f i)

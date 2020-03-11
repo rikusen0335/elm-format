@@ -1,7 +1,7 @@
 module ElmFormat.ImportInfo (ImportInfo(..), fromModule, fromImports) where
 
 import AST.V0_16
-import AST.Variable (Listing(..))
+import AST.Listing (Listing(..))
 import Elm.Utils ((|>))
 
 import AST.Module (Module)

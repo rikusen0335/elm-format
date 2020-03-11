@@ -4,7 +4,7 @@ import Elm.Utils ((|>))
 
 import AST.V0_16
 import AST.Module (ImportMethod(..), DetailedListing(..))
-import AST.Variable (Listing(..))
+import AST.Listing (Listing(..))
 import Test.Tasty
 import Test.Tasty.HUnit
 

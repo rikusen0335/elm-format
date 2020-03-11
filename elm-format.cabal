@@ -59,13 +59,14 @@ library
         ElmFormat.World
         -- exposed for tests
         AST.Helpers
+        AST.Listing
         AST.MatchReferences
         AST.Module
         AST.Structure
         AST.V0_16
-        AST.Variable
         Box
         Data.Coapplicative
+        Data.Indexed
         Elm.Utils
         ElmFormat.Execute
         ElmFormat.FileStore
@@ -102,7 +103,6 @@ library
         Cheapskate.Types
         Cheapskate.Util
         CommandLine.Helpers
-        Data.Indexed
         ElmFormat.CliFlags
         ElmFormat.Filesystem
         ElmFormat.Operation

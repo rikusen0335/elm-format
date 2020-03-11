@@ -1,10 +1,10 @@
+{-# LANGUAGE DataKinds #-}
 module Test.Property where
 
 import Prelude hiding ((>>))
 import Elm.Utils ((|>), (>>))
 
 import AST.V0_16
-import AST.Declaration (Declaration)
 import AST.Module (Module)
 import AST.Structure
 import Test.Tasty
@@ -13,7 +13,6 @@ import Test.Tasty.QuickCheck
 import Test.QuickCheck.IO ()
 import Reporting.Annotation (Located)
 
-import qualified AST.Module
 import qualified Data.Text as Text
 import qualified Data.Maybe as Maybe
 import qualified ElmFormat.Parse as Parse
@@ -36,7 +35,7 @@ assertStringToString source =
         assertEqual "" (Right source') result
 
 
-astToAst :: Module [UppercaseIdentifier] (Located (ASTNS Declaration Located [UppercaseIdentifier])) -> Assertion
+astToAst :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK) -> Assertion
 astToAst ast =
     let
         result =

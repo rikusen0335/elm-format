@@ -12,7 +12,8 @@ module AST.Module
     , BeforeExposing, AfterExposing, BeforeAs, AfterAs
     ) where
 
-import qualified AST.Variable as Var
+import AST.Listing (Listing)
+import qualified AST.Listing as Listing
 import qualified Cheapskate.Types as Markdown
 import Data.Map.Strict (Map)
 import qualified Reporting.Annotation as A
@@ -31,7 +32,7 @@ data Module ns decl =
     , imports :: C1 BeforeImports (Map ns (C1 Before ImportMethod))
     , body :: [TopLevelStructure decl]
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Functor)
 
 
 -- HEADERS
@@ -49,7 +50,7 @@ data Header = Header
     { srcTag :: SourceTag
     , name :: C2 Before After [UppercaseIdentifier]
     , moduleSettings :: Maybe (C2 BeforeWhere AfterWhere SourceSettings)
-    , exports :: Maybe (C2 BeforeExposing AfterExposing (Var.Listing DetailedListing))
+    , exports :: Maybe (C2 BeforeExposing AfterExposing (Listing DetailedListing))
     }
     deriving (Eq, Show)
 
@@ -65,9 +66,9 @@ defaultHeader =
 
 data BeforeListing
 data DetailedListing = DetailedListing
-    { values :: Var.CommentedMap LowercaseIdentifier ()
-    , operators :: Var.CommentedMap SymbolIdentifier ()
-    , types :: Var.CommentedMap UppercaseIdentifier (C1 BeforeListing (Var.Listing (Var.CommentedMap UppercaseIdentifier ())))
+    { values :: Listing.CommentedMap LowercaseIdentifier ()
+    , operators :: Listing.CommentedMap SymbolIdentifier ()
+    , types :: Listing.CommentedMap UppercaseIdentifier (C1 BeforeListing (Listing (Listing.CommentedMap UppercaseIdentifier ())))
     }
     deriving (Eq, Show)
 
@@ -90,6 +91,6 @@ type UserImport
 data BeforeAs; data AfterAs; data BeforeExposing; data AfterExposing
 data ImportMethod = ImportMethod
     { alias :: Maybe (C2 BeforeAs AfterAs UppercaseIdentifier)
-    , exposedVars :: C2 BeforeExposing AfterExposing (Var.Listing DetailedListing)
+    , exposedVars :: C2 BeforeExposing AfterExposing (Listing DetailedListing)
     }
     deriving (Eq, Show)
