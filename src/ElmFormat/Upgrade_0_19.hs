@@ -241,13 +241,10 @@ transformModule upgradeDefinition modu =
             ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
             -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
         transformDeclaration =
-            -- TODO: did switching from a mapAll to a unified cata break anything?
-            I.cata
-                  (I.convert (pure . extract)
-                      . transform' upgradeDefinition importInfo
-                      . transformType upgradeDefinition
-                      . I.Fix
-                  )
+            -- TODO: combine transform' and transformType into a single pass
+            I.convert (pure . extract)
+            . transform' upgradeDefinition importInfo
+            . I.cata (transformType upgradeDefinition . I.Fix)
 
         expressionFromTopLevelStructure ::
             TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)
@@ -496,7 +493,7 @@ simplify expr =
         -- reduce case expressions
         (FromUpgradeDefinition, Case (C (pre, post) term, _) branches) ->
             let
-                makeBranch :: UAST 'CaseBranchNK -> (C1 jj (UAST 'PatternNK), UExpr)
+                makeBranch :: UAST 'CaseBranchNK -> (C1 c (UAST 'PatternNK), UExpr)
                 makeBranch branch =
                     case extract $ I.unFix branch of
                         (CaseBranch prePattern postPattern _ p1 b1) ->
@@ -667,7 +664,7 @@ destructureFirstMatch value choices fallback =
 
 withComments :: Comments -> UExpr -> Comments -> UExpr
 withComments [] e [] = e
-withComments pre e post = I.Fix $ Compose $ pure $ (,) FromUpgradeDefinition $ Parens $ C (pre, post) e
+withComments pre e post = I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ Parens $ C (pre, post) e
 
 
 data DestructureResult a
@@ -828,8 +825,8 @@ destructure pat arg =
 
 simplifyFunctionApplication :: Source -> UExpr -> [C1 before UExpr] -> FunctionApplicationMultiline -> UExpr
 simplifyFunctionApplication appSource fn args appMultiline =
-    case (I.unFix fn, args) of
-        (Compose (Identity (lambdaSource, Lambda (pat:restVar) preBody body multiline)), arg:restArgs) ->
+    case (runIdentity $ getCompose $ I.unFix fn, args) of
+        ((lambdaSource, Lambda (pat:restVar) preBody body multiline), arg:restArgs) ->
             case destructure pat arg of
                 Matches mappings ->
                     let
