@@ -27,11 +27,19 @@ deriving instance Eq (ann (f (Fix ann f) i)) => Eq (Fix ann f i)
 deriving instance Ord (ann (f (Fix ann f) i)) => Ord (Fix ann f i)
 
 cata ::
-  Functor ann =>
-  IFunctor f =>
-  (forall i. ann (f a i) -> a i) ->
-  (forall i. Fix ann f i -> a i)
+    Functor ann =>
+    IFunctor f =>
+    (forall i. ann (f a i) -> a i)
+    -> (forall i. Fix ann f i -> a i)
 cata f = f . fmap (imap $ cata f) . unFix
+
+
+ana ::
+    Functor ann =>
+    IFunctor f =>
+    (forall i. a i -> ann (f a i))
+    -> (forall i. a i -> Fix ann f i)
+ana f = Fix . fmap (imap $ ana f) . f
 
 
 convert ::

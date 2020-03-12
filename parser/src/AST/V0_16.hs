@@ -6,11 +6,13 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module AST.V0_16 where
 
 import Data.Bifunctor
 import Data.Coapplicative
+import Data.Functor.Compose
 import Data.Int (Int64)
 import qualified Data.Indexed as I
 import qualified Cheapskate.Types as Markdown
@@ -620,13 +622,57 @@ instance I.IFunctor (AST typeRef ctorRef varRef) where
     imap fast = mapAll id id id fast
 
 
--- mapType ::
---     (getType1 'TypeNK -> getType2 'TypeNK)
---     -> (forall kind. AST typeRef ctorRef varRef getType1 kind
---         -> AST typeRef ctorRef varRef getType2 kind
---        )
--- mapType ftyp =
---     imap fast
---     where
---         fast = \case
---             x -> ftyp x -- TODO: not right
+
+--
+-- Recursion schemes
+--
+
+
+topDownReferencesWithContext ::
+    forall
+        context ns
+        typeRef2 ctorRef2 varRef2
+        ann kind.
+    Functor ann =>
+    (UppercaseIdentifier -> context -> context)
+    -> (UppercaseIdentifier -> context -> context)
+    -> (LowercaseIdentifier -> context -> context)
+    -> (context -> (ns, UppercaseIdentifier) -> typeRef2)
+    -> (context -> (ns, UppercaseIdentifier) -> ctorRef2)
+    -> (context -> (Ref ns) -> varRef2)
+    -> context
+    -> I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)) kind
+    -> I.Fix ann (AST typeRef2 ctorRef2 varRef2) kind
+topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar initialContext initialAst =
+    let
+        incNewDefinitions ::
+            forall any kind'.
+            AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns) any kind'
+            -> context -> context
+        incNewDefinitions node =
+            case node of
+                -- TODO: actually implement this for all node types
+                _ -> id
+
+        step ::
+            forall kind'.
+            context
+            -> AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)
+                (I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)))
+                kind'
+            -> AST typeRef2 ctorRef2 varRef2
+                (Compose
+                    ((,) context)
+                    (I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)))
+                )
+                kind'
+        step context node =
+            let
+                context' = incNewDefinitions node context
+            in
+            mapAll (fType context) (fCtor context) (fVar context) id
+                $ (I.imap (Compose . (,) context)) node
+    in
+    I.ana
+        (\(Compose (context, ast)) -> fmap (step context) $ I.unFix ast)
+        (Compose (initialContext, initialAst))

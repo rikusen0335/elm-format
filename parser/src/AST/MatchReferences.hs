@@ -25,6 +25,12 @@ fromMatched _ (MatchedImport t) = t
 fromMatched _ (Unmatched t) = t
 
 
+data Name
+    = TypeName UppercaseIdentifier
+    | CtorName UppercaseIdentifier
+    | VarName LowercaseIdentifier
+    deriving (Eq, Ord)
+
 matchReferences ::
     (Functor annf, Ord u) =>
     ImportInfo [u]
@@ -39,12 +45,19 @@ matchReferences importInfo =
                 (Dict.mapKeys Left $ ImportInfo._exposed importInfo)
                 (Dict.mapKeys Right $ ImportInfo._exposedTypes importInfo)
 
-        f ns identifier =
+        toExposedKey (TypeName u) = Right u
+        toExposedKey (CtorName u) = Right u
+        toExposedKey (VarName l) = Left l
+
+        f locals ns identifier =
             case ns of
                 [] ->
-                    case Dict.lookup identifier exposed of
-                        Nothing -> NoNamespace
-                        Just exposedFrom -> MatchedImport exposedFrom
+                    case Dict.lookup identifier locals of
+                        Just () -> NoNamespace
+                        Nothing ->
+                            case Dict.lookup (toExposedKey identifier) exposed of
+                                Nothing -> NoNamespace
+                                Just exposedFrom -> MatchedImport exposedFrom
 
                 _ ->
                     let
@@ -64,13 +77,20 @@ matchReferences importInfo =
                         Nothing -> Unmatched ns
                         Just single -> MatchedImport single
 
-        mapTypeRef (ns, u) = (f ns (Right u), u)
-        mapCtorRef (ns, u) = (f ns (Right u), u)
-        mapVarRef (VarRef ns l) = VarRef (f ns (Left l)) l
-        mapVarRef (TagRef ns u) = TagRef (f ns (Right u)) u
-        mapVarRef (OpRef op) = OpRef op
+        defineLocalType u = Dict.insert (TypeName u) ()
+        defineLocalCtor u = Dict.insert (CtorName u) ()
+        defineLocalVar l = Dict.insert (VarName l) ()
+
+        mapTypeRef locals (ns, u) = (f locals ns (TypeName u), u)
+        mapCtorRef locals (ns, u) = (f locals ns (CtorName u), u)
+        mapVarRef locals (VarRef ns l) = VarRef (f locals ns (VarName l)) l
+        mapVarRef locals (TagRef ns u) = TagRef (f locals ns (CtorName u)) u
+        mapVarRef _ (OpRef op) = OpRef op
     in
-    bottomUpReferences mapTypeRef mapCtorRef mapVarRef
+    topDownReferencesWithContext
+        defineLocalType defineLocalCtor defineLocalVar
+        mapTypeRef mapCtorRef mapVarRef
+        mempty
 
 
 applyReferences ::

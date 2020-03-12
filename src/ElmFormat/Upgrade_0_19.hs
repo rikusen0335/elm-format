@@ -36,8 +36,6 @@ import qualified Data.Text as Text
 import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified ElmFormat.Parse
 import qualified ElmFormat.Version
-import qualified Reporting.Annotation as RA
-import qualified Reporting.Region as Region
 import qualified Reporting.Result as Result
 
 
