@@ -19,6 +19,7 @@ module AST.Structure
 
 import Data.Coapplicative
 import Data.Foldable (fold)
+import Data.Functor.Const
 import AST.V0_16
 import qualified Data.Indexed as I
 
@@ -45,34 +46,25 @@ bottomUpReferences ftr fcr fvr =
     I.cata (I.Fix . fmap (mapAll ftr fcr fvr id))
 
 
--- TODO: move this Data.Indexed?
-newtype Const x y = Const { unConst :: x }
--- TODO: probably best to remove this monoid instance so unwrapping can be more explicit
-instance Semigroup x => Semigroup (Const x y) where
-    (Const a) <> (Const b) = Const (a <> b)
-instance Monoid x => Monoid (Const x y) where
-    mempty = Const mempty
-
-
 foldReferences ::
     forall a annf typeRef ctorRef varRef kind.
     (Monoid a, Coapplicative annf) =>
     (typeRef -> a) -> (ctorRef -> a) -> (varRef -> a)
     -> FixAST annf typeRef ctorRef varRef kind -> a
 foldReferences ftype fctor fvar =
-    unConst . I.cata (foldNode  . extract)
+    getConst . I.cata (foldNode  . extract)
     where
         -- This is kinda confusing, but we use the Const type constructor to merge all the different NodeKinds into a single type `a`
         -- See http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html for relevant details.
         foldNode :: forall kind'. AST typeRef ctorRef varRef (Const a) kind' -> Const a kind'
         foldNode = \case
             -- Declarations
-            Definition name args _ e -> Const (unConst name <> foldMap (unConst . extract) args <> unConst e)
-            TypeAnnotation _ t -> Const (unConst $ extract t)
-            Datatype _ ctors -> Const (foldMap (unConst . fold) ctors)
-            TypeAlias _ _ t -> Const (unConst $ extract t)
-            PortAnnotation _ _ t -> Const (unConst t)
-            PortDefinition _ _ e -> Const (unConst e)
+            Definition name args _ e -> Const (getConst name <> foldMap (getConst . extract) args <> getConst e)
+            TypeAnnotation _ t -> Const (getConst $ extract t)
+            Datatype _ ctors -> Const (foldMap (getConst . fold) ctors)
+            TypeAlias _ _ t -> Const (getConst $ extract t)
+            PortAnnotation _ _ t -> Const (getConst t)
+            PortDefinition _ _ e -> Const (getConst e)
             Fixity _ _ _ _ name -> Const (fvar name)
             Fixity_0_19 _ _ _ _ -> mempty
 
@@ -82,7 +74,7 @@ foldReferences ftype fctor fvar =
             VarExpr var -> Const $ fvar var
             App first rest _ -> first <> mconcat (fmap extract rest)
             Unary _ e -> e
-            Binops first ops _ -> Const (unConst first <> foldMap foldBinopsClause ops)
+            Binops first ops _ -> Const (getConst first <> foldMap foldBinopsClause ops)
             Parens e -> extract e
             ExplicitList terms _ _ -> fold terms
             Range left right _ -> extract left <> extract right
@@ -91,14 +83,14 @@ foldReferences ftype fctor fvar =
             Record _ fields _ _ -> foldMap (extract . _value) fields
             Access e _ -> e
             AccessFunction _ -> mempty
-            Lambda args _ e _ -> Const (foldMap (unConst . extract) args <> unConst e)
-            If cond elsifs els -> Const (foldIfClause cond <> foldMap (foldIfClause . extract) elsifs <> unConst (extract els))
-            Let defs _ e -> Const (foldMap unConst defs <> unConst e)
-            LetDefinition name args _ body -> Const (unConst name <> foldMap (unConst . extract) args <> unConst body)
-            LetAnnotation _ typ -> Const (unConst $ extract typ)
+            Lambda args _ e _ -> Const (foldMap (getConst . extract) args <> getConst e)
+            If cond elsifs els -> Const (foldIfClause cond <> foldMap (foldIfClause . extract) elsifs <> getConst (extract els))
+            Let defs _ e -> Const (foldMap getConst defs <> getConst e)
+            LetDefinition name args _ body -> Const (getConst name <> foldMap (getConst . extract) args <> getConst body)
+            LetAnnotation _ typ -> Const (getConst $ extract typ)
             LetComment _ -> mempty
-            Case (cond, _) branches -> Const (unConst (extract cond) <> foldMap unConst branches)
-            CaseBranch _ _ _ p e -> Const (unConst p <> unConst e)
+            Case (cond, _) branches -> Const (getConst (extract cond) <> foldMap getConst branches)
+            CaseBranch _ _ _ p e -> Const (getConst p <> getConst e)
             GLShader _ -> mempty
 
             -- Patterns
@@ -107,7 +99,7 @@ foldReferences ftype fctor fvar =
             LiteralPattern _ -> mempty
             VarPattern _ -> mempty
             OpPattern _ -> mempty
-            DataPattern ctor args -> Const (ftype ctor <> foldMap (unConst . extract) args)
+            DataPattern ctor args -> Const (ftype ctor <> foldMap (getConst . extract) args)
             PatternParens p -> extract p
             TuplePattern terms -> foldMap extract terms
             EmptyListPattern _ -> mempty
@@ -120,7 +112,7 @@ foldReferences ftype fctor fvar =
             -- Types
             UnitType _ -> mempty
             TypeVariable _ -> mempty
-            TypeConstruction ctor args -> Const (foldTypeConstructor ctor <> foldMap (unConst . extract) args)
+            TypeConstruction ctor args -> Const (foldTypeConstructor ctor <> foldMap (getConst . extract) args)
             TypeParens typ -> extract typ
             TupleType terms -> foldMap extract terms
             RecordType _ fields _ _ -> foldMap (extract . _value) fields
@@ -133,11 +125,11 @@ foldReferences ftype fctor fvar =
 
         foldBinopsClause :: BinopsClause varRef (Const a 'ExpressionNK) -> a
         foldBinopsClause = \case
-            BinopsClause _ op _ e -> fvar op <> unConst e
+            BinopsClause _ op _ e -> fvar op <> getConst e
 
         foldIfClause :: IfClause (Const a 'ExpressionNK) -> a
         foldIfClause = \case
-            IfClause cond els -> unConst (extract cond) <> unConst (extract els)
+            IfClause cond els -> getConst (extract cond) <> getConst (extract els)
 
 
 mapNs ::
