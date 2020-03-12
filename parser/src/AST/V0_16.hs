@@ -671,6 +671,11 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                         (\p -> fold' defineVar (varNamesFromPattern $ extract $ I.unFix p))
                         (first : fmap extract rest)
 
+                LetDefinition first rest _ _ ->
+                    fold'
+                        (\p -> fold' defineVar (varNamesFromPattern $ extract $ I.unFix p))
+                        (first : fmap extract rest)
+
                 -- TODO: actually implement this for all node types
                 _ -> id
 
