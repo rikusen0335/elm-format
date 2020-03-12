@@ -12,6 +12,7 @@ module AST.V0_16 where
 
 import Data.Bifunctor
 import Data.Coapplicative
+import Data.Functor.Const
 import Data.Functor.Compose
 import Data.Int (Int64)
 import qualified Data.Indexed as I
@@ -646,18 +647,25 @@ topDownReferencesWithContext ::
     -> I.Fix ann (AST typeRef2 ctorRef2 varRef2) kind
 topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar initialContext initialAst =
     let
-        varNamesFromPattern ::
-            Coapplicative ann' =>
-            AST a b c (I.Fix ann' (AST a b c)) 'PatternNK
-            -> [LowercaseIdentifier]
-        varNamesFromPattern = \case
+        varNamesFromPattern' ::
+            forall a b c kind'. -- We actually only care about PatternNK' here
+            AST a b c (Const [LowercaseIdentifier]) kind'
+            -> Const [LowercaseIdentifier] kind'
+        varNamesFromPattern' = \case
             Anything -> mempty
             UnitPattern _ -> mempty
             LiteralPattern _ -> mempty
-            VarPattern l -> pure l
+            VarPattern l -> Const $ pure l
             OpPattern _ -> mempty
-            DataPattern _ args -> foldMap (varNamesFromPattern . extract . I.unFix . extract) args
+            DataPattern _ args -> foldMap extract args
             -- TODO: implement this for the remaining pattern types
+
+        varNamesFromPattern ::
+            Coapplicative ann' =>
+            I.Fix ann' (AST a b c) 'PatternNK
+            -> [LowercaseIdentifier]
+        varNamesFromPattern =
+            getConst . I.cata (varNamesFromPattern' . extract)
 
         fold' f as b = foldr f b as
 
@@ -671,12 +679,12 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             case node of
                 Definition first rest _ _ ->
                     fold'
-                        (\p -> fold' defineVar (varNamesFromPattern $ extract $ I.unFix p))
+                        (\p -> fold' defineVar (varNamesFromPattern p))
                         (first : fmap extract rest)
 
                 LetDefinition first rest _ _ ->
                     fold'
-                        (\p -> fold' defineVar (varNamesFromPattern $ extract $ I.unFix p))
+                        (\p -> fold' defineVar (varNamesFromPattern p))
                         (first : fmap extract rest)
 
                 -- TODO: actually implement this for all node types
