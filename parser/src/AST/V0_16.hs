@@ -647,6 +647,7 @@ topDownReferencesWithContext ::
 topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar initialContext initialAst =
     let
         varNamesFromPattern ::
+            Coapplicative ann' =>
             AST a b c (I.Fix ann' (AST a b c)) 'PatternNK
             -> [LowercaseIdentifier]
         varNamesFromPattern = \case
@@ -654,6 +655,8 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             UnitPattern _ -> mempty
             LiteralPattern _ -> mempty
             VarPattern l -> pure l
+            OpPattern _ -> mempty
+            DataPattern _ args -> foldMap (varNamesFromPattern . extract . I.unFix . extract) args
             -- TODO: implement this for the remaining pattern types
 
         fold' f as b = foldr f b as
