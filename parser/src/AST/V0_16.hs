@@ -634,6 +634,7 @@ topDownReferencesWithContext ::
         typeRef2 ctorRef2 varRef2
         ann kind.
     Functor ann =>
+    Coapplicative ann =>
     (UppercaseIdentifier -> context -> context)
     -> (UppercaseIdentifier -> context -> context)
     -> (LowercaseIdentifier -> context -> context)
@@ -645,12 +646,31 @@ topDownReferencesWithContext ::
     -> I.Fix ann (AST typeRef2 ctorRef2 varRef2) kind
 topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar initialContext initialAst =
     let
+        varNamesFromPattern ::
+            AST a b c (I.Fix ann' (AST a b c)) 'PatternNK
+            -> [LowercaseIdentifier]
+        varNamesFromPattern = \case
+            Anything -> mempty
+            UnitPattern _ -> mempty
+            LiteralPattern _ -> mempty
+            VarPattern l -> pure l
+            -- TODO: implement this for the remaining pattern types
+
+        fold' f as b = foldr f b as
+
         incNewDefinitions ::
-            forall any kind'.
-            AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns) any kind'
+            forall kind'.
+            AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)
+                (I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)))
+                kind'
             -> context -> context
         incNewDefinitions node =
             case node of
+                Definition first rest _ _ ->
+                    fold'
+                        (\p -> fold' defineVar (varNamesFromPattern $ extract $ I.unFix p))
+                        (first : fmap extract rest)
+
                 -- TODO: actually implement this for all node types
                 _ -> id
 
@@ -670,8 +690,8 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             let
                 context' = incNewDefinitions node context
             in
-            mapAll (fType context) (fCtor context) (fVar context) id
-                $ (I.imap (Compose . (,) context)) node
+            mapAll (fType context') (fCtor context') (fVar context') id
+                $ (I.imap (Compose . (,) context')) node
     in
     I.ana
         (\(Compose (context, ast)) -> fmap (step context) $ I.unFix ast)

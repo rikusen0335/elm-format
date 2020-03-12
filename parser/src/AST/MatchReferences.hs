@@ -3,6 +3,7 @@ module AST.MatchReferences (MatchedNamespace(..), fromMatched, matchReferences, 
 import AST.V0_16
 import AST.Structure
 import Control.Applicative ((<|>))
+import Data.Coapplicative
 import ElmFormat.ImportInfo (ImportInfo)
 
 import qualified Data.Bimap as Bimap
@@ -32,7 +33,7 @@ data Name
     deriving (Eq, Ord)
 
 matchReferences ::
-    (Functor annf, Ord u) =>
+    (Functor annf, Coapplicative annf, Ord u) =>
     ImportInfo [u]
     -> ASTNS annf [u] kind
     -> ASTNS annf (MatchedNamespace [u]) kind
