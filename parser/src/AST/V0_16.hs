@@ -700,6 +700,11 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                         (\p -> fold' defineVar (varNamesFromPattern p))
                         (first : fmap extract rest)
 
+                Lambda args _ _ _ ->
+                    fold'
+                        (\p -> fold' defineVar (varNamesFromPattern p))
+                        (fmap extract args)
+
                 Let decls _ _ ->
                     fold' defineVar (foldMap varNamesFromLetDeclaration decls)
 

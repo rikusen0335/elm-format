@@ -57,3 +57,7 @@ hiddenByLetDefinition =
             ( 1, 2 )
     in
     ( a1, a2 )
+
+
+hiddenByLambdaParams =
+    \a1 -> a1
