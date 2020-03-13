@@ -713,6 +713,9 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                         (\p -> fold' defineVar (varNamesFromPattern p))
                         (first : fmap extract rest)
 
+                CaseBranch _ _ _ p _ ->
+                    fold' defineVar (varNamesFromPattern p)
+
                 -- TODO: actually implement this for all node types
                 _ -> id
 

@@ -61,3 +61,12 @@ hiddenByLetDefinition =
 
 hiddenByLambdaParams =
     \a1 -> a1
+
+
+hiddenByCaseBranchPattern =
+    case Nothing of
+        Just a1 ->
+            Just a1
+
+        a1 ->
+            a1
