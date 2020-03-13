@@ -675,6 +675,16 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
         varNamesFromPattern =
             getConst . I.cata (varNamesFromPattern' . extract)
 
+        varNamesFromLetDeclaration ::
+            Coapplicative ann' =>
+            I.Fix ann' (AST a b c) 'LetDeclarationNK
+            -> [LowercaseIdentifier]
+        varNamesFromLetDeclaration decl =
+            case extract $ I.unFix decl of
+                LetDefinition p _ _ _ -> varNamesFromPattern p
+                LetAnnotation _ _ -> mempty
+                LetComment _ -> mempty
+
         fold' f as b = foldr f b as
 
         incNewDefinitions ::
@@ -689,6 +699,9 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                     fold'
                         (\p -> fold' defineVar (varNamesFromPattern p))
                         (first : fmap extract rest)
+
+                Let decls _ _ ->
+                    fold' defineVar (foldMap varNamesFromLetDeclaration decls)
 
                 LetDefinition first rest _ _ ->
                     fold'

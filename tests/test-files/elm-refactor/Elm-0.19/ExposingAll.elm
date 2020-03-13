@@ -43,3 +43,17 @@ hiddenBy_patterns =
             ( a1, a2 )
     in
     ()
+
+
+hiddenByLetDefinition =
+    let
+        a1 =
+            []
+
+        z =
+            a1
+
+        ( a2, y ) =
+            ( 1, 2 )
+    in
+    ( a1, a2 )
