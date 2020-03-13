@@ -14,13 +14,14 @@ import AST.Module (Module, BeforeExposing, AfterExposing, BeforeAs, AfterAs, Imp
 import qualified AST.Module as Module
 import AST.Structure
 import AST.V0_16
+import qualified Data.Indexed as I
 import ElmVersion
 import Parse.IParser
 import Parse.Whitespace
 import Reporting.Annotation (Located)
 
 
-elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK))
+elmModule :: ElmVersion -> IParser (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'TopLevelNK))
 elmModule elmVersion =
   do  preModule <- option [] freshLine
       h <- moduleDecl elmVersion
@@ -31,12 +32,18 @@ elmModule elmVersion =
           , (,) <$> addLocation (return Nothing) <*> return []
           ]
       (preImportComments, imports', postImportComments) <- imports elmVersion
-      decls <- topLevel $ Decl.declaration elmVersion
-      trailingComments <-
-          (++)
-              <$> option [] freshLine
-              <*> option [] spaces
-      eof
+      topLevels <-
+          fmap I.Fix $
+          addLocation $
+          fmap TopLevel $
+          do
+              decls <- topLevel $ Decl.declaration elmVersion
+              trailingComments <-
+                  (++)
+                      <$> option [] freshLine
+                      <*> option [] spaces
+              eof
+              return ((map BodyComment postImportComments) ++ decls ++ (map BodyComment trailingComments))
 
       return $
         Module.Module
@@ -44,7 +51,7 @@ elmModule elmVersion =
           h
           docs
           (C (preDocsComments ++ postDocsComments ++ preImportComments) imports')
-          ((map BodyComment postImportComments) ++ decls ++ (map BodyComment trailingComments))
+          topLevels
 
 
 topLevel :: IParser a -> IParser [TopLevelStructure a]

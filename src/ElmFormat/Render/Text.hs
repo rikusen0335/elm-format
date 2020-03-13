@@ -13,7 +13,7 @@ import qualified Data.Text as Text
 import qualified ElmFormat.Render.Box as Render
 
 
-render :: Coapplicative annf => ElmVersion -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK) -> Text.Text
+render :: Coapplicative annf => ElmVersion -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK) -> Text.Text
 render elmVersion modu =
     renderBox $ Render.formatModule elmVersion True 2 modu
 

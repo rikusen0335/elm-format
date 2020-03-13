@@ -24,13 +24,13 @@ import AST.V0_16
 
 
 data BeforeImports
-data Module ns decl =
+data Module ns body =
     Module
     { initialComments :: Comments
     , header :: Maybe Header
     , docs :: A.Located (Maybe Markdown.Blocks)
     , imports :: C1 BeforeImports (Map ns (C1 Before ImportMethod))
-    , body :: [TopLevelStructure decl]
+    , body :: body
     }
     deriving (Eq, Show, Functor)
 

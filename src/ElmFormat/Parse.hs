@@ -16,7 +16,7 @@ import qualified Reporting.Result as Result
 import Reporting.Annotation (Located)
 
 
-parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK))
+parse :: ElmVersion -> Text.Text -> Result.Result () Syntax.Error (Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'TopLevelNK))
 parse elmVersion input =
     Text.unpack input
         |> Parse.parseModule elmVersion

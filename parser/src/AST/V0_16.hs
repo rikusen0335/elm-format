@@ -259,16 +259,21 @@ data IfClause e =
     deriving (Eq, Show, Functor)
 
 
--- TODO: merge this into AST
 data TopLevelStructure a
     = DocComment Markdown.Blocks
     | BodyComment Comment
     | Entry a
     deriving (Eq, Show, Functor)
 
+instance Foldable TopLevelStructure where
+    foldMap _ (DocComment _) = mempty
+    foldMap _ (BodyComment _) = mempty
+    foldMap f (Entry a) = f a
+
 
 data NodeKind
-    = DeclarationNK
+    = TopLevelNK
+    | DeclarationNK
     | ExpressionNK
     | LetDeclarationNK
     | CaseBranchNK
@@ -282,6 +287,11 @@ data BeforePattern; data BeforeArrow; data AfterArrow
 data AfterName; data BeforeType; data AfterEquals
 
 data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) where
+
+    TopLevel ::
+        [TopLevelStructure (getType 'DeclarationNK)]
+        -> AST typeRef ctorRef varRef getType 'TopLevelNK
+
     --
     -- Declarations
     --
@@ -532,6 +542,7 @@ data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) wh
 
 deriving instance
     ( Eq typeRef, Eq ctorRef, Eq varRef
+    , Eq (getType 'DeclarationNK)
     , Eq (getType 'ExpressionNK)
     , Eq (getType 'LetDeclarationNK)
     , Eq (getType 'CaseBranchNK)
@@ -541,6 +552,7 @@ deriving instance
     Eq (AST typeRef ctorRef varRef getType kind)
 deriving instance
     ( Show typeRef, Show ctorRef, Show varRef
+    , Show (getType 'DeclarationNK)
     , Show (getType 'ExpressionNK)
     , Show (getType 'LetDeclarationNK)
     , Show (getType 'CaseBranchNK)
@@ -558,6 +570,8 @@ mapAll ::
         -> AST typeRef2 ctorRef2 varRef2 getType2 kind
         )
 mapAll ftyp fctor fvar fast = \case
+    TopLevel tls -> TopLevel (fmap (fmap fast) tls)
+
     -- Declaration
     Definition name args c e -> Definition (fast name) (fmap (fmap fast) args) c (fast e)
     TypeAnnotation name t -> TypeAnnotation name (fmap fast t)

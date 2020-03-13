@@ -34,7 +34,7 @@ pleaseReport what details =
     error ("<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >")
 
 
-showModule :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK) -> JSValue
+showModule :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'TopLevelNK) -> JSValue
 showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
     let
         header =
@@ -57,16 +57,13 @@ showModule modu@(Module _ maybeHeader _ (C _ imports) body) =
                 ]
             )
 
-        normalizeDecl =
+        normalize =
             mapNs (fromMatched []) . matchReferences importInfo
-
-        normalizedBody =
-            fmap (fmap normalizeDecl) body
     in
     makeObj
         [ ( "moduleName", showJSON name )
         , ( "imports", makeObj $ fmap importJson $ Map.toList imports )
-        , ( "body", JSArray $ fmap showJSON $ mergeDeclarations $ normalizedBody )
+        , ( "body", JSArray $ fmap showJSON $ mergeDeclarations $ normalize body )
         ]
 
 
@@ -83,8 +80,8 @@ data MergedTopLevelStructure ns
     | TodoTopLevelStructure String
 
 
-mergeDeclarations :: forall ns. Show ns => List (TopLevelStructure (ASTNS Located ns 'DeclarationNK)) -> List (MergedTopLevelStructure ns)
-mergeDeclarations decls =
+mergeDeclarations :: forall ns. Show ns => ASTNS Located ns 'TopLevelNK -> List (MergedTopLevelStructure ns)
+mergeDeclarations (I.Fix (A _ (TopLevel decls))) =
     let
         collectAnnotation :: TopLevelStructure (ASTNS Located ns 'DeclarationNK) -> Maybe (LowercaseIdentifier, (Comments, Comments, ASTNS Located ns 'TypeNK))
         collectAnnotation decl =

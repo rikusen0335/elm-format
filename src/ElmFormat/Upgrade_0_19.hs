@@ -94,6 +94,8 @@ parseUpgradeDefinition definitionText =
             let
                 importInfo = ImportInfo.fromModule (const mempty) modu
 
+                (TopLevel topLevels) = extract $ I.unFix body
+
                 makeName :: String -> Maybe ([UppercaseIdentifier], String)
                 makeName name =
                     (\rev -> (UppercaseIdentifier <$> reverse (tail rev), head rev))
@@ -155,8 +157,8 @@ parseUpgradeDefinition definitionText =
             in
             Right $ UpgradeDefinition
                 -- TODO: it should be an error if any of the namespaces end up unmatched; we should require that upgrade script authors always reference imports unambiguously
-                { _replacements = fmap (matchReferences importInfo) $ Dict.fromList $ Maybe.mapMaybe getExpressionReplacement body
-                , _typeReplacements = Dict.fromList $ Maybe.mapMaybe getTypeReplacement body
+                { _replacements = fmap (matchReferences importInfo) $ Dict.fromList $ Maybe.mapMaybe getExpressionReplacement topLevels
+                , _typeReplacements = Dict.fromList $ Maybe.mapMaybe getTypeReplacement topLevels
                 , _imports = imports
                 }
 
@@ -187,7 +189,7 @@ instance Ord ns => Monoid (UsageCount ns) where
 
 countUsages ::
     (Ord ns, Coapplicative annf) =>
-    ASTNS annf ns 'ExpressionNK
+    ASTNS annf ns kind
     -> UsageCount ns
 countUsages =
     foldReferences
@@ -222,11 +224,11 @@ transformModule ::
     forall annf.
     (Applicative annf, Coapplicative annf) =>
     UpgradeDefinition
-    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)
-    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
 transformModule upgradeDefinition modu =
     let
-        (Module a b c (C preImports originalImports) originalBody') =
+        (Module a b c (C preImports originalImports) originalBody) =
             modu
 
         importInfo =
@@ -235,10 +237,10 @@ transformModule upgradeDefinition modu =
             -- the imports merged in from the upgrade definition
             ImportInfo.fromModule (knownContents upgradeDefinition) modu
 
-        transformDeclaration ::
-            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
-            -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK
-        transformDeclaration =
+        transformBody ::
+            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
+            -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
+        transformBody =
             -- TODO: combine transform' and transformType into a single pass
             I.convert (pure . extract)
             . transform' upgradeDefinition importInfo
@@ -257,14 +259,10 @@ transformModule upgradeDefinition modu =
 
         usages ::
             Coapplicative annf =>
-            [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
+            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
             -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
-        usages body =
-            let
-                collectExprs = Maybe.mapMaybe expressionFromTopLevelStructure body
-                usages' = _usageCount $ mconcat $ fmap countUsages collectExprs
-            in
-            fmap (Dict.foldr (+) 0) usages'
+        usages =
+            fmap (Dict.foldr (+) 0) . _usageCount . countUsages
 
         typeReplacementsByModule :: Dict.Map [UppercaseIdentifier] (Set UppercaseIdentifier)
         typeReplacementsByModule =
@@ -285,13 +283,9 @@ transformModule upgradeDefinition modu =
             C pre $
                 ImportMethod alias (fmap (removeTypes $ fromMaybe Set.empty $ Dict.lookup ns typeReplacementsByModule) exposing)
 
-        originalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
-        originalBody =
-            fmap (fmap $ matchReferences importInfo) originalBody'
-
-        finalBody :: [TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)]
+        finalBody :: ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
         finalBody =
-            fmap (fmap transformDeclaration) originalBody
+            transformBody $ matchReferences importInfo originalBody
 
         finalImports =
             mergeUpgradeImports
@@ -304,7 +298,7 @@ transformModule upgradeDefinition modu =
             ImportInfo.fromImports (const mempty) $ fmap extract finalImports
     in
     finalBody
-        |> fmap (fmap $ applyReferences finalImportInfo)
+        |> applyReferences finalImportInfo
         |> Module a b c (C preImports finalImports)
 
 

@@ -228,7 +228,7 @@ sortVars forceMultiline fromExposing fromDocs =
         else ( listedInDocs ++ if List.null remainingFromExposing then [] else [ remainingFromExposing ], commentsFromReorderedVars )
 
 
-formatModuleHeader :: Coapplicative annf => ElmVersion -> Bool -> AST.Module.Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK) -> [Box]
+formatModuleHeader :: Coapplicative annf => ElmVersion -> Bool -> AST.Module.Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK) -> [Box]
 formatModuleHeader elmVersion addDefaultHeader modu =
   let
       maybeHeader =
@@ -273,6 +273,8 @@ formatModuleHeader elmVersion addDefaultHeader modu =
       definedVars :: Set (C2 before after AST.Listing.Value)
       definedVars =
           AST.Module.body modu
+              |> (extract . I.unFix)
+              |> (\(TopLevel decls) -> decls)
               |> concatMap extractVarName
               |> fmap (\x -> C ([], []) x)
               |> Set.fromList
@@ -512,7 +514,7 @@ formatModuleLine elmVersion (varsToExpose, extraComments) srcTag name moduleSett
       [ exports ]
 
 
-formatModule :: Coapplicative annf => ElmVersion -> Bool -> Int -> AST.Module.Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'DeclarationNK) -> Box
+formatModule :: Coapplicative annf => ElmVersion -> Bool -> Int -> AST.Module.Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK) -> Box
 formatModule elmVersion addDefaultHeader spacing modu =
     let
         initialComments' =
@@ -524,17 +526,21 @@ formatModule elmVersion addDefaultHeader spacing modu =
                 ++ [ blankLine, blankLine ]
 
         spaceBeforeBody =
-            case AST.Module.body modu of
-                [] -> 0
-                BodyComment _ : _ -> spacing + 1
-                _ -> spacing
+            case extract $ I.unFix $ AST.Module.body modu of
+                TopLevel [] -> 0
+                TopLevel (BodyComment _ : _) -> spacing + 1
+                TopLevel _ -> spacing
+
+        decls =
+          case extract $ I.unFix $ AST.Module.body modu of
+              TopLevel decls -> decls
     in
       stack1 $
           concat
               [ initialComments'
               , formatModuleHeader elmVersion addDefaultHeader modu
               , List.replicate spaceBeforeBody blankLine
-              , maybeToList $ formatModuleBody spacing elmVersion (ImportInfo.fromModule (const mempty) modu) (AST.Module.body modu)
+              , maybeToList $ formatModuleBody spacing elmVersion (ImportInfo.fromModule (const mempty) modu) decls
               ]
 
 
@@ -634,7 +640,7 @@ formatTopLevelBody linesBetween elmVersion importInfo entryType formatEntry body
 data ElmCodeBlock annf ns
     = DeclarationsCode [TopLevelStructure (ASTNS annf ns 'DeclarationNK)]
     | ExpressionsCode [TopLevelStructure (C0Eol (ASTNS annf ns 'ExpressionNK))]
-    | ModuleCode (AST.Module.Module ns (ASTNS annf ns 'DeclarationNK))
+    | ModuleCode (AST.Module.Module ns (ASTNS annf ns 'TopLevelNK))
 
 convertElmCodeBlock :: Functor ann => (forall x. ann x -> ann' x) -> ElmCodeBlock ann ns -> ElmCodeBlock ann' ns
 convertElmCodeBlock f = \case

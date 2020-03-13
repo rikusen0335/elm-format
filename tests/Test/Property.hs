@@ -35,7 +35,7 @@ assertStringToString source =
         assertEqual "" (Right source') result
 
 
-astToAst :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'DeclarationNK) -> Assertion
+astToAst :: Module [UppercaseIdentifier] (ASTNS Located [UppercaseIdentifier] 'TopLevelNK) -> Assertion
 astToAst ast =
     let
         result =

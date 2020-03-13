@@ -58,6 +58,8 @@ foldReferences ftype fctor fvar =
         -- See http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html for relevant details.
         foldNode :: forall kind'. AST typeRef ctorRef varRef (Const a) kind' -> Const a kind'
         foldNode = \case
+            TopLevel tls -> Const $ foldMap (foldMap getConst) tls
+
             -- Declarations
             Definition name args _ e -> Const (getConst name <> foldMap (getConst . extract) args <> getConst e)
             TypeAnnotation _ t -> Const (getConst $ extract t)
