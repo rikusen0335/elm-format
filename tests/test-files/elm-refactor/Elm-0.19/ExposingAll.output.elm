@@ -24,5 +24,20 @@ hiddenBy_patterns =
 
         byData (Just a1) =
             a1
+
+        byTuple ( a1, z ) =
+            a1
+
+        byList [ a1 ] =
+            a1
+
+        byCons (a1 :: a2) =
+            ( a1, a2 )
+
+        byRecord { a1 } =
+            a1
+
+        byAlias ((Just a1) as a2) =
+            ( a1, a2 )
     in
     ()

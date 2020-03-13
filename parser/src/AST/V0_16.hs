@@ -12,6 +12,7 @@ module AST.V0_16 where
 
 import Data.Bifunctor
 import Data.Coapplicative
+import Data.Foldable
 import Data.Functor.Const
 import Data.Functor.Compose
 import Data.Int (Int64)
@@ -658,7 +659,14 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             VarPattern l -> Const $ pure l
             OpPattern _ -> mempty
             DataPattern _ args -> foldMap extract args
-            -- TODO: implement this for the remaining pattern types
+            PatternParens p -> extract p
+            TuplePattern ps -> foldMap extract ps
+            EmptyListPattern _ -> mempty
+            ListPattern ps -> foldMap extract ps
+            ConsPattern p ps -> extract p <> fold ps
+            EmptyRecordPattern _ -> mempty
+            RecordPattern ps -> Const $ fmap extract ps
+            Alias p name -> extract p <> Const (pure $ extract name)
 
         varNamesFromPattern ::
             Coapplicative ann' =>
