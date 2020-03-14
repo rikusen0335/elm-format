@@ -706,6 +706,20 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
         varNamesFromDeclaration decl =
             case extract $ I.unFix decl of
                Definition p _ _ _ -> varNamesFromPattern p
+               TypeAnnotation _ _ -> []
+               Datatype _ _ -> []
+               -- TODO: remaining cases
+               _ -> []
+
+        typeNamesFromDeclaration ::
+            Coapplicative ann' =>
+            I.Fix ann' (AST a b c) 'DeclarationNK
+            -> [UppercaseIdentifier]
+        typeNamesFromDeclaration decl =
+            case extract $ I.unFix decl of
+               Definition _ _ _ _ -> []
+               TypeAnnotation _ _ -> []
+               Datatype (C _ (NameWithArgs name _)) _ -> [name]
                -- TODO: remaining cases
                _ -> []
 
@@ -722,6 +736,9 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                 TopLevel decls ->
                     fold'
                         (\p -> fold' defineVar (foldMap varNamesFromDeclaration p))
+                        decls
+                    . fold'
+                        (\p -> fold' defineType (foldMap typeNamesFromDeclaration p))
                         decls
 
                 Definition first rest _ _ ->

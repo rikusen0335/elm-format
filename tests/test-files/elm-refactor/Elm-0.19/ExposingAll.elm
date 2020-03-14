@@ -80,5 +80,19 @@ a9 =
     ( (), () )
 
 
-hiddenByDeclaration =
+hiddenByDefinition =
     ( a8, a9 )
+
+
+directTypeReference : A1 -> ()
+directTypeReference _ =
+    ()
+
+
+type A9
+    = A9_1
+
+
+typeHiddenByDefinition : A9 -> ()
+typeHiddenByDefinition _ =
+    ()

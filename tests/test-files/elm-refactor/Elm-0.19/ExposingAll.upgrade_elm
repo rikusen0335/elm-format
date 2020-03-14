@@ -4,3 +4,6 @@ upgrade_A_a1 = ()
 upgrade_A_a2 = ()
 upgrade_A_a8 = ()
 upgrade_A_a9 = ()
+
+type alias Upgrade_A_A1 = ()
+type alias Upgrade_A_A9 = ()
