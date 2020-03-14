@@ -699,6 +699,16 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
                 LetAnnotation _ _ -> mempty
                 LetComment _ -> mempty
 
+        varNamesFromDeclaration ::
+            Coapplicative ann' =>
+            I.Fix ann' (AST a b c) 'DeclarationNK
+            -> [LowercaseIdentifier]
+        varNamesFromDeclaration decl =
+            case extract $ I.unFix decl of
+               Definition p _ _ _ -> varNamesFromPattern p
+               -- TODO: remaining cases
+               _ -> []
+
         fold' f as b = foldr f b as
 
         incNewDefinitions ::
@@ -709,6 +719,11 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             -> context -> context
         incNewDefinitions node =
             case node of
+                TopLevel decls ->
+                    fold'
+                        (\p -> fold' defineVar (foldMap varNamesFromDeclaration p))
+                        decls
+
                 Definition first rest _ _ ->
                     fold'
                         (\p -> fold' defineVar (varNamesFromPattern p))

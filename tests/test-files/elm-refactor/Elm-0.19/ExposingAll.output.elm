@@ -68,3 +68,15 @@ hiddenByCaseBranchPattern =
 
         a1 ->
             a1
+
+
+a9 =
+    ()
+
+
+( a8, _ ) =
+    ( (), () )
+
+
+hiddenByDeclaration =
+    ( a8, a9 )
