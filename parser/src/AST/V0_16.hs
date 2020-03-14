@@ -716,44 +716,34 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
                -- TODO: remaining cases
                _ -> []
 
-        fold' f as b = foldr f b as
-
-        incNewDefinitions ::
+        newDefinitionsAtNode ::
             forall kind'.
             AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)
                 (I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)))
                 kind'
-            -> context -> context
-        incNewDefinitions node =
+            -> [LocalName]
+        newDefinitionsAtNode node =
             case node of
                 TopLevel decls ->
-                    fold'
-                        (\p -> fold' defineLocal (foldMap namesFromDeclaration p))
-                        decls
+                    foldMap (foldMap namesFromDeclaration) decls
 
                 Definition first rest _ _ ->
-                    fold'
-                        (\p -> fold' defineLocal (namesFromPattern p))
-                        (first : fmap extract rest)
+                    foldMap namesFromPattern (first : fmap extract rest)
 
                 Lambda args _ _ _ ->
-                    fold'
-                        (\p -> fold' defineLocal (namesFromPattern p))
-                        (fmap extract args)
+                    foldMap namesFromPattern (fmap extract args)
 
                 Let decls _ _ ->
-                    fold' defineLocal (foldMap namesFromLetDeclaration decls)
+                    foldMap namesFromLetDeclaration decls
 
                 LetDefinition first rest _ _ ->
-                    fold'
-                        (\p -> fold' defineLocal (namesFromPattern p))
-                        (first : fmap extract rest)
+                    foldMap namesFromPattern (first : fmap extract rest)
 
                 CaseBranch _ _ _ p _ ->
-                    fold' defineLocal (namesFromPattern p)
+                    namesFromPattern p
 
                 -- TODO: actually implement this for all node types
-                _ -> id
+                _ -> []
 
         step ::
             forall kind'.
@@ -769,7 +759,7 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
                 kind'
         step context node =
             let
-                context' = incNewDefinitions node context
+                context' = foldl (flip defineLocal) context (newDefinitionsAtNode node)
             in
             mapAll (fType context') (fCtor context') (fVar context') id
                 $ (I.imap (Compose . (,) context')) node
