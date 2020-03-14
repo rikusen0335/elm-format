@@ -271,6 +271,13 @@ instance Foldable TopLevelStructure where
     foldMap f (Entry a) = f a
 
 
+data LocalName
+    = TypeName UppercaseIdentifier
+    | CtorName UppercaseIdentifier
+    | VarName LowercaseIdentifier
+    deriving (Eq, Ord)
+
+
 data NodeKind
     = TopLevelNK
     | DeclarationNK
@@ -651,26 +658,24 @@ topDownReferencesWithContext ::
         ann kind.
     Functor ann =>
     Coapplicative ann =>
-    (UppercaseIdentifier -> context -> context)
-    -> (UppercaseIdentifier -> context -> context)
-    -> (LowercaseIdentifier -> context -> context)
+    (LocalName -> context -> context) -- TODO: since the caller typically passes a function that builds a Map or Set, this could be optimized by taking `List (LocalName)` instead of one at a time
     -> (context -> (ns, UppercaseIdentifier) -> typeRef2)
     -> (context -> (ns, UppercaseIdentifier) -> ctorRef2)
     -> (context -> (Ref ns) -> varRef2)
     -> context
     -> I.Fix ann (AST (ns, UppercaseIdentifier) (ns, UppercaseIdentifier) (Ref ns)) kind
     -> I.Fix ann (AST typeRef2 ctorRef2 varRef2) kind
-topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar initialContext initialAst =
+topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initialAst =
     let
-        varNamesFromPattern' ::
+        namesFromPattern' ::
             forall a b c kind'. -- We actually only care about PatternNK' here
-            AST a b c (Const [LowercaseIdentifier]) kind'
-            -> Const [LowercaseIdentifier] kind'
-        varNamesFromPattern' = \case
+            AST a b c (Const [LocalName]) kind'
+            -> Const [LocalName] kind'
+        namesFromPattern' = \case
             Anything -> mempty
             UnitPattern _ -> mempty
             LiteralPattern _ -> mempty
-            VarPattern l -> Const $ pure l
+            VarPattern l -> Const $ pure $ VarName l
             OpPattern _ -> mempty
             DataPattern _ args -> foldMap extract args
             PatternParens p -> extract p
@@ -679,47 +684,35 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             ListPattern ps -> foldMap extract ps
             ConsPattern p ps -> extract p <> fold ps
             EmptyRecordPattern _ -> mempty
-            RecordPattern ps -> Const $ fmap extract ps
-            Alias p name -> extract p <> Const (pure $ extract name)
+            RecordPattern ps -> Const $ fmap (VarName . extract) ps
+            Alias p name -> extract p <> Const (pure $ VarName $ extract name)
 
-        varNamesFromPattern ::
+        namesFromPattern ::
             Coapplicative ann' =>
             I.Fix ann' (AST a b c) 'PatternNK
-            -> [LowercaseIdentifier]
-        varNamesFromPattern =
-            getConst . I.cata (varNamesFromPattern' . extract)
+            -> [LocalName]
+        namesFromPattern =
+            getConst . I.cata (namesFromPattern' . extract)
 
-        varNamesFromLetDeclaration ::
+        namesFromLetDeclaration ::
             Coapplicative ann' =>
             I.Fix ann' (AST a b c) 'LetDeclarationNK
-            -> [LowercaseIdentifier]
-        varNamesFromLetDeclaration decl =
+            -> [LocalName]
+        namesFromLetDeclaration decl =
             case extract $ I.unFix decl of
-                LetDefinition p _ _ _ -> varNamesFromPattern p
+                LetDefinition p _ _ _ -> namesFromPattern p
                 LetAnnotation _ _ -> mempty
                 LetComment _ -> mempty
 
-        varNamesFromDeclaration ::
+        namesFromDeclaration ::
             Coapplicative ann' =>
             I.Fix ann' (AST a b c) 'DeclarationNK
-            -> [LowercaseIdentifier]
-        varNamesFromDeclaration decl =
+            -> [LocalName]
+        namesFromDeclaration decl =
             case extract $ I.unFix decl of
-               Definition p _ _ _ -> varNamesFromPattern p
+               Definition p _ _ _ -> namesFromPattern p
                TypeAnnotation _ _ -> []
-               Datatype _ _ -> []
-               -- TODO: remaining cases
-               _ -> []
-
-        typeNamesFromDeclaration ::
-            Coapplicative ann' =>
-            I.Fix ann' (AST a b c) 'DeclarationNK
-            -> [UppercaseIdentifier]
-        typeNamesFromDeclaration decl =
-            case extract $ I.unFix decl of
-               Definition _ _ _ _ -> []
-               TypeAnnotation _ _ -> []
-               Datatype (C _ (NameWithArgs name _)) _ -> [name]
+               Datatype (C _ (NameWithArgs name _)) _ -> [TypeName name]
                -- TODO: remaining cases
                _ -> []
 
@@ -735,32 +728,29 @@ topDownReferencesWithContext defineType defineCtor defineVar fType fCtor fVar in
             case node of
                 TopLevel decls ->
                     fold'
-                        (\p -> fold' defineVar (foldMap varNamesFromDeclaration p))
-                        decls
-                    . fold'
-                        (\p -> fold' defineType (foldMap typeNamesFromDeclaration p))
+                        (\p -> fold' defineLocal (foldMap namesFromDeclaration p))
                         decls
 
                 Definition first rest _ _ ->
                     fold'
-                        (\p -> fold' defineVar (varNamesFromPattern p))
+                        (\p -> fold' defineLocal (namesFromPattern p))
                         (first : fmap extract rest)
 
                 Lambda args _ _ _ ->
                     fold'
-                        (\p -> fold' defineVar (varNamesFromPattern p))
+                        (\p -> fold' defineLocal (namesFromPattern p))
                         (fmap extract args)
 
                 Let decls _ _ ->
-                    fold' defineVar (foldMap varNamesFromLetDeclaration decls)
+                    fold' defineLocal (foldMap namesFromLetDeclaration decls)
 
                 LetDefinition first rest _ _ ->
                     fold'
-                        (\p -> fold' defineVar (varNamesFromPattern p))
+                        (\p -> fold' defineLocal (namesFromPattern p))
                         (first : fmap extract rest)
 
                 CaseBranch _ _ _ p _ ->
-                    fold' defineVar (varNamesFromPattern p)
+                    fold' defineLocal (namesFromPattern p)
 
                 -- TODO: actually implement this for all node types
                 _ -> id

@@ -26,12 +26,6 @@ fromMatched _ (MatchedImport t) = t
 fromMatched _ (Unmatched t) = t
 
 
-data Name
-    = TypeName UppercaseIdentifier
-    | CtorName UppercaseIdentifier
-    | VarName LowercaseIdentifier
-    deriving (Eq, Ord)
-
 matchReferences ::
     (Functor annf, Coapplicative annf, Ord u) =>
     ImportInfo [u]
@@ -78,9 +72,7 @@ matchReferences importInfo =
                         Nothing -> Unmatched ns
                         Just single -> MatchedImport single
 
-        defineLocalType u = Dict.insert (TypeName u) ()
-        defineLocalCtor u = Dict.insert (CtorName u) ()
-        defineLocalVar l = Dict.insert (VarName l) ()
+        defineLocal name = Dict.insert name ()
 
         mapTypeRef locals (ns, u) = (f locals ns (TypeName u), u)
         mapCtorRef locals (ns, u) = (f locals ns (CtorName u), u)
@@ -89,7 +81,7 @@ matchReferences importInfo =
         mapVarRef _ (OpRef op) = OpRef op
     in
     topDownReferencesWithContext
-        defineLocalType defineLocalCtor defineLocalVar
+        defineLocal
         mapTypeRef mapCtorRef mapVarRef
         mempty
 
