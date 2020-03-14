@@ -1,4 +1,4 @@
-module ExposingAdd exposing (directReference)
+port module ExposingAdd exposing (directReference)
 
 
 directReference =
@@ -80,6 +80,13 @@ a9 =
 
 hiddenByDefinition =
     ( a8, a9 )
+
+
+port a7 : () -> Cmd msg
+
+
+hiddenByPortDefinition =
+    a7
 
 
 directTypeReference : () -> ()

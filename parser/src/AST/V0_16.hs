@@ -714,8 +714,10 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
                TypeAnnotation _ _ -> []
                Datatype (C _ (NameWithArgs name _)) _ -> [TypeName name]
                TypeAlias _ (C _ (NameWithArgs name _)) _ -> [TypeName name]
-               -- TODO: remaining cases
-               _ -> []
+               PortAnnotation (C _ name) _ _ -> [VarName name]
+               PortDefinition (C _ name) _ _ -> [VarName name]
+               Fixity _ _ _ _ _ -> []
+               Fixity_0_19 _ _ _ _ -> []
 
         newDefinitionsAtNode ::
             forall kind'.
