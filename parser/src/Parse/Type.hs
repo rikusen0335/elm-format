@@ -7,7 +7,7 @@ import Parse.Helpers
 import Reporting.Annotation (Located)
 import qualified Reporting.Annotation as A
 import AST.V0_16
-import AST.Structure (FixAST)
+import AST.Structure
 import Data.Coapplicative
 import qualified Data.Indexed as I
 import Data.Maybe (maybeToList)
@@ -22,7 +22,7 @@ tvar elmVersion =
     (TypeVariable <$> lowVar elmVersion <?> "a type variable")
 
 
-tuple :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+tuple :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 tuple elmVersion =
   fmap I.Fix $ addLocation $
   do  types <- parens'' (withEol $ expr elmVersion)
@@ -40,7 +40,7 @@ tuple elmVersion =
                   TupleType $ fmap (\(C (pre, post) (C eol t)) -> C (pre, post, eol) t) types'
 
 
-record :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+record :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 record elmVersion =
     fmap I.Fix $ addLocation $ brackets' $ checkMultiline $
         do
@@ -63,14 +63,14 @@ constructor0 elmVersion =
             return (NamedConstructor (reverse rest', last'))
 
 
-constructor0' :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+constructor0' :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 constructor0' elmVersion =
     fmap I.Fix $ addLocation $
     do  ctor <- constructor0 elmVersion
         return (TypeConstruction ctor [])
 
 
-term :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+term :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 term elmVersion =
   tuple elmVersion <|> record elmVersion <|> tvar elmVersion <|> constructor0' elmVersion
 
@@ -81,7 +81,7 @@ tupleCtor =
         return (TupleConstructor (length ctor + 1))
 
 
-app :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+app :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 app elmVersion =
   fmap I.Fix $ addLocation $
   do  f <- constructor0 elmVersion <|> try tupleCtor <?> "a type constructor"
@@ -89,7 +89,7 @@ app elmVersion =
       return $ TypeConstruction f args
 
 
-expr :: ElmVersion -> IParser (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)
+expr :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 expr elmVersion =
   do
     result <- separated rightArrow (app elmVersion <|> term elmVersion)
@@ -102,13 +102,13 @@ expr elmVersion =
 
 
 -- TODO: can this be removed?  (tag is the new name?)
-constructor :: ElmVersion -> IParser ([UppercaseIdentifier], [C1 before (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK)])
+constructor :: ElmVersion -> IParser ([UppercaseIdentifier], [C1 before (ASTNS Located [UppercaseIdentifier] 'TypeNK)])
 constructor elmVersion =
   (,) <$> (capTypeVar elmVersion<?> "another type constructor")
       <*> spacePrefix (term elmVersion)
 
 
-tag :: ElmVersion -> IParser (NameWithArgs UppercaseIdentifier (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK))
+tag :: ElmVersion -> IParser (NameWithArgs UppercaseIdentifier (ASTNS Located [UppercaseIdentifier] 'TypeNK))
 tag elmVersion =
   NameWithArgs
       <$> (capVar elmVersion <?> "another type constructor")

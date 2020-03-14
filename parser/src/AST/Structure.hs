@@ -101,7 +101,7 @@ foldReferences ftype fctor fvar =
             LiteralPattern _ -> mempty
             VarPattern _ -> mempty
             OpPattern _ -> mempty
-            DataPattern ctor args -> Const (ftype ctor <> foldMap (getConst . extract) args)
+            DataPattern ctor args -> Const (fctor ctor <> foldMap (getConst . extract) args)
             PatternParens p -> extract p
             TuplePattern terms -> foldMap extract terms
             EmptyListPattern _ -> mempty
@@ -114,15 +114,15 @@ foldReferences ftype fctor fvar =
             -- Types
             UnitType _ -> mempty
             TypeVariable _ -> mempty
-            TypeConstruction ctor args -> Const (foldTypeConstructor ctor <> foldMap (getConst . extract) args)
+            TypeConstruction name args -> Const (foldTypeConstructor name <> foldMap (getConst . extract) args)
             TypeParens typ -> extract typ
             TupleType terms -> foldMap extract terms
             RecordType _ fields _ _ -> foldMap (extract . _value) fields
             FunctionType first rest _ -> extract first <> fold rest
 
-        foldTypeConstructor :: TypeConstructor ctorRef -> a
+        foldTypeConstructor :: TypeConstructor typeRef -> a
         foldTypeConstructor = \case
-            NamedConstructor ctor -> fctor ctor
+            NamedConstructor name -> ftype name
             TupleConstructor _ -> mempty
 
         foldBinopsClause :: BinopsClause varRef (Const a 'ExpressionNK) -> a

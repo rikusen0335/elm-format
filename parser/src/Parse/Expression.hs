@@ -308,7 +308,7 @@ letExpr elmVersion =
 
 -- TYPE ANNOTATION
 
-typeAnnotation :: ElmVersion -> (C1 after (Ref ()) -> C1 before (FixAST Located typeRef ([UppercaseIdentifier], UppercaseIdentifier) varRef 'TypeNK) -> a) -> IParser a
+typeAnnotation :: ElmVersion -> (C1 after (Ref ()) -> C1 before (ASTNS Located [UppercaseIdentifier] 'TypeNK) -> a) -> IParser a
 typeAnnotation elmVersion fn =
     (\(v, pre, post) e -> fn (C pre v) (C post e)) <$> try start <*> Type.expr elmVersion
   where

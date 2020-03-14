@@ -474,7 +474,7 @@ data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) wh
         SymbolIdentifier
         -> AST typeRef ctorRef varRef getType 'PatternNK
     DataPattern ::
-        typeRef
+        ctorRef
         -> [C1 BeforeTerm (getType 'PatternNK)]
         -> AST typeRef ctorRef varRef getType 'PatternNK
     PatternParens ::
@@ -517,7 +517,7 @@ data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) wh
         LowercaseIdentifier
         -> AST typeRef ctorRef varRef getType 'TypeNK
     TypeConstruction ::
-        TypeConstructor ctorRef
+        TypeConstructor typeRef
         -> [C1 Before (getType 'TypeNK)]
         -> AST typeRef ctorRef varRef getType 'TypeNK
     TypeParens ::
@@ -613,7 +613,7 @@ mapAll ftyp fctor fvar fast = \case
     LiteralPattern l -> LiteralPattern l
     VarPattern l -> VarPattern l
     OpPattern s -> OpPattern s
-    DataPattern typ pats -> DataPattern (ftyp typ) (fmap (fmap fast) pats)
+    DataPattern ctor pats -> DataPattern (fctor ctor) (fmap (fmap fast) pats)
     PatternParens pat -> PatternParens (fmap fast pat)
     TuplePattern pats -> TuplePattern (fmap (fmap fast) pats)
     EmptyListPattern c -> EmptyListPattern c
@@ -626,7 +626,7 @@ mapAll ftyp fctor fvar fast = \case
     -- Types
     UnitType c -> UnitType c
     TypeVariable name -> TypeVariable name
-    TypeConstruction ctor args -> TypeConstruction (fmap fctor ctor) (fmap (fmap fast) args)
+    TypeConstruction name args -> TypeConstruction (fmap ftyp name) (fmap (fmap fast) args)
     TypeParens typ -> TypeParens (fmap fast typ)
     TupleType typs -> TupleType (fmap (fmap fast) typs)
     RecordType base fields c ml -> RecordType base (fmap (fmap fast) fields) c ml
