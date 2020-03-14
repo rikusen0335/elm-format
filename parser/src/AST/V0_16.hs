@@ -713,6 +713,7 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
                Definition p _ _ _ -> namesFromPattern p
                TypeAnnotation _ _ -> []
                Datatype (C _ (NameWithArgs name _)) _ -> [TypeName name]
+               TypeAlias _ (C _ (NameWithArgs name _)) _ -> [TypeName name]
                -- TODO: remaining cases
                _ -> []
 

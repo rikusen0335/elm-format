@@ -96,3 +96,12 @@ type A9
 typeHiddenByDefinition : A9 -> ()
 typeHiddenByDefinition _ =
     ()
+
+
+type alias A8 =
+    ()
+
+
+typeHiddenByTypeAlias : A8 -> ()
+typeHiddenByTypeAlias _ =
+    ()
