@@ -97,7 +97,7 @@ infixDecl_0_19 elmVersion =
                 , string "left" >> return L
                 ]
     in
-    Fixity_0_19
+    Fixity
         <$> (try (reserved elmVersion "infix") *> preCommented assoc)
         <*> (preCommented $ (\n -> read [n]) <$> digit)
         <*> (commented symOpInParens)
@@ -116,7 +116,7 @@ infixDecl_0_16 elmVersion =
       digitComments <- forcedWS
       n <- digit
       opComments <- forcedWS
-      Fixity assoc digitComments (read [n]) opComments <$> anyOp elmVersion
+      Fixity_until_0_18 assoc digitComments (read [n]) opComments <$> anyOp elmVersion
 
 
 -- PORT
@@ -142,4 +142,4 @@ port elmVersion =
       do  try equals
           bodyComments <- whitespace
           expr <- Expr.expr elmVersion
-          return (PortDefinition name bodyComments expr)
+          return (PortDefinition_until_0_16 name bodyComments expr)

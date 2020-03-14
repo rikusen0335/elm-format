@@ -567,7 +567,7 @@ formatModuleBody linesBetween elmVersion importInfo body =
                 TypeAlias _ (C _ (NameWithArgs name _)) _ ->
                     BodyNamed $ TagRef () name
 
-                PortDefinition (C _ name) _ _ ->
+                PortDefinition_until_0_16 (C _ name) _ _ ->
                     BodyNamed $ VarRef () name
 
                 TypeAnnotation (C _ name) _ ->
@@ -576,10 +576,10 @@ formatModuleBody linesBetween elmVersion importInfo body =
                 PortAnnotation (C _ name) _ _ ->
                     BodyNamed $ VarRef () name
 
-                Fixity _ _ _ _ _ ->
+                Fixity_until_0_18 _ _ _ _ _ ->
                     BodyFixity
 
-                Fixity_0_19 _ _ _ _ ->
+                Fixity _ _ _ _ ->
                     BodyFixity
     in
     formatTopLevelBody linesBetween elmVersion importInfo entryType (formatDeclaration elmVersion importInfo) body
@@ -1053,13 +1053,13 @@ formatDeclaration elmVersion importInfo decl =
             [ formatCommented (line . formatLowercaseIdentifier elmVersion []) name ]
             (formatCommented' typeComments (formatType elmVersion) typ)
 
-        PortDefinition name bodyComments expr ->
+        PortDefinition_until_0_16 name bodyComments expr ->
             ElmStructure.definition "=" True
             (line $ keyword "port")
             [formatCommented (line . formatLowercaseIdentifier elmVersion []) name]
             (formatCommented' bodyComments (formatExpression elmVersion importInfo SyntaxSeparated) $ expr)
 
-        Fixity assoc precedenceComments precedence nameComments name ->
+        Fixity_until_0_18 assoc precedenceComments precedence nameComments name ->
             case
                 ( formatCommented' nameComments (line . formatInfixVar elmVersion) name
                 , formatCommented' precedenceComments (line . literal . show) precedence
@@ -1079,7 +1079,7 @@ formatDeclaration elmVersion importInfo decl =
                 _ ->
                     pleaseReport "TODO" "multiline fixity declaration"
 
-        Fixity_0_19 assoc precedence name value ->
+        Fixity assoc precedence name value ->
             let
                 formatAssoc a =
                     case a of

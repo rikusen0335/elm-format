@@ -328,19 +328,19 @@ data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) wh
         -> Comments
         -> getType 'TypeNK
         -> AST typeRef ctorRef varRef getType 'DeclarationNK
-    PortDefinition ::
+    PortDefinition_until_0_16 ::
         C2 Before After LowercaseIdentifier
         -> Comments
         -> getType 'ExpressionNK
         -> AST typeRef ctorRef varRef getType 'DeclarationNK
-    Fixity ::
+    Fixity_until_0_18 ::
         Assoc
         -> Comments
         -> Int
         -> Comments
         -> varRef
         -> AST typeRef ctorRef varRef getType 'DeclarationNK
-    Fixity_0_19 ::
+    Fixity ::
         C1 Before Assoc
         -> C1 Before Int
         -> C2 Before After SymbolIdentifier
@@ -585,9 +585,9 @@ mapAll ftyp fctor fvar fast = \case
     Datatype nameWithArgs ctors -> Datatype nameWithArgs (fmap (fmap fast) ctors)
     TypeAlias c nameWithArgs t -> TypeAlias c nameWithArgs (fmap fast t)
     PortAnnotation name c t -> PortAnnotation name c (fast t)
-    PortDefinition name c e -> PortDefinition name c (fast e)
-    Fixity a c n c' name -> Fixity a c n c' (fvar name)
-    Fixity_0_19 a n op name -> Fixity_0_19 a n op name
+    PortDefinition_until_0_16 name c e -> PortDefinition_until_0_16 name c (fast e)
+    Fixity_until_0_18 a c n c' name -> Fixity_until_0_18 a c n c' (fvar name)
+    Fixity a n op name -> Fixity a n op name
 
     -- Expressions
     Unit c -> Unit c
@@ -715,9 +715,9 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
                Datatype (C _ (NameWithArgs name _)) _ -> [TypeName name]
                TypeAlias _ (C _ (NameWithArgs name _)) _ -> [TypeName name]
                PortAnnotation (C _ name) _ _ -> [VarName name]
-               PortDefinition (C _ name) _ _ -> [VarName name]
-               Fixity _ _ _ _ _ -> []
-               Fixity_0_19 _ _ _ _ -> []
+               PortDefinition_until_0_16 (C _ name) _ _ -> [VarName name]
+               Fixity_until_0_18 _ _ _ _ _ -> []
+               Fixity _ _ _ _ -> []
 
         newDefinitionsAtNode ::
             forall kind'.

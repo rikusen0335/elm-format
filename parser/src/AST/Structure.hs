@@ -66,9 +66,9 @@ foldReferences ftype fctor fvar =
             Datatype _ ctors -> Const (foldMap (getConst . fold) ctors)
             TypeAlias _ _ t -> Const (getConst $ extract t)
             PortAnnotation _ _ t -> Const (getConst t)
-            PortDefinition _ _ e -> Const (getConst e)
-            Fixity _ _ _ _ name -> Const (fvar name)
-            Fixity_0_19 _ _ _ _ -> mempty
+            PortDefinition_until_0_16 _ _ e -> Const (getConst e)
+            Fixity_until_0_18 _ _ _ _ name -> Const (fvar name)
+            Fixity _ _ _ _ -> mempty
 
             -- Expressions
             Unit _ -> mempty
