@@ -14,11 +14,10 @@ import qualified Data.Set as Set
 
 data ImportInfo ns =
     ImportInfo
-        { _exposed :: Dict.Map LowercaseIdentifier ns
-        , _exposedTypes :: Dict.Map UppercaseIdentifier ns
+        { _exposed :: Dict.Map LocalName ns
         , _aliases :: Bimap.Bimap ns ns
         , _directImports :: Set.Set ns
-        , _ambiguous :: Dict.Map UppercaseIdentifier [ns]
+        , _ambiguous :: Dict.Map LocalName [ns]
         }
     deriving Show
 
@@ -52,27 +51,20 @@ fromImports knownModuleContents imports =
                         mempty
                 _ -> knownModuleContents moduleName
 
-        getExposedValues moduleName (AST.Module.ImportMethod _ (C _ listing)) =
+        getExposed moduleName (AST.Module.ImportMethod _ (C _ listing)) =
             Dict.fromList $ fmap (flip (,) moduleName) $
             case listing of
                 ClosedListing -> []
-                OpenListing _ -> Dict.keys $ AST.Module.values $ moduleContents moduleName
-                ExplicitListing details _ -> Dict.keys $ AST.Module.values details
+                OpenListing _ ->
+                    (fmap VarName $ Dict.keys $ AST.Module.values $ moduleContents moduleName)
+                    <> (fmap TypeName $ Dict.keys $ AST.Module.types $ moduleContents moduleName)
+                ExplicitListing details _ ->
+                    (fmap VarName $ Dict.keys $ AST.Module.values details)
+                    <> (fmap TypeName $ Dict.keys $ AST.Module.types details)
 
         exposed =
             -- TODO: mark ambiguous names if multiple modules expose them
-            Dict.foldlWithKey (\a k v -> Dict.union a $ getExposedValues k v) mempty imports
-
-        getExposedTypes moduleName (AST.Module.ImportMethod _ (C _ listing)) =
-            Dict.fromList $ fmap (flip (,) moduleName) $
-                case listing of
-                    ClosedListing -> []
-                    OpenListing _ -> Dict.keys $ AST.Module.types $ moduleContents moduleName
-                    ExplicitListing details _ -> Dict.keys $ AST.Module.types details
-
-        exposedTypes =
-            -- TODO: mark ambiguous names if multiple modules expose them
-            Dict.foldlWithKey (\a k v -> Dict.union a $ getExposedTypes k v) mempty imports
+            Dict.foldlWithKey (\a k v -> Dict.union a $ getExposed k v) mempty imports
 
         aliases =
             let
@@ -105,4 +97,4 @@ fromImports knownModuleContents imports =
 
         ambiguous = Dict.empty
     in
-    ImportInfo exposed exposedTypes aliases directs ambiguous
+    ImportInfo exposed aliases directs ambiguous

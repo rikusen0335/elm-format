@@ -434,7 +434,7 @@ applyUpgrades upgradeDefinition importInfo expr =
         (ann, ExplicitList terms' trailing multiline) ->
             let
                 ha = (fmap UppercaseIdentifier ["Html", "Attributes"])
-                styleExposed = Dict.lookup (LowercaseIdentifier "style") exposed == Just ha
+                styleExposed = Dict.lookup (VarName $ LowercaseIdentifier "style") exposed == Just ha
             in
             I.Fix $ Compose $ pure $ (,) ann $ ExplicitList (Sequence $ concat $ fmap (expandHtmlStyle styleExposed) $ sequenceToList terms') trailing multiline
 

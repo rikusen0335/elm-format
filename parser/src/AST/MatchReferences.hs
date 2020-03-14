@@ -35,14 +35,7 @@ matchReferences importInfo =
     let
         aliases = Bimap.toMap $ ImportInfo._aliases importInfo
         imports = ImportInfo._directImports importInfo
-        exposed =
-            Dict.union
-                (Dict.mapKeys Left $ ImportInfo._exposed importInfo)
-                (Dict.mapKeys Right $ ImportInfo._exposedTypes importInfo)
-
-        toExposedKey (TypeName u) = Right u
-        toExposedKey (CtorName u) = Right u
-        toExposedKey (VarName l) = Left l
+        exposed = ImportInfo._exposed importInfo
 
         f locals ns identifier =
             case ns of
@@ -50,7 +43,7 @@ matchReferences importInfo =
                     case Dict.lookup identifier locals of
                         Just () -> NoNamespace
                         Nothing ->
-                            case Dict.lookup (toExposedKey identifier) exposed of
+                            case Dict.lookup identifier exposed of
                                 Nothing -> NoNamespace
                                 Just exposedFrom -> MatchedImport exposedFrom
 
@@ -94,10 +87,7 @@ applyReferences ::
 applyReferences importInfo =
     let
         aliases = Bimap.toMapR $ ImportInfo._aliases importInfo
-        exposed =
-            Dict.union
-                (Dict.mapKeys Left $ ImportInfo._exposed importInfo)
-                (Dict.mapKeys Right $ ImportInfo._exposedTypes importInfo)
+        exposed = ImportInfo._exposed importInfo
 
         f ns' identifier =
             case ns' of
@@ -107,10 +97,10 @@ applyReferences importInfo =
                         Just exposedFrom | exposedFrom == ns -> []
                         _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases
                 Unmatched name -> name
-        mapTypeRef (ns, u) = (f ns (Right u), u)
-        mapCtorRef (ns, u) = (f ns (Right u), u)
-        mapVarRef (VarRef ns l) = VarRef (f ns (Left l)) l
-        mapVarRef (TagRef ns u) = TagRef (f ns (Right u)) u
+        mapTypeRef (ns, u) = (f ns (TypeName u), u)
+        mapCtorRef (ns, u) = (f ns (CtorName u), u)
+        mapVarRef (VarRef ns l) = VarRef (f ns (VarName l)) l
+        mapVarRef (TagRef ns u) = TagRef (f ns (CtorName u)) u
         mapVarRef (OpRef op) = OpRef op
     in
     bottomUpReferences mapTypeRef mapCtorRef mapVarRef

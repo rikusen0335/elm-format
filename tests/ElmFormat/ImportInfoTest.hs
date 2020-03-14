@@ -60,19 +60,19 @@ tests =
         [ testCase "includes exposed values" $
             buildImportInfo [(["B"], Nothing, ExplicitListing (DetailedListing (Dict.singleton (LowercaseIdentifier "oldValue") (C ([], []) ())) mempty mempty) False )]
                 |> ImportInfo._exposed
-                |> Dict.lookup (LowercaseIdentifier "oldValue")
+                |> Dict.lookup (VarName $ LowercaseIdentifier "oldValue")
                 |> assertEqual "contains oldValue" (Just [UppercaseIdentifier "B"])
         , testCase "includes Html.Attributes.style" $
             buildImportInfo [(["Html", "Attributes"], Nothing, OpenListing (C ([], []) ()))]
                 |> ImportInfo._exposed
-                |> Dict.lookup (LowercaseIdentifier "style")
+                |> Dict.lookup (VarName $ LowercaseIdentifier "style")
                 |> assertEqual "contains style" (Just [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"])
         ]
     , testGroup "_exposedTypes" $
         [ testCase "includes exposed types" $
             buildImportInfo [(["B"], Nothing, ExplicitListing (DetailedListing mempty mempty (Dict.singleton (UppercaseIdentifier "OldType") (C ([], []) (C [] ClosedListing)))) False )]
-                |> ImportInfo._exposedTypes
-                |> Dict.lookup (UppercaseIdentifier "OldType")
+                |> ImportInfo._exposed
+                |> Dict.lookup (TypeName $ UppercaseIdentifier "OldType")
                 |> assertEqual "contains OldType" (Just [UppercaseIdentifier "B"])
         ]
     ]

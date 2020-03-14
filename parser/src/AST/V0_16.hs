@@ -275,7 +275,7 @@ data LocalName
     = TypeName UppercaseIdentifier
     | CtorName UppercaseIdentifier
     | VarName LowercaseIdentifier
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 
 data NodeKind
