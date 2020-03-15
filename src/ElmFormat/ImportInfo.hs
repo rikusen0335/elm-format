@@ -23,7 +23,7 @@ data ImportInfo ns =
 
 
 fromModule ::
-    ([UppercaseIdentifier] -> AST.Module.DetailedListing)
+    ([UppercaseIdentifier] -> [LocalName])
     -> Module [UppercaseIdentifier] decl
     -> ImportInfo [UppercaseIdentifier]
 fromModule knownModuleContents modu =
@@ -31,24 +31,19 @@ fromModule knownModuleContents modu =
 
 
 fromImports ::
-    ([UppercaseIdentifier] -> AST.Module.DetailedListing)
+    ([UppercaseIdentifier] -> [LocalName])
     -> Dict.Map [UppercaseIdentifier] AST.Module.ImportMethod
     -> ImportInfo [UppercaseIdentifier]
 fromImports knownModuleContents imports =
     let
         -- these are things we know will get exposed for certain modules when we see "exposing (..)"
         -- only things that are currently useful for Elm 0.19 upgrade are included
-        moduleContents :: [UppercaseIdentifier] -> AST.Module.DetailedListing
+        moduleContents :: [UppercaseIdentifier] -> [LocalName]
         moduleContents moduleName =
             case (\(UppercaseIdentifier x) -> x) <$> moduleName of
                 ["Html", "Attributes"] ->
-                    AST.Module.DetailedListing
-                        (Dict.fromList $ fmap (\x -> (LowercaseIdentifier x, C ([], []) ())) $
-                            [ "style"
-                            ]
-                        )
-                        mempty
-                        mempty
+                    [ VarName $ LowercaseIdentifier "style"
+                    ]
                 _ -> knownModuleContents moduleName
 
         getExposed moduleName (AST.Module.ImportMethod _ (C _ listing)) =
@@ -56,9 +51,9 @@ fromImports knownModuleContents imports =
             case listing of
                 ClosedListing -> []
                 OpenListing _ ->
-                    (fmap VarName $ Dict.keys $ AST.Module.values $ moduleContents moduleName)
-                    <> (fmap TypeName $ Dict.keys $ AST.Module.types $ moduleContents moduleName)
+                    moduleContents moduleName
                 ExplicitListing details _ ->
+                    -- TODO: exposing (Type(..)) should pull in variant names from knownModuleContents, though this should also be a warning because we can't know for sure which of those are for this type
                     (fmap VarName $ Dict.keys $ AST.Module.values details)
                     <> (fmap TypeName $ Dict.keys $ AST.Module.types details)
 

@@ -34,10 +34,7 @@ tests =
 
             makeKnownContent (moduleName, known, _, _) =
                 ( fmap UppercaseIdentifier $ splitOn "." moduleName
-                , DetailedListing
-                    (known |> fmap (\l -> ( LowercaseIdentifier l, C ([], []) () )) |> Dict.fromList)
-                    mempty -- TODO
-                    mempty -- TODO
+                , fmap (VarName . LowercaseIdentifier) known
                 )
 
             makeImportMethod :: (String, knownContents, Maybe String, Listing DetailedListing) -> ([UppercaseIdentifier], ImportMethod)

@@ -68,23 +68,18 @@ data UpgradeDefinition =
         , _imports :: Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
         }
 
-knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> DetailedListing
+knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> [LocalName]
 knownContents upgradeDefinition ns =
-    DetailedListing
-        { values =
-            Dict.fromList
-            $ fmap (flip (,) (C ([], []) ()) . LowercaseIdentifier . snd)
-            $ filter ((==) ns . fst)
-            $ Dict.keys
-            $ _replacements upgradeDefinition
-        , operators = mempty
-        , types =
-            Dict.fromList
-            $ fmap (flip (,) (C ([], []) (C [] ClosedListing)) . snd)
+    (fmap (VarName . LowercaseIdentifier . snd)
+        $ filter ((==) ns . fst)
+        $ Dict.keys
+        $ _replacements upgradeDefinition
+    )
+    <> (fmap (TypeName . snd)
             $ filter ((==) ns . fst)
             $ Dict.keys
             $ _typeReplacements upgradeDefinition
-        }
+       )
 
 
 parseUpgradeDefinition :: Text.Text -> Either () UpgradeDefinition
