@@ -10,4 +10,5 @@ type alias Upgrade_A_A1 = ()
 type alias Upgrade_A_A8 = ()
 type alias Upgrade_A_A9 = ()
 
+upgrade_A_B1 = ()
 upgrade_A_C1 = ()

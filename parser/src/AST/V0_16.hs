@@ -712,7 +712,9 @@ topDownReferencesWithContext defineLocal fType fCtor fVar initialContext initial
             case extract $ I.unFix decl of
                Definition p _ _ _ -> namesFromPattern p
                TypeAnnotation _ _ -> []
-               Datatype (C _ (NameWithArgs name _)) _ -> [TypeName name]
+               Datatype (C _ (NameWithArgs name _)) tags ->
+                   TypeName name
+                   : fmap (\(NameWithArgs name _) -> CtorName name) (toList tags)
                TypeAlias _ (C _ (NameWithArgs name _)) _ -> [TypeName name]
                PortAnnotation (C _ name) _ _ -> [VarName name]
                PortDefinition_until_0_16 (C _ name) _ _ -> [VarName name]

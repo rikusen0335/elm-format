@@ -114,3 +114,11 @@ typeHiddenByTypeAlias _ =
 
 directTypeVariantReference =
     ()
+
+
+type B
+    = B1
+
+
+hiddenByTypeVariant =
+    B1
