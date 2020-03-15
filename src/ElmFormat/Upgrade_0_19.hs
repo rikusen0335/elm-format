@@ -17,11 +17,12 @@ import AST.Module (Module(Module), ImportMethod(..), DetailedListing(..))
 import AST.Structure
 import Control.Applicative (liftA2)
 import Control.Monad (zipWithM)
+import Data.Char (isUpper, isLower)
 import Data.Coapplicative
 import Data.Foldable
 import Data.Functor.Compose
 import Data.Functor.Identity
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe, listToMaybe)
 import Data.Set (Set)
 import ElmFormat.ImportInfo (ImportInfo)
 import ElmVersion
@@ -70,7 +71,14 @@ data UpgradeDefinition =
 
 knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> [LocalName]
 knownContents upgradeDefinition ns =
-    (fmap (VarName . LowercaseIdentifier . snd)
+    let
+        expressionNameToLocalName name =
+            case listToMaybe name of
+                Just c | isUpper c -> Just $ CtorName $ UppercaseIdentifier name
+                Just c | isLower c -> Just $ VarName $ LowercaseIdentifier name
+                _ -> Nothing
+    in
+    (mapMaybe (expressionNameToLocalName . snd)
         $ filter ((==) ns . fst)
         $ Dict.keys
         $ _replacements upgradeDefinition

@@ -110,3 +110,7 @@ type alias A8 =
 typeHiddenByTypeAlias : A8 -> ()
 typeHiddenByTypeAlias _ =
     ()
+
+
+directTypeVariantReference =
+    ()
