@@ -27,7 +27,7 @@ fromMatched _ (Unmatched t) = t
 
 
 matchReferences ::
-    (Functor annf, Coapplicative annf, Ord u) =>
+    (Coapplicative annf, Ord u) =>
     ImportInfo [u]
     -> ASTNS annf [u] kind
     -> ASTNS annf (MatchedNamespace [u]) kind
@@ -80,7 +80,7 @@ matchReferences importInfo =
 
 
 applyReferences ::
-    (Functor annf, Ord u) =>
+    (Coapplicative annf, Ord u) =>
     ImportInfo [u]
     -> ASTNS annf (MatchedNamespace [u]) kind
     -> ASTNS annf [u] kind
@@ -89,18 +89,27 @@ applyReferences importInfo =
         aliases = Bimap.toMapR $ ImportInfo._aliases importInfo
         exposed = ImportInfo._exposed importInfo
 
-        f ns' identifier =
+        f locals ns' identifier =
             case ns' of
                 NoNamespace -> []
                 MatchedImport ns ->
                     case Dict.lookup identifier exposed of
-                        Just exposedFrom | exposedFrom == ns -> []
+                        Just exposedFrom | exposedFrom == ns ->
+                            case Dict.lookup identifier locals of
+                                Just _ -> ns -- Something locally defined with the same name is in scope, so don't change anything
+                                Nothing -> [] -- This is exposed unambiguously and doesn't need to be qualified
                         _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases
                 Unmatched name -> name
-        mapTypeRef (ns, u) = (f ns (TypeName u), u)
-        mapCtorRef (ns, u) = (f ns (CtorName u), u)
-        mapVarRef (VarRef ns l) = VarRef (f ns (VarName l)) l
-        mapVarRef (TagRef ns u) = TagRef (f ns (CtorName u)) u
-        mapVarRef (OpRef op) = OpRef op
+
+        defineLocal name = Dict.insert name ()
+
+        mapTypeRef locals (ns, u) = (f locals ns (TypeName u), u)
+        mapCtorRef locals (ns, u) = (f locals ns (CtorName u), u)
+        mapVarRef locals (VarRef ns l) = VarRef (f locals ns (VarName l)) l
+        mapVarRef locals (TagRef ns u) = TagRef (f locals ns (CtorName u)) u
+        mapVarRef _ (OpRef op) = OpRef op
     in
-    bottomUpReferences mapTypeRef mapCtorRef mapVarRef
+    topDownReferencesWithContext
+        defineLocal
+        mapTypeRef mapCtorRef mapVarRef
+        mempty
