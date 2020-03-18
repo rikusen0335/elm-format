@@ -96,7 +96,7 @@ applyReferences importInfo =
                     case Dict.lookup identifier exposed of
                         Just exposedFrom | exposedFrom == ns ->
                             case Dict.lookup identifier locals of
-                                Just _ -> ns -- Something locally defined with the same name is in scope, so don't change anything
+                                Just _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases -- Something locally defined with the same name is in scope, so keep it qualified
                                 Nothing -> [] -- This is exposed unambiguously and doesn't need to be qualified
                         _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases
                 Unmatched name -> name
