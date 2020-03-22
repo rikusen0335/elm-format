@@ -29,7 +29,7 @@ tests =
                 (Dict.singleton [UppercaseIdentifier "A"] (c "1" $ ImportMethod Nothing (c2 "2" "3" ClosedListing)))
                 Dict.empty
                 Set.empty
-                (Dict.singleton (MatchedImport [UppercaseIdentifier "A"]) 1)
+                (Dict.singleton (MatchedImport False [UppercaseIdentifier "A"]) 1)
                 |> assertImports ["A"] (c "1" $ ImportMethod Nothing (c2 "2" "3" ClosedListing))
         , testCase "removes unused imports that were the subject of the upgrade" $
             mergeUpgradeImports
@@ -50,7 +50,7 @@ tests =
                 Dict.empty
                 (Dict.singleton [UppercaseIdentifier "B"] (c "1" $ ImportMethod Nothing (c2 "2" "3" ClosedListing)))
                 Set.empty
-                (Dict.singleton (MatchedImport [UppercaseIdentifier "B"]) 1)
+                (Dict.singleton (MatchedImport True [UppercaseIdentifier "B"]) 1)
                 |> assertImports ["B"] (c "1" $ ImportMethod Nothing (c2 "2" "3" ClosedListing))
         , testCase "does not add import from upgrade if it is not used" $
             mergeUpgradeImports

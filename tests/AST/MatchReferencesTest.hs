@@ -65,10 +65,10 @@ tests =
         , test "matches references from an import"
             [ ("A", [], Nothing, closedListing) ]
             (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a"))
-            (VarRef (MatchedImport [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
+            (VarRef (MatchedImport True [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
         , test "matches reference to a known value via exposing(..)"
             [ ("Html", [ "div" ], Nothing, openListing) ]
             (VarRef [] (LowercaseIdentifier "div"))
-            (VarRef (MatchedImport [UppercaseIdentifier "Html"]) (LowercaseIdentifier "div"))
+            (VarRef (MatchedImport False [UppercaseIdentifier "Html"]) (LowercaseIdentifier "div"))
         ]
     ]

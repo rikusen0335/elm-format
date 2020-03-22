@@ -15,14 +15,14 @@ import qualified ElmFormat.ImportInfo as ImportInfo
 
 data MatchedNamespace t
     = NoNamespace
-    | MatchedImport t
+    | MatchedImport Bool t -- Bool is True if it was originally qualified
     | Unmatched t
     deriving (Eq, Ord, Show)
 
 
 fromMatched :: t -> MatchedNamespace t -> t
 fromMatched empty NoNamespace = empty
-fromMatched _ (MatchedImport t) = t
+fromMatched _ (MatchedImport _ t) = t
 fromMatched _ (Unmatched t) = t
 
 
@@ -45,7 +45,7 @@ matchReferences importInfo =
                         Nothing ->
                             case Dict.lookup identifier exposed of
                                 Nothing -> NoNamespace
-                                Just exposedFrom -> MatchedImport exposedFrom
+                                Just exposedFrom -> MatchedImport False exposedFrom
 
                 _ ->
                     let
@@ -63,7 +63,7 @@ matchReferences importInfo =
                     in
                     case resolved of
                         Nothing -> Unmatched ns
-                        Just single -> MatchedImport single
+                        Just single -> MatchedImport True single
 
         defineLocal name = Dict.insert name ()
 
@@ -93,12 +93,15 @@ applyReferences importInfo =
         f locals ns' identifier =
             case ns' of
                 NoNamespace -> []
-                MatchedImport ns ->
+                MatchedImport wasQualified ns ->
                     let
                         qualify =
-                            (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
-                            || Dict.member identifier locals -- something is locally defined with the same name
-                            || unresolvedExposingAll -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
+                            case wasQualified of
+                                True ->
+                                    (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
+                                    || Dict.member identifier locals -- something is locally defined with the same name
+                                    || unresolvedExposingAll -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
+                                False -> False -- never add qualification to something that was not qualified
                     in
                     if qualify
                       then Maybe.fromMaybe ns $ Dict.lookup ns aliases

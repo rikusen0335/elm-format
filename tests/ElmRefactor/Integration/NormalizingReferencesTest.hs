@@ -40,6 +40,21 @@ tests =
             , "x ="
             , "    ( A.a, Other.b )"
             ]
+        , refactorTest "exposing (..) in an import does not qualify references that were previously unqualified"
+            [ "import A exposing (a)"
+            , "import Other exposing (..)"
+            , "x = ( a, Other.b )"
+            ]
+            [ "upgrade_X_x = ()" ]
+            [ "module Main exposing (x)"
+            , ""
+            , "import A exposing (a)"
+            , "import Other exposing (..)"
+            , ""
+            , ""
+            , "x ="
+            , "    ( a, Other.b )"
+            ]
         ]
 
 

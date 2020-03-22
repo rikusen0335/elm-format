@@ -313,8 +313,10 @@ mergeUpgradeImports ::
     -> Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
 mergeUpgradeImports originalImports upgradeImports upgradesAttempted usagesAfter =
     let
-        -- uBefore ns = Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport ns) usagesBefore
-        uAfter ns = Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport ns) usagesAfter
+        -- uBefore ns = Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport _ ns) usagesBefore
+        uAfter ns =
+            (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport False ns) usagesAfter)
+            + (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport True ns) usagesAfter)
     in
     Dict.union
         (Dict.filterWithKey (\k _ -> uAfter k > 0 || not (Set.member k upgradesAttempted)) originalImports)
@@ -355,7 +357,7 @@ transformType ::
     -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind -- TODO: should return ((,) Source) instead of annf
 transformType upgradeDefinition typ =
     case extract $ I.unFix typ of
-        TypeConstruction (NamedConstructor (MatchedImport ctorNs, ctorName)) args ->
+        TypeConstruction (NamedConstructor (MatchedImport _ ctorNs, ctorName)) args ->
             case Dict.lookup (ctorNs, ctorName) (_typeReplacements upgradeDefinition) of
                 Just (argOrder, newTyp) ->
                     let
@@ -381,10 +383,10 @@ applyUpgrades upgradeDefinition importInfo expr =
                 VarRef NoNamespace (LowercaseIdentifier name) ->
                     Dict.lookup ([UppercaseIdentifier "Basics"], name) replacements
 
-                VarRef (MatchedImport ns) (LowercaseIdentifier name) ->
+                VarRef (MatchedImport _ ns) (LowercaseIdentifier name) ->
                     Dict.lookup (ns, name) replacements
 
-                TagRef (MatchedImport ns) (UppercaseIdentifier name) ->
+                TagRef (MatchedImport _ ns) (UppercaseIdentifier name) ->
                     Dict.lookup (ns, name) replacements
 
                 OpRef (SymbolIdentifier "!") ->
@@ -449,7 +451,7 @@ simplify :: UAST kind -> UAST kind
 simplify expr =
     let
         isElmFixRemove :: (Source, AST typeRef ctorRef (Ref (MatchedNamespace [UppercaseIdentifier])) getType 'ExpressionNK) -> Bool
-        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
+        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
         isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
         isElmFixRemove _ = False
     in
@@ -521,7 +523,7 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
 
         isHtmlAttributesStyle var =
             case var of
-                VarRef (MatchedImport [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"]) (LowercaseIdentifier "style") -> True
+                VarRef (MatchedImport _ [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"]) (LowercaseIdentifier "style") -> True
                 VarRef NoNamespace (LowercaseIdentifier "style") -> styleExposed
                 _ -> False
     in
@@ -696,7 +698,7 @@ destructure pat arg =
     let
         namespaceMatch nsd ns =
             case (nsd, ns) of
-                (Unmatched nsd', MatchedImport ns') -> nsd' == ns'
+                (Unmatched nsd', MatchedImport _ ns') -> nsd' == ns'
                 _ -> nsd == ns
     in
     case (fmap (extract . I.unFix) pat, fmap (extract . I.unFix) arg) of
