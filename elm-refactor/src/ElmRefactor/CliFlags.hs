@@ -8,7 +8,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 
 data Flags = Flags
-    { _upgradeDefinition :: FilePath
+    { _upgradeDefinitions :: [FilePath]
     , _input :: [FilePath]
     }
 
@@ -61,9 +61,14 @@ linesToDoc lineList =
     PP.vcat (map PP.text lineList)
 
 
-upgradeDefinition :: Opt.Parser FilePath
+upgradeDefinition :: Opt.Parser [FilePath]
 upgradeDefinition =
-    Opt.strArgument $ Opt.metavar "UPGRADE_DEFINITION"
+    Opt.many $ Opt.strOption $
+        mconcat
+        [ Opt.long "upgrade"
+        , Opt.metavar "UPGRADE_DEFINITION"
+        , Opt.help "A file specifying an upgrade transformation to apply. You may specify this more than once."
+        ]
 
 
 input :: Opt.Parser FilePath

@@ -274,7 +274,7 @@ main = do
         let upgradeDefinition = dropDirectory1 $ out -<.> "upgrade_elm"
         need [ elmRefactor, source, upgradeDefinition ]
         cmd_ "cp" source out
-        cmd_ elmRefactor upgradeDefinition out
+        cmd_ elmRefactor "--upgrade" upgradeDefinition out
 
     "_build/tests//*.elm_refactor_matches" %> \out -> do
         let actual = out -<.> "elm_refactor_upgraded"

@@ -21,16 +21,20 @@ import qualified ElmFormat.Render.Text as Render
 import qualified Reporting.Result as Result
 
 
-upgrade :: UpgradeDefinition -> (FilePath, Text) -> Either InfoMessage Text
-upgrade upgradeDefinition (_, inputText) =
+upgrade :: [UpgradeDefinition] -> (FilePath, Text) -> Either InfoMessage Text
+upgrade upgradeDefinitions (_, inputText) =
     let
         elmVersion = Elm_0_19
     in
     case Parse.parse elmVersion inputText of
         Result.Result _ (Result.Ok ast) ->
+            let
+                transform input =
+                    foldl' (flip transformModule) input upgradeDefinitions
+            in
             ast
                 |> fmap (I.convert (Identity . extract))
-                |> transformModule upgradeDefinition
+                |> transform
                 |> Render.render elmVersion
                 |> Right
 
@@ -54,10 +58,10 @@ main' flags =
             [] -> Program.showUsage
             first:rest -> return $ FilesInPlace first rest
 
-        let definitionFile = Flags._upgradeDefinition flags
-        definition <- readDefinitionFile definitionFile
+        let definitionFiles = Flags._upgradeDefinitions flags
+        definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ run $ TransformFiles.applyTransformation (upgrade definition) mode
+        result <- Program.liftM $ run $ TransformFiles.applyTransformation (upgrade definitions) mode
         if result
             then return ()
             else Program.failed
