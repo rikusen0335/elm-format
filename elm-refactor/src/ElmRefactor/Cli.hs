@@ -38,19 +38,24 @@ upgrade upgradeDefinition (_, inputText) =
             -- TODO: return an error message
             error "TODO: couldn't parse source file"
 
-
 main' :: World m => Flags.Flags -> ProgramIO m String ()
 main' flags =
-    do
-        let autoYes = True
-        let run = Execute.run $ Execute.forHuman autoYes
+    let
+        autoYes = True
+        run = Execute.run $ Execute.forHuman autoYes
 
+        readDefinitionFile definitionFile =
+            Program.liftME
+                $ fmap (first (\() -> "Failed to parse upgrade definition"))
+                $ parseUpgradeDefinition . snd <$> run (TransformFiles.readFromFile definitionFile)
+    in
+    do
         mode <- case Flags._input flags of
             [] -> Program.showUsage
             first:rest -> return $ FilesInPlace first rest
 
         let definitionFile = Flags._upgradeDefinition flags
-        definition <- Program.liftME $ fmap (first (\() -> "Failed to parse upgrade definition")) $ parseUpgradeDefinition . snd <$> run (TransformFiles.readFromFile definitionFile)
+        definition <- readDefinitionFile definitionFile
 
         result <- Program.liftM $ run $ TransformFiles.applyTransformation (upgrade definition) mode
         if result
