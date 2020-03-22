@@ -9,7 +9,6 @@ import qualified BoxTest
 import qualified ElmFormat.ImportInfoTest
 import qualified ElmFormat.Render.ElmStructureTest
 import qualified ElmFormat.Upgrade_0_19Test
-import qualified ElmRefactor.Integration.NormalizingReferencesTest
 import qualified Integration.CliTest
 import qualified Integration.LiteralTest
 import qualified Parse.ExpressionTest
@@ -32,7 +31,6 @@ main =
             , ElmFormat.ImportInfoTest.tests
             , ElmFormat.Render.ElmStructureTest.tests
             , ElmFormat.Upgrade_0_19Test.tests
-            , ElmRefactor.Integration.NormalizingReferencesTest.tests
             , Integration.CliTest.tests
             , Integration.LiteralTest.tests
             , Parse.ExpressionTest.tests
