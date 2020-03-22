@@ -27,7 +27,7 @@ flags :: Opt.Parser Flags
 flags =
     Flags
       <$> upgradeDefinition
-      <*> Opt.many input
+      <*> Opt.some input
 
 
 -- HELP
@@ -73,4 +73,8 @@ upgradeDefinition =
 
 input :: Opt.Parser FilePath
 input =
-    Opt.strArgument $ Opt.metavar "INPUT"
+    Opt.strArgument $
+        mconcat
+        [ Opt.metavar "INPUT"
+        , Opt.help "The .elm file to transform. You may specify more than one."
+        ]
