@@ -186,6 +186,7 @@ test-Suite elm-format-tests
         ElmFormat.Render.ElmStructureTest
         ElmFormat.Upgrade_0_19Test
         ElmFormat.TestWorld
+        ElmRefactor.Integration.NormalizingReferencesTest
         Expect
         Integration.CliTest
         Integration.LiteralTest

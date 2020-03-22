@@ -18,6 +18,7 @@ data ImportInfo ns =
         , _aliases :: Bimap.Bimap ns ns
         , _directImports :: Set.Set ns
         , _ambiguous :: Dict.Map LocalName [ns]
+        , _unresolvedExposingAll :: Bool -- True if there is an exposing(..) and we didn't know the module contents
         }
     deriving Show
 
@@ -91,5 +92,14 @@ fromImports knownModuleContents imports =
                 (Dict.keysSet $ Dict.filter noAlias imports)
 
         ambiguous = Dict.empty
+
+        exposesAll (AST.Module.ImportMethod _ (C _ listing)) =
+            case listing of
+                ExplicitListing _ _ -> False
+                OpenListing _ -> True
+                ClosedListing -> False
+
+        unresolvedExposingAll =
+            any exposesAll imports
     in
-    ImportInfo exposed aliases directs ambiguous
+    ImportInfo exposed aliases directs ambiguous unresolvedExposingAll

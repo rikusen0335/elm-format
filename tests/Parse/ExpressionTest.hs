@@ -33,7 +33,7 @@ example name input expected =
 
 importInfo :: ImportInfo ns
 importInfo =
-    ImportInfo Map.empty Bimap.empty Set.empty Map.empty
+    ImportInfo Map.empty Bimap.empty Set.empty Map.empty False
 
 
 example' :: String -> String -> String -> TestTree

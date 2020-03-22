@@ -88,17 +88,21 @@ applyReferences importInfo =
     let
         aliases = Bimap.toMapR $ ImportInfo._aliases importInfo
         exposed = ImportInfo._exposed importInfo
+        unresolvedExposingAll = ImportInfo._unresolvedExposingAll importInfo
 
         f locals ns' identifier =
             case ns' of
                 NoNamespace -> []
                 MatchedImport ns ->
-                    case Dict.lookup identifier exposed of
-                        Just exposedFrom | exposedFrom == ns ->
-                            case Dict.lookup identifier locals of
-                                Just _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases -- Something locally defined with the same name is in scope, so keep it qualified
-                                Nothing -> [] -- This is exposed unambiguously and doesn't need to be qualified
-                        _ -> Maybe.fromMaybe ns $ Dict.lookup ns aliases
+                    let
+                        qualify =
+                            (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
+                            || Dict.member identifier locals -- something is locally defined with the same name
+                            || unresolvedExposingAll -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
+                    in
+                    if qualify
+                      then Maybe.fromMaybe ns $ Dict.lookup ns aliases
+                      else [] -- This is exposed unambiguously and doesn't need to be qualified
                 Unmatched name -> name
 
         defineLocal name = Dict.insert name ()
