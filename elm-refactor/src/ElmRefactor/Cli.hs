@@ -17,6 +17,7 @@ import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles
 import qualified Data.Indexed as I
 import qualified ElmFormat.Execute as Execute
+import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.Parse as Parse
 import qualified ElmFormat.Render.Text as Render
 import qualified Reporting.Result as Result
@@ -52,7 +53,7 @@ main' flags =
         readDefinitionFile definitionFile =
             Program.liftME
                 $ fmap (first (\() -> "Failed to parse upgrade definition"))
-                $ parseUpgradeDefinition . snd <$> run (TransformFiles.readFromFile (onInfo . ProcessingFile) definitionFile)
+                $ parseUpgradeDefinition . snd <$> run (FileStore.readFileWithPath definitionFile)
     in
     do
         mode <- case Flags._input flags of

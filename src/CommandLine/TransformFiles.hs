@@ -2,7 +2,6 @@ module CommandLine.TransformFiles
     ( Result
     , TransformMode(..), applyTransformation
     , ValidateMode(..), validateNoChanges
-    , readFromFile, readStdin
     ) where
 
 -- This module provides reusable functions for command line tools that
