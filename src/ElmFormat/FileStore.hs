@@ -1,4 +1,4 @@
-module ElmFormat.FileStore (FileStore, FileStoreF(..), FileType(..), readFile, stat, listDirectory, execute) where
+module ElmFormat.FileStore (FileStore, FileStoreF(..), FileType(..), readFile, readFileWithPath, stat, listDirectory, execute) where
 
 import Prelude hiding (readFile, writeFile)
 import Control.Monad.Free
@@ -17,6 +17,10 @@ class Functor f => FileStore f where
     readFile :: FilePath -> f Text
     stat :: FilePath -> f FileType
     listDirectory :: FilePath -> f [FilePath]
+
+readFileWithPath :: FileStore f => FilePath -> f (FilePath, Text)
+readFileWithPath filePath =
+    (,) filePath <$> readFile filePath
 
 
 data FileStoreF a

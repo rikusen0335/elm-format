@@ -48,7 +48,7 @@ readStdin =
 readFromFile :: FileStore f => (FilePath -> Free f ()) -> FilePath -> Free f (FilePath, Text)
 readFromFile onProcessingFile filePath =
     onProcessingFile filePath
-        *> ((,) filePath <$> FileStore.readFile filePath)
+        *> FileStore.readFileWithPath filePath
 
 
 data TransformMode
