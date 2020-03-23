@@ -15,11 +15,7 @@ class Functor f => FileWriter f where
 data FileWriterF a
     = WriteFile FilePath Text a
     | OverwriteFile FilePath Text a
-
-
-instance Functor FileWriterF where
-    fmap f (WriteFile path content a) = WriteFile path content (f a)
-    fmap f (OverwriteFile path content a) = OverwriteFile path content (f a)
+    deriving (Functor)
 
 
 instance FileWriter FileWriterF where

@@ -12,16 +12,12 @@ class Functor f => InfoFormatter f where
 data InfoFormatterF a
     = OnInfo InfoMessage a
     | Approve PromptMessage (Bool -> a)
+    deriving (Functor)
 
 
 instance InfoFormatter InfoFormatterF where
     onInfo info = OnInfo info ()
     approve prompt = Approve prompt id
-
-
-instance Functor InfoFormatterF where
-    fmap f (OnInfo info a) = OnInfo info (f a)
-    fmap f (Approve prompt a) = Approve prompt (f . a)
 
 
 instance InfoFormatter f => InfoFormatter (Free f) where

@@ -18,6 +18,7 @@ data OperationF a
     | InOutputConsole (OutputConsoleF a)
     | InInputConsole (InputConsoleF a)
     | InFileWriter (FileWriterF a)
+    deriving (Functor)
 
 
 instance Operation OperationF
@@ -45,14 +46,6 @@ instance OutputConsole OperationF where
 instance FileWriter OperationF where
     writeFile path content = InFileWriter $ writeFile path content
     overwriteFile path content = InFileWriter $ overwriteFile path content
-
-
-instance Functor OperationF where
-    fmap f (InFileStore op) = InFileStore (fmap f op)
-    fmap f (InInfoFormatter op) = InInfoFormatter (fmap f op)
-    fmap f (InOutputConsole op) = InOutputConsole (fmap f op)
-    fmap f (InInputConsole op) = InInputConsole (fmap f op)
-    fmap f (InFileWriter op) = InFileWriter (fmap f op)
 
 
 instance Operation f => Operation (Free f)

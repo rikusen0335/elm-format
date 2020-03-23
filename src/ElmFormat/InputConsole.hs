@@ -11,10 +11,7 @@ class Functor f => InputConsole f where
 
 data InputConsoleF a
     = ReadStdin (Text -> a)
-
-
-instance Functor InputConsoleF where
-    fmap f (ReadStdin a) = ReadStdin (f . a)
+    deriving (Functor)
 
 
 instance InputConsole InputConsoleF where

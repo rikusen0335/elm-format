@@ -12,10 +12,7 @@ class Functor f => OutputConsole f where
 
 data OutputConsoleF a
     = WriteStdout Text a
-
-
-instance Functor OutputConsoleF where
-    fmap f (WriteStdout content a) = WriteStdout content (f a)
+    deriving (Functor)
 
 
 instance OutputConsole OutputConsoleF where

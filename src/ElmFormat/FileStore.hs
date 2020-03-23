@@ -23,12 +23,7 @@ data FileStoreF a
     = ReadFile FilePath (Text -> a)
     | Stat FilePath (FileType -> a)
     | ListDirectory FilePath ([FilePath] -> a)
-
-
-instance Functor FileStoreF where
-    fmap f (ReadFile path a) = ReadFile path (f . a)
-    fmap f (Stat path a) = Stat path (f . a)
-    fmap f (ListDirectory path a) = ListDirectory path (f . a)
+    deriving (Functor)
 
 
 instance FileStore FileStoreF where
