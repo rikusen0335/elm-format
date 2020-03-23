@@ -9,8 +9,6 @@ import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InputConsole (InputConsole)
 import ElmFormat.OutputConsole (OutputConsole)
-import Messages.Formatter.Format
-import Messages.Types
 
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.FileStore as FileStore
@@ -42,9 +40,9 @@ readStdin =
     (,) "<STDIN>" <$> InputConsole.readStdin
 
 
-readFromFile :: (FileStore f, InfoFormatter f) => FilePath -> Free f (FilePath, Text)
-readFromFile filePath =
-    onInfo (ProcessingFile filePath)
+readFromFile :: FileStore f => (FilePath -> Free f ()) -> FilePath -> Free f (FilePath, Text)
+readFromFile onProcessingFile filePath =
+    onProcessingFile filePath
         *> ((,) filePath <$> FileStore.readFile filePath)
 
 
@@ -56,34 +54,34 @@ data TransformMode
     | FilesInPlace FilePath [FilePath]
 
 
-applyTransformation :: (InputConsole f, OutputConsole f, InfoFormatter f, FileStore f, FileWriter f) => ((FilePath, Text) -> Either InfoMessage Text) -> TransformMode -> Free f Bool
-applyTransformation transform mode =
+applyTransformation :: (InputConsole f, OutputConsole f, FileStore f, FileWriter f) => (info -> Free f ()) -> (FilePath -> info) -> ([FilePath] -> Free f Bool) -> ((FilePath, Text) -> Either info Text) -> TransformMode -> Free f Bool
+applyTransformation onInfo processingFile approve transform mode =
     case mode of
         StdinToStdout ->
-            (transform <$> readStdin) >>= logErrorOr OutputConsole.writeStdout
+            (transform <$> readStdin) >>= logErrorOr onInfo OutputConsole.writeStdout
 
         StdinToFile outputFile ->
-            (transform <$> readStdin) >>= logErrorOr (FileWriter.overwriteFile outputFile)
+            (transform <$> readStdin) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
 
         -- TODO: this prints "Processing such-and-such-a-file.elm" which makes the stdout invalid
         -- FileToStdout inputFile ->
         --     (fmap fromResult <$> transform <$> ElmFormat.readFile inputFile) >>= logErrorOr OutputConsole.writeStdout
 
         FileToFile inputFile outputFile ->
-            (transform <$> readFromFile inputFile) >>= logErrorOr (FileWriter.overwriteFile outputFile)
+            (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
 
         FilesInPlace first rest ->
             do
-                canOverwrite <- approve $ FilesWillBeOverwritten (first:rest)
+                canOverwrite <- approve (first:rest)
                 if canOverwrite
                     then all id <$> mapM formatFile (first:rest)
                     else return True
             where
-                formatFile file = ((\i -> checkChange i <$> transform i) <$> readFromFile file) >>= logErrorOr updateFile
+                formatFile file = ((\i -> checkChange i <$> transform i) <$> readFromFile (onInfo . processingFile) file) >>= logErrorOr onInfo updateFile
 
 
-logErrorOr :: InfoFormatter f => (a -> Free f ()) -> Either InfoMessage a -> Free f Bool
-logErrorOr fn result =
+logErrorOr :: Monad m => (error -> m ()) -> (a -> m ()) -> Either error a -> m Bool
+logErrorOr onInfo fn result =
     case result of
         Left message ->
             onInfo message *> return False

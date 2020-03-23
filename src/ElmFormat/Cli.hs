@@ -232,10 +232,10 @@ doIt elmVersion whatToDo =
 
         ValidateFiles first rest ->
             and <$> mapM validateFile (first:rest)
-            where validateFile file = (validate elmVersion <$> TransformFiles.readFromFile file) >>= logError
+            where validateFile file = (validate elmVersion <$> TransformFiles.readFromFile (onInfo . ProcessingFile) file) >>= logError
 
         Format transformMode ->
-            TransformFiles.applyTransformation (format elmVersion) transformMode
+            TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (format elmVersion) transformMode
 
         ConvertToJson transformMode ->
-            TransformFiles.applyTransformation (toJson elmVersion) transformMode
+            TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (toJson elmVersion) transformMode

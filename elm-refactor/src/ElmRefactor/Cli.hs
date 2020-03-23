@@ -11,6 +11,7 @@ import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
 import ElmVersion
 import Messages.Types
+import Messages.Formatter.Format
 
 import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles
@@ -51,7 +52,7 @@ main' flags =
         readDefinitionFile definitionFile =
             Program.liftME
                 $ fmap (first (\() -> "Failed to parse upgrade definition"))
-                $ parseUpgradeDefinition . snd <$> run (TransformFiles.readFromFile definitionFile)
+                $ parseUpgradeDefinition . snd <$> run (TransformFiles.readFromFile (onInfo . ProcessingFile) definitionFile)
     in
     do
         mode <- case Flags._input flags of
@@ -61,7 +62,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ run $ TransformFiles.applyTransformation (upgrade definitions) mode
+        result <- Program.liftM $ run $ TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (upgrade definitions) mode
         if result
             then return ()
             else Program.failed
