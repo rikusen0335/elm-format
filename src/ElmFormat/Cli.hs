@@ -12,7 +12,7 @@ import Messages.Types
 import Messages.Strings (showErrorMessage)
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
-import CommandLine.TransformFiles (TransformMode(..))
+import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
 import Control.Monad.Free
 import ElmVersion
 import ElmFormat.FileStore (FileStore)
@@ -39,8 +39,7 @@ import qualified Text.JSON
 data WhatToDo
     = Format TransformMode
     | ConvertToJson TransformMode
-    | ValidateStdin
-    | ValidateFiles FilePath [FilePath]
+    | Validate ValidateMode
 
 
 data Source
@@ -89,8 +88,8 @@ determineWhatToDo :: Source -> Destination -> Mode -> Either ErrorMessage WhatTo
 determineWhatToDo source destination mode =
     case ( mode, source, destination ) of
         ( ValidateMode, _, ToFile _) -> Left OutputAndValidate
-        ( ValidateMode, Stdin, _ ) -> Right ValidateStdin
-        ( ValidateMode, FromFiles first rest, _) -> Right $ ValidateFiles first rest
+        ( ValidateMode, Stdin, _ ) -> Right $ Validate ValidateStdin
+        ( ValidateMode, FromFiles first rest, _) -> Right $ Validate (ValidateFiles first rest)
         ( FormatMode, Stdin, InPlace ) -> Right $ Format StdinToStdout
         ( FormatMode, Stdin, ToFile output ) -> Right $ Format (StdinToFile output)
         ( FormatMode, FromFiles first [], ToFile output ) -> Right $ Format (FileToFile first output)
@@ -178,16 +177,16 @@ autoDetectElmVersion =
 
 
 validate :: ElmVersion -> (FilePath, Text.Text) -> Either InfoMessage ()
-validate elmVersion (inputFile, inputText) =
-    case Parse.parse elmVersion inputText of
-        Result.Result _ (Result.Ok modu) ->
+validate elmVersion input@(inputFile, inputText) =
+    case parseModule elmVersion input of
+        Right modu ->
             if inputText /= Render.render elmVersion modu then
                 Left $ FileWouldChange inputFile
             else
                 Right ()
 
-        Result.Result _ (Result.Err errs) ->
-            Left $ ParseError inputFile (toString inputText) errs
+        Left err ->
+            Left err
 
 
 parseModule ::
@@ -214,28 +213,23 @@ toJson elmVersion (inputFile, inputText) =
     <$> parseModule elmVersion (inputFile, inputText)
 
 
-logError :: InfoFormatter f => Either InfoMessage () -> Free f Bool
-logError result =
-    case result of
-        Left message ->
-            onInfo message *> return False
-
-        Right () ->
-            return True
-
-
 doIt :: (InputConsole f, OutputConsole f, InfoFormatter f, FileStore f, FileWriter f) => ElmVersion -> WhatToDo -> Free f Bool
 doIt elmVersion whatToDo =
     case whatToDo of
-        ValidateStdin ->
-            (validate elmVersion <$> TransformFiles.readStdin) >>= logError
-
-        ValidateFiles first rest ->
-            and <$> mapM validateFile (first:rest)
-            where validateFile file = (validate elmVersion <$> TransformFiles.readFromFile (onInfo . ProcessingFile) file) >>= logError
+        Validate validateMode ->
+            TransformFiles.validateNoChanges
+                onInfo ProcessingFile
+                (validate elmVersion)
+                validateMode
 
         Format transformMode ->
-            TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (format elmVersion) transformMode
+            TransformFiles.applyTransformation
+                onInfo ProcessingFile (approve . FilesWillBeOverwritten)
+                (format elmVersion)
+                transformMode
 
         ConvertToJson transformMode ->
-            TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (toJson elmVersion) transformMode
+            TransformFiles.applyTransformation
+                onInfo ProcessingFile (approve . FilesWillBeOverwritten)
+                (toJson elmVersion)
+                transformMode

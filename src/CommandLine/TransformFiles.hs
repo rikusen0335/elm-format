@@ -1,4 +1,9 @@
-module CommandLine.TransformFiles (Result, TransformMode(..), applyTransformation, readFromFile, readStdin) where
+module CommandLine.TransformFiles
+    ( Result
+    , TransformMode(..), applyTransformation
+    , ValidateMode(..), validateNoChanges
+    , readFromFile, readStdin
+    ) where
 
 -- This module provides reusable functions for command line tools that
 -- transform files.
@@ -54,7 +59,14 @@ data TransformMode
     | FilesInPlace FilePath [FilePath]
 
 
-applyTransformation :: (InputConsole f, OutputConsole f, FileStore f, FileWriter f) => (info -> Free f ()) -> (FilePath -> info) -> ([FilePath] -> Free f Bool) -> ((FilePath, Text) -> Either info Text) -> TransformMode -> Free f Bool
+applyTransformation ::
+    (InputConsole f, OutputConsole f, FileStore f, FileWriter f) =>
+    (info -> Free f ())
+    -> (FilePath -> info)
+    -> ([FilePath] -> Free f Bool)
+    -> ((FilePath, Text) -> Either info Text)
+    -> TransformMode
+    -> Free f Bool
 applyTransformation onInfo processingFile approve transform mode =
     case mode of
         StdinToStdout ->
@@ -80,6 +92,31 @@ applyTransformation onInfo processingFile approve transform mode =
                 formatFile file = ((\i -> checkChange i <$> transform i) <$> readFromFile (onInfo . processingFile) file) >>= logErrorOr onInfo updateFile
 
 
+data ValidateMode
+    = ValidateStdin
+    | ValidateFiles FilePath [FilePath]
+
+
+validateNoChanges ::
+    (InputConsole f, OutputConsole f, FileStore f, FileWriter f) =>
+    (info -> Free f ())
+    -> (FilePath -> info)
+    -> ((FilePath, Text) -> Either info ())
+    -> ValidateMode
+    -> Free f Bool
+validateNoChanges onInfo processingFile validate mode =
+    case mode of
+        ValidateStdin ->
+            (validate <$> readStdin) >>= logError onInfo
+
+        ValidateFiles first rest ->
+            and <$> mapM validateFile (first:rest)
+            where
+                validateFile file =
+                    (validate <$> readFromFile (onInfo . processingFile) file)
+                        >>= logError onInfo
+
+
 logErrorOr :: Monad m => (error -> m ()) -> (a -> m ()) -> Either error a -> m Bool
 logErrorOr onInfo fn result =
     case result of
@@ -88,3 +125,7 @@ logErrorOr onInfo fn result =
 
         Right value ->
             fn value *> return True
+
+logError :: Monad m => (error -> m ()) -> Either error () -> m Bool
+logError onInfo =
+    logErrorOr onInfo return
