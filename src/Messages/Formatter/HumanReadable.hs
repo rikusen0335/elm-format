@@ -3,11 +3,13 @@ module Messages.Formatter.HumanReadable (format) where
 
 import Prelude hiding (getLine, putStr, putStrLn)
 
+import ElmFormat.World
 import Messages.Formatter.Format
 import Messages.Types
-import CommandLine.Helpers (showErrors)
-import Messages.Strings (showPromptMessage)
-import ElmFormat.World
+import Messages.Strings (showPromptMessage, showErrorMessage)
+import qualified Reporting.Annotation as RA
+import qualified Reporting.Report as Report
+import qualified Reporting.Error.Syntax as Syntax
 
 
 format :: World m => Bool -> InfoFormatterF a -> m a
@@ -46,3 +48,14 @@ renderInfo (FileWouldChange file) =
 
 renderInfo (ParseError inputFile inputText errs) =
     showErrors inputFile inputText errs
+
+
+showErrors :: World m => String -> String -> [RA.Located Syntax.Error] ->  m ()
+showErrors filename source errs = do
+    putStrLnStderr (showErrorMessage ErrorsHeading)
+    mapM_ (printError filename source) errs
+
+
+printError :: World m => String -> String -> RA.Located Syntax.Error -> m ()
+printError filename source (RA.A range err) =
+    Report.printError filename range (Syntax.toReport err) source

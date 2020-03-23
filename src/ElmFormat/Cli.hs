@@ -7,8 +7,9 @@ import Relude hiding (exitFailure, exitSuccess, putStr, putStrLn)
 import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
-import Messages.Types
 import Messages.Formatter.Format
+import Messages.Types
+import Messages.Strings (showErrorMessage)
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..))
@@ -22,7 +23,6 @@ import ElmFormat.World
 import Reporting.Annotation (Located)
 
 import qualified AST.Json
-import qualified CommandLine.Helpers as Helpers
 import qualified CommandLine.Program as Program
 import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified CommandLine.TransformFiles as TransformFiles
@@ -135,7 +135,7 @@ main =
 
 main' :: World m => String -> Maybe String -> [String] -> m ()
 main' elmFormatVersion experimental args =
-    Program.run (Flags.parser elmFormatVersion experimental) Helpers.r run' args
+    Program.run (Flags.parser elmFormatVersion experimental) showErrorMessage run' args
     where
         run' :: World m => Flags.Config -> ProgramIO m ErrorMessage ()
         run' flags =

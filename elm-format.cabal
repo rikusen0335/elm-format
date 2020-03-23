@@ -102,7 +102,6 @@ library
         Cheapskate.ParserCombinators
         Cheapskate.Types
         Cheapskate.Util
-        CommandLine.Helpers
         ElmFormat.CliFlags
         ElmFormat.Filesystem
         ElmFormat.Operation
