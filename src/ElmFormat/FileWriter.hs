@@ -32,13 +32,7 @@ execute :: World m => FileWriterF a -> m a
 execute operation =
     case operation of
         WriteFile path content next ->
-            do
-                exists <- World.doesFileExist path
-                case exists of
-                    True ->
-                        error "file exists and was not marked to be overwritten"
-                    False ->
-                        World.writeUtf8File path content *> return next
+            World.writeUtf8FileNoOverwrite path content *> return next
 
         OverwriteFile path content next ->
             World.writeUtf8File path content *> return next

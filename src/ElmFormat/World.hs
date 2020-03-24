@@ -16,6 +16,15 @@ import qualified System.IO
 class Monad m => World m where
     readUtf8File :: FilePath -> m Text
     writeUtf8File :: FilePath -> Text -> m ()
+    writeUtf8FileNoOverwrite :: FilePath -> Text -> m ()
+    writeUtf8FileNoOverwrite path content =
+        do
+            exists <- doesFileExist path
+            case exists of
+                True ->
+                    error "file exists and was not marked to be overwritten"
+                False ->
+                    writeUtf8File path content
 
     doesFileExist :: FilePath -> m Bool
     doesDirectoryExist :: FilePath -> m Bool
