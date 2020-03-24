@@ -74,9 +74,8 @@ applyTransformation onInfo processingFile approve transform mode =
         StdinToFile outputFile ->
             (transform <$> readStdin) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
 
-        -- TODO: this prints "Processing such-and-such-a-file.elm" which makes the stdout invalid
-        -- FileToStdout inputFile ->
-        --     (fmap fromResult <$> transform <$> ElmFormat.readFile inputFile) >>= logErrorOr OutputConsole.writeStdout
+        FileToStdout inputFile ->
+            (transform <$> FileStore.readFileWithPath inputFile) >>= logErrorOr onInfo OutputConsole.writeStdout
 
         FileToFile inputFile outputFile ->
             (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
