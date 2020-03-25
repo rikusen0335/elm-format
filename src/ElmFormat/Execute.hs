@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE LambdaCase #-}
 module ElmFormat.Execute (execute) where
 
 {-| This module provides executors that can take streams of Operations and
@@ -20,17 +20,19 @@ import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
 
 
-data Program m opF state = Program
-    { init :: (m (), state)
-    , step :: forall a. opF a -> StateT state m a
-    , done :: state -> m ()
-    }
-
-
 execute :: World m => InfoFormatter.ExecuteMode -> ElmVersion -> Bool -> Free OperationF a -> m a
 execute infoMode elmVersion autoYes operations =
+    let
+        init = InfoFormatter.init infoMode
+        step = \case
+            InFileStore op -> lift $ FileStore.execute op
+            InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
+            InInputConsole op -> lift $ InputConsole.execute op
+            InOutputConsole op -> lift $ OutputConsole.execute op
+            InFileWriter op -> lift $ FileWriter.execute op
+        done = InfoFormatter.done infoMode
+    in
     do
-        let Program init step done = program infoMode elmVersion autoYes
         let (initIO, initState) = init
         initIO
         (result, finalState) <-
@@ -39,18 +41,3 @@ execute infoMode elmVersion autoYes operations =
                 |> flip runStateT initState
         done finalState
         return result
-
-
-program :: World m => InfoFormatter.ExecuteMode -> ElmVersion -> Bool -> Program m OperationF Bool
-program infoMode elmVersion autoYes =
-    Program
-        { init = InfoFormatter.init infoMode
-        , step = \operation ->
-            case operation of
-                InFileStore op -> lift $ FileStore.execute op
-                InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
-                InInputConsole op -> lift $ InputConsole.execute op
-                InOutputConsole op -> lift $ OutputConsole.execute op
-                InFileWriter op -> lift $ FileWriter.execute op
-        , done = InfoFormatter.done infoMode
-        }
