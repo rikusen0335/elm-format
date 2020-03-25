@@ -2,7 +2,8 @@ module ElmFormat.InputConsole (InputConsole, InputConsoleF(..), readStdin, execu
 
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World
+import ElmFormat.World (World)
+import qualified ElmFormat.World as World
 
 
 class Functor f => InputConsole f where
@@ -26,4 +27,4 @@ execute :: World m => InputConsoleF a -> m a
 execute operation =
     case operation of
         ReadStdin next ->
-            next <$> getStdin
+            next <$> World.getStdin
