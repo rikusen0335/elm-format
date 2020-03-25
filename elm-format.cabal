@@ -106,7 +106,6 @@ library
         ElmFormat.Filesystem
         ElmFormat.Operation
         ElmFormat.Version
-        Messages.Formatter.HumanReadable
         Messages.Strings
         Paths_elm_format
         Parse.Binop

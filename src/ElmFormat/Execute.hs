@@ -17,7 +17,6 @@ import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.FileWriter as FileWriter
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
-import qualified Messages.Formatter.HumanReadable as HumanReadable
 import qualified Messages.Formatter.Format as InfoFormatter
 
 
@@ -43,18 +42,22 @@ run program operations =
 
 
 {-| Execute Operations in a fashion appropriate for interacting with humans. -}
-forHuman :: World m => Bool -> Program m OperationF ()
+forHuman :: World m => Bool -> Program m OperationF Bool
 forHuman autoYes =
+    let
+        infoMode = InfoFormatter.ForHuman
+        elmVersion = undefined
+    in
     Program
-        { init = (return (), ())
+        { init = InfoFormatter.init infoMode
         , step = \operation ->
               case operation of
                   InFileStore op -> lift $ FileStore.execute op
-                  InInfoFormatter op -> lift $ HumanReadable.format autoYes op
+                  InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
                   InInputConsole op -> lift $ InputConsole.execute op
                   InOutputConsole op -> lift $ OutputConsole.execute op
                   InFileWriter op -> lift $ FileWriter.execute op
-        , done = \() -> return ()
+        , done = InfoFormatter.done infoMode
         }
 
 
