@@ -3,14 +3,8 @@ module ElmFormat.FileStore (FileStore, FileStoreF(..), FileType(..), readFile, r
 import Prelude hiding (readFile, writeFile)
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World hiding (listDirectory)
+import ElmFormat.World (World, FileType)
 import qualified ElmFormat.World as World
-
-
-data FileType
-    = IsFile
-    | IsDirectory
-    | DoesNotExist
 
 
 class Functor f => FileStore f where
@@ -46,16 +40,10 @@ execute :: World m => FileStoreF a -> m a
 execute operation =
     case operation of
         ReadFile path next ->
-            next <$> readUtf8File path
+            next <$> World.readUtf8File path
 
         Stat path next ->
-            do
-                isFile <- doesFileExist path
-                isDirectory <- doesDirectoryExist path
-                case ( isFile, isDirectory ) of
-                    ( True, _ ) -> return $ next IsFile
-                    ( _, True ) -> return $ next IsDirectory
-                    ( False, False ) -> return $ next DoesNotExist
+            next <$> World.stat path
 
         ListDirectory path next ->
             next <$> World.listDirectory path

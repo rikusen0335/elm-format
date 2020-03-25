@@ -13,6 +13,12 @@ import qualified System.Exit
 import qualified System.IO
 
 
+data FileType
+    = IsFile
+    | IsDirectory
+    | DoesNotExist
+
+
 class Monad m => World m where
     readUtf8File :: FilePath -> m Text
     writeUtf8File :: FilePath -> Text -> m ()
@@ -29,6 +35,15 @@ class Monad m => World m where
     doesFileExist :: FilePath -> m Bool
     doesDirectoryExist :: FilePath -> m Bool
     listDirectory :: FilePath -> m [FilePath]
+    stat :: FilePath -> m FileType
+    stat path =
+        do
+            isFile <- doesFileExist path
+            isDirectory <- doesDirectoryExist path
+            return $ case ( isFile, isDirectory ) of
+                ( True, _ ) -> IsFile
+                ( _, True ) -> IsDirectory
+                ( False, False ) -> DoesNotExist
 
     getProgName :: m String
 
