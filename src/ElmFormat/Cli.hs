@@ -16,7 +16,7 @@ import Control.Monad.Free
 import ElmVersion
 import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
-import ElmFormat.InfoFormatter (InfoFormatter, onInfo, approve)
+import ElmFormat.InfoFormatter (InfoFormatter, ExecuteMode(..), onInfo, approve)
 import ElmFormat.InputConsole (InputConsole)
 import ElmFormat.OutputConsole (OutputConsole)
 import ElmFormat.World
@@ -140,7 +140,7 @@ main' elmFormatVersion experimental args =
         run' flags =
             do
                 let autoYes = Flags._yes flags
-                resolvedInputFiles <- Program.liftM $ Execute.run (Execute.forHuman autoYes) $ ResolveFiles.resolveElmFiles (Flags._input flags)
+                resolvedInputFiles <- Program.liftM $ Execute.execute ForHuman undefined autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
 
                 whatToDo <- case determineWhatToDoFromConfig flags resolvedInputFiles of
                     Left NoInputs -> Program.showUsage
@@ -154,8 +154,8 @@ main' elmFormatVersion experimental args =
                 elmVersion <- Program.liftEither $ determineVersion elmVersionChoice (Flags._upgrade flags)
 
                 let run = case Flags._validate flags of
-                        True -> Execute.run $ Execute.forMachine elmVersion True
-                        False -> Execute.run $ Execute.forHuman autoYes
+                        True -> Execute.execute ForMachine elmVersion True
+                        False -> Execute.execute ForHuman elmVersion autoYes
                 result <- Program.liftM $ run $ doIt elmVersion whatToDo
                 if result
                     then return ()

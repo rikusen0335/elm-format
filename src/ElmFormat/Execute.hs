@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types #-}
-module ElmFormat.Execute (forHuman, forMachine, run) where
+module ElmFormat.Execute (execute) where
 
 {-| This module provides executors that can take streams of Operations and
 perform IO.
@@ -27,10 +27,10 @@ data Program m opF state = Program
     }
 
 
-run :: World m => Program m opF state -> Free opF a -> m a
-run program operations =
+execute :: World m => InfoFormatter.ExecuteMode -> ElmVersion -> Bool -> Free OperationF a -> m a
+execute infoMode elmVersion autoYes operations =
     do
-        let Program init step done = program
+        let Program init step done = program infoMode elmVersion autoYes
         let (initIO, initState) = init
         initIO
         (result, finalState) <-
@@ -41,32 +41,8 @@ run program operations =
         return result
 
 
-{-| Execute Operations in a fashion appropriate for interacting with humans. -}
-forHuman :: World m => Bool -> Program m OperationF Bool
-forHuman autoYes =
-    let
-        infoMode = InfoFormatter.ForHuman
-        elmVersion = undefined
-    in
-    Program
-        { init = InfoFormatter.init infoMode
-        , step = \operation ->
-              case operation of
-                  InFileStore op -> lift $ FileStore.execute op
-                  InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
-                  InInputConsole op -> lift $ InputConsole.execute op
-                  InOutputConsole op -> lift $ OutputConsole.execute op
-                  InFileWriter op -> lift $ FileWriter.execute op
-        , done = InfoFormatter.done infoMode
-        }
-
-
-{-| Execute Operations in a fashion appropriate for use by automated scripts. -}
-forMachine :: World m => ElmVersion -> Bool -> Program m OperationF Bool
-forMachine elmVersion autoYes =
-    let
-        infoMode = InfoFormatter.ForMachine
-    in
+program :: World m => InfoFormatter.ExecuteMode -> ElmVersion -> Bool -> Program m OperationF Bool
+program infoMode elmVersion autoYes =
     Program
         { init = InfoFormatter.init infoMode
         , step = \operation ->

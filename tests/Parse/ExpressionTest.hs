@@ -7,7 +7,6 @@ import Test.Tasty.HUnit
 import Parse.Expression
 import AST.V0_16
 import AST.Structure
-import AST.Listing
 import qualified Box
 import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Map

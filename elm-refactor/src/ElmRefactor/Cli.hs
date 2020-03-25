@@ -6,7 +6,7 @@ import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))
 import Data.Coapplicative
 import Data.Text (Text)
-import ElmFormat.InfoFormatter (onInfo, approve)
+import ElmFormat.InfoFormatter (ExecuteMode(..), onInfo, approve)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
 import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
@@ -48,7 +48,7 @@ main' :: World m => Flags.Flags -> ProgramIO m String ()
 main' flags =
     let
         autoYes = True
-        run = Execute.run $ Execute.forHuman autoYes
+        run = Execute.execute ForHuman undefined autoYes
 
         readDefinitionFile definitionFile =
             Program.liftME
