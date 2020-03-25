@@ -107,7 +107,6 @@ library
         ElmFormat.Operation
         ElmFormat.Version
         Messages.Formatter.HumanReadable
-        Messages.Formatter.Json
         Messages.Strings
         Paths_elm_format
         Parse.Binop

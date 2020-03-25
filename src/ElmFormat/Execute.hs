@@ -18,7 +18,7 @@ import qualified ElmFormat.FileWriter as FileWriter
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
 import qualified Messages.Formatter.HumanReadable as HumanReadable
-import qualified Messages.Formatter.Json as Json
+import qualified Messages.Formatter.Format as InfoFormatter
 
 
 data Program m opF state = Program
@@ -61,14 +61,17 @@ forHuman autoYes =
 {-| Execute Operations in a fashion appropriate for use by automated scripts. -}
 forMachine :: World m => ElmVersion -> Bool -> Program m OperationF Bool
 forMachine elmVersion autoYes =
+    let
+        infoMode = InfoFormatter.ForMachine
+    in
     Program
-        { init = Json.init
+        { init = InfoFormatter.init infoMode
         , step = \operation ->
             case operation of
                 InFileStore op -> lift $ FileStore.execute op
-                InInfoFormatter op -> Json.format elmVersion autoYes op
+                InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
                 InInputConsole op -> lift $ InputConsole.execute op
                 InOutputConsole op -> lift $ OutputConsole.execute op
                 InFileWriter op -> lift $ FileWriter.execute op
-        , done = const Json.done
+        , done = InfoFormatter.done infoMode
         }
