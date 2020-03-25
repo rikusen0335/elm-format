@@ -15,9 +15,9 @@ import ElmVersion
 
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.FileWriter as FileWriter
+import qualified ElmFormat.InfoFormatter as InfoFormatter
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
-import qualified Messages.Formatter.Format as InfoFormatter
 
 
 data Program m opF state = Program

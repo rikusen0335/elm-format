@@ -4,9 +4,9 @@ import Prelude hiding (readFile, writeFile)
 import Control.Monad.Free
 import ElmFormat.FileStore
 import ElmFormat.FileWriter
+import ElmFormat.InfoFormatter
 import ElmFormat.InputConsole
 import ElmFormat.OutputConsole
-import Messages.Formatter.Format
 
 
 class (FileStore f, InfoFormatter f, OutputConsole f) => Operation f

@@ -72,6 +72,7 @@ library
         ElmFormat.FileStore
         ElmFormat.FileWriter
         ElmFormat.ImportInfo
+        ElmFormat.InfoFormatter
         ElmFormat.InputConsole
         ElmFormat.OutputConsole
         ElmFormat.Parse
@@ -79,7 +80,6 @@ library
         ElmFormat.Render.ElmStructure
         ElmFormat.Render.Markdown
         ElmFormat.Render.Text
-        Messages.Formatter.Format
         Messages.Types
         Parse.Expression
         Parse.Helpers

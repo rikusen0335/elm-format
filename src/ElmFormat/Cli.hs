@@ -7,7 +7,6 @@ import Relude hiding (exitFailure, exitSuccess, putStr, putStrLn)
 import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
-import Messages.Formatter.Format
 import Messages.Types
 import Messages.Strings (showErrorMessage)
 import CommandLine.Program (ProgramIO)
@@ -17,6 +16,7 @@ import Control.Monad.Free
 import ElmVersion
 import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
+import ElmFormat.InfoFormatter (InfoFormatter, onInfo, approve)
 import ElmFormat.InputConsole (InputConsole)
 import ElmFormat.OutputConsole (OutputConsole)
 import ElmFormat.World

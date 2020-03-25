@@ -6,12 +6,12 @@ import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))
 import Data.Coapplicative
 import Data.Text (Text)
+import ElmFormat.InfoFormatter (onInfo, approve)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
 import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
 import ElmVersion
 import Messages.Types
-import Messages.Formatter.Format
 
 import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles

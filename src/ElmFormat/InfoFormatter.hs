@@ -1,4 +1,4 @@
-module Messages.Formatter.Format
+module ElmFormat.InfoFormatter
     ( InfoFormatter, InfoFormatterF(..), onInfo, approve
     , ExecuteMode(..), init, done, step
     ) where
