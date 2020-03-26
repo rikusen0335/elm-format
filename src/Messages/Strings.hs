@@ -1,7 +1,9 @@
-module Messages.Strings where
+module Messages.Strings (showPromptMessage, showInfoMessage, showErrorMessage) where
 
 import CommandLine.ResolveFiles (ResolveFileError(..))
 import Messages.Types
+import qualified Reporting.Annotation as RA
+import Reporting.Region (Region(..), Position(..))
 
 
 showFiles :: [FilePath] -> String
@@ -19,6 +21,24 @@ showPromptMessage (FilesWillBeOverwritten filePaths) =
         , ""
         , "Are you sure you want to overwrite these files with formatted versions? (y/n)"
         ]
+
+
+showInfoMessage :: InfoMessage -> String
+
+showInfoMessage (ProcessingFile file) =
+    "Processing file " ++ file
+
+showInfoMessage (FileWouldChange file) =
+    "File would be changed " ++ file
+
+showInfoMessage (ParseError inputFile _ errs) =
+    let
+        location =
+            case errs of
+                [] -> inputFile
+                (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
+    in
+    "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."
 
 
 showErrorMessage :: ErrorMessage -> String

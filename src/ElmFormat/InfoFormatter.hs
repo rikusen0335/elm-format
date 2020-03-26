@@ -11,10 +11,8 @@ import ElmVersion (ElmVersion)
 import qualified ElmFormat.Version
 import ElmFormat.World (World)
 import qualified ElmFormat.World as World
-import Messages.Strings (showPromptMessage)
+import Messages.Strings (showPromptMessage, showInfoMessage)
 import Messages.Types
-import qualified Reporting.Annotation as RA
-import Reporting.Region (Region(..), Position(..))
 import qualified Text.JSON as Json
 
 
@@ -113,16 +111,3 @@ yesOrNo =
         "n" -> return False
         _   -> do World.putStr "Must type 'y' for yes or 'n' for no: "
                   yesOrNo
-
-
-showInfoMessage :: InfoMessage -> String
-showInfoMessage (ProcessingFile file) = "Processing file " ++ file
-showInfoMessage (FileWouldChange file) = "File would be changed " ++ file
-showInfoMessage (ParseError inputFile _ errs) =
-    let
-        location =
-            case errs of
-                [] -> inputFile
-                (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
-    in
-    "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."
