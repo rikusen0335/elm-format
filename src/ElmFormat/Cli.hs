@@ -12,13 +12,8 @@ import Messages.Strings (showErrorMessage)
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
-import Control.Monad.Free
 import ElmVersion
-import ElmFormat.FileStore (FileStore)
-import ElmFormat.FileWriter (FileWriter)
-import ElmFormat.InfoFormatter (InfoFormatter, ExecuteMode(..), onInfo, approve)
-import ElmFormat.InputConsole (InputConsole)
-import ElmFormat.OutputConsole (OutputConsole)
+import ElmFormat.InfoFormatter (ExecuteMode(..), onInfo, approve)
 import ElmFormat.World
 import Reporting.Annotation (Located)
 
@@ -153,10 +148,7 @@ main' elmFormatVersion experimental args =
 
                 elmVersion <- Program.liftEither $ determineVersion elmVersionChoice (Flags._upgrade flags)
 
-                let run = case Flags._validate flags of
-                        True -> Execute.execute ForMachine elmVersion True
-                        False -> Execute.execute ForHuman elmVersion autoYes
-                result <- Program.liftM $ run $ doIt elmVersion whatToDo
+                result <- Program.liftM $ doIt elmVersion autoYes whatToDo
                 if result
                     then return ()
                     else Program.failed
@@ -213,22 +205,25 @@ toJson elmVersion (inputFile, inputText) =
     <$> parseModule elmVersion (inputFile, inputText)
 
 
-doIt :: (InputConsole f, OutputConsole f, InfoFormatter f, FileStore f, FileWriter f) => ElmVersion -> WhatToDo -> Free f Bool
-doIt elmVersion whatToDo =
+doIt :: World m => ElmVersion -> Bool -> WhatToDo -> m Bool
+doIt elmVersion autoYes whatToDo =
     case whatToDo of
         Validate validateMode ->
+            Execute.execute ForMachine elmVersion True $
             TransformFiles.validateNoChanges
                 onInfo ProcessingFile
                 (validate elmVersion)
                 validateMode
 
         Format transformMode ->
+            Execute.execute ForHuman elmVersion autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
+            Execute.execute ForHuman elmVersion autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (toJson elmVersion)
