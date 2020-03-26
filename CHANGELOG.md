@@ -1,3 +1,9 @@
+## master
+
+Feature changes:
+  - Detailed error messages for syntax errors have been removed.  Use elm make to see a detailed error if elm-format fails.
+
+
 ## 0.8.3
 
 Bug fixes:

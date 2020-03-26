@@ -11,11 +11,10 @@ import ElmVersion (ElmVersion)
 import qualified ElmFormat.Version
 import ElmFormat.World (World)
 import qualified ElmFormat.World as World
-import Messages.Strings (showPromptMessage, showErrorMessage)
+import Messages.Strings (showPromptMessage)
 import Messages.Types
 import qualified Reporting.Annotation as RA
-import qualified Reporting.Report as Report
-import qualified Reporting.Error.Syntax as Syntax
+import Reporting.Region (Region(..), Position(..))
 import qualified Text.JSON as Json
 
 
@@ -112,15 +111,11 @@ yesOrNo =
 renderInfo :: World m => InfoMessage -> m ()
 renderInfo (ProcessingFile file) = World.putStrLn $ "Processing file " ++ file
 renderInfo (FileWouldChange file) = World.putStrLn $ "File would be changed " ++ file
-renderInfo (ParseError inputFile inputText errs) = showErrors inputFile inputText errs
-
-
-showErrors :: World m => String -> String -> [RA.Located Syntax.Error] ->  m ()
-showErrors filename source errs = do
-    World.putStrLnStderr (showErrorMessage ErrorsHeading)
-    mapM_ (printError filename source) errs
-
-
-printError :: World m => String -> String -> RA.Located Syntax.Error -> m ()
-printError filename source (RA.A range err) =
-    Report.printError filename range (Syntax.toReport err) source
+renderInfo (ParseError inputFile _ errs) =
+    let
+        location =
+            case errs of
+                [] -> inputFile
+                (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
+    in
+    World.putStrLnStderr $ "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."

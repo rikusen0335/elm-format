@@ -23,8 +23,6 @@ showPromptMessage (FilesWillBeOverwritten filePaths) =
 
 showErrorMessage :: ErrorMessage -> String
 
-showErrorMessage ErrorsHeading = "ERRORS"
-
 showErrorMessage (BadInputFiles filePaths) =
   unlines
     [ "There was a problem reading one or more of the specified INPUT paths:"

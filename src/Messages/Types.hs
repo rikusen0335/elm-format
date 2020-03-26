@@ -19,9 +19,7 @@ data PromptMessage
 
 
 data ErrorMessage
-  = ErrorsHeading
-
-  | BadInputFiles [ResolveFileError]
+  = BadInputFiles [ResolveFileError]
   | NoInputs
   | SingleOutputWithMultipleInputs
   | TooManyInputs
