@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module ElmFormat.InfoFormatter
     ( InfoFormatter, InfoFormatterF(..), onInfo, approve
     , ExecuteMode(..), init, done, step
@@ -58,15 +59,7 @@ step (ForMachine elmVersion) autoYes infoFormatter =
         OnInfo info next ->
             let
                 log =
-                    case info of
-                        ProcessingFile _ -> return ()
-                        FileWouldChange file ->
-                            json file
-                                ( "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
-                                    ++ " --elm-version=" ++ show elmVersion
-                                )
-                        ParseError inputFile _ _ ->
-                            json inputFile "Error parsing the file"
+                    maybe (return ()) json $ jsonMessage elmVersion info
             in
             log *> return next
 
@@ -99,15 +92,31 @@ step (ForHuman usingStdout) autoYes infoFormatter =
                         *> fmap next yesOrNo
 
 
-json :: World m => FilePath -> String -> StateT Bool m ()
-json file message =
+jsonMessage :: ElmVersion -> InfoMessage -> Maybe Json.JSValue
+jsonMessage elmVersion =
+    let
+        fileMessage filename message =
+            Json.makeObj
+                [ ( "path", Json.JSString $ Json.toJSString filename )
+                , ( "message", Json.JSString $ Json.toJSString message )
+                ]
+    in
+    \case
+    ProcessingFile _ -> Nothing
+    FileWouldChange file ->
+        Just $ fileMessage file $
+            "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
+            ++ " --elm-version=" ++ show elmVersion
+    ParseError inputFile _ _ ->
+        Just $ fileMessage inputFile "Error parsing the file"
+
+
+json :: World m => Json.JSValue -> StateT Bool m ()
+json jsvalue =
     do
         printComma <- get
         when printComma (lift $ World.putStr ",")
-        lift $ World.putStrLn $ Json.encode $ Json.makeObj
-            [ ( "path", Json.JSString $ Json.toJSString file )
-            , ( "message", Json.JSString $ Json.toJSString message )
-            ]
+        lift $ World.putStrLn $ Json.encode jsvalue
         put True
 
 
