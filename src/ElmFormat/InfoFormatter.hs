@@ -57,11 +57,14 @@ step (ForMachine elmVersion) autoYes infoFormatter =
     case infoFormatter of
         OnInfo (ProcessingFile _) next -> return next
         OnInfo (FileWouldChange file) next ->
-            json next file $
-                "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
-                ++ " --elm-version=" ++ show elmVersion
+            json file
+                ( "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
+                    ++ " --elm-version=" ++ show elmVersion
+                )
+                *> return next
         OnInfo (ParseError inputFile _ _) next ->
-            json next inputFile "Error parsing the file"
+            json inputFile "Error parsing the file"
+                *> return next
 
         Approve _prompt next ->
             case autoYes of
@@ -89,8 +92,8 @@ step (ForHuman usingStdout) autoYes infoFormatter =
                         *> fmap next yesOrNo
 
 
-json :: World m => a -> FilePath -> String -> StateT Bool m a
-json next file message =
+json :: World m => FilePath -> String -> StateT Bool m ()
+json file message =
     do
         printComma <- get
         when printComma (lift $ World.putStr ",")
@@ -99,7 +102,6 @@ json next file message =
             , ( "message", Json.JSString $ Json.toJSString message )
             ]
         put True
-        return next
 
 
 yesOrNo :: World m => m Bool
