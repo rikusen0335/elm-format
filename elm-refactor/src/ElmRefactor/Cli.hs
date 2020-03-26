@@ -63,7 +63,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ run $ TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (upgrade definitions) mode
+        result <- Program.liftM $ TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (upgrade definitions) autoYes mode
         if result
             then return ()
             else Program.failed

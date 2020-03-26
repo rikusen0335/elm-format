@@ -9,10 +9,14 @@ module CommandLine.TransformFiles
 
 import Control.Monad.Free
 import Data.Text (Text)
+import qualified ElmFormat.Execute as Execute
 import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
+import ElmFormat.InfoFormatter (ExecuteMode(..))
 import ElmFormat.InputConsole (InputConsole)
+import ElmFormat.Operation (OperationF)
 import ElmFormat.OutputConsole (OutputConsole)
+import ElmFormat.World (World)
 
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.FileStore as FileStore
@@ -59,14 +63,16 @@ data TransformMode
 
 
 applyTransformation ::
-    (InputConsole f, OutputConsole f, FileStore f, FileWriter f) =>
-    (info -> Free f ())
+    World m =>
+    (info -> Free OperationF ())
     -> (FilePath -> info)
-    -> ([FilePath] -> Free f Bool)
+    -> ([FilePath] -> Free OperationF Bool)
     -> ((FilePath, Text) -> Either info Text)
+    -> Bool
     -> TransformMode
-    -> Free f Bool
-applyTransformation onInfo processingFile approve transform mode =
+    -> m Bool
+applyTransformation onInfo processingFile approve transform autoYes mode =
+    Execute.execute ForHuman autoYes $
     case mode of
         StdinToStdout ->
             (transform <$> readStdin) >>= logErrorOr onInfo OutputConsole.writeStdout

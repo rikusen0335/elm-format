@@ -216,15 +216,13 @@ doIt elmVersion autoYes whatToDo =
                 validateMode
 
         Format transformMode ->
-            Execute.execute ForHuman autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (format elmVersion)
-                transformMode
+                autoYes transformMode
 
         ConvertToJson transformMode ->
-            Execute.execute ForHuman autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (toJson elmVersion)
-                transformMode
+                autoYes transformMode
