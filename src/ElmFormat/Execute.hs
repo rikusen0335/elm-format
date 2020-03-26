@@ -11,7 +11,6 @@ import Control.Monad.State
 import Control.Monad.Free
 import ElmFormat.Operation
 import ElmFormat.World
-import ElmVersion
 
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.FileWriter as FileWriter
@@ -20,13 +19,13 @@ import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
 
 
-execute :: World m => InfoFormatter.ExecuteMode -> ElmVersion -> Bool -> Free OperationF a -> m a
-execute infoMode elmVersion autoYes operations =
+execute :: World m => InfoFormatter.ExecuteMode -> Bool -> Free OperationF a -> m a
+execute infoMode autoYes operations =
     let
         init = InfoFormatter.init infoMode
         step = \case
             InFileStore op -> lift $ FileStore.execute op
-            InInfoFormatter op -> InfoFormatter.step infoMode elmVersion autoYes op
+            InInfoFormatter op -> InfoFormatter.step infoMode autoYes op
             InInputConsole op -> lift $ InputConsole.execute op
             InOutputConsole op -> lift $ OutputConsole.execute op
             InFileWriter op -> lift $ FileWriter.execute op

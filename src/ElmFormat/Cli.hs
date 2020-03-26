@@ -135,7 +135,7 @@ main' elmFormatVersion experimental args =
         run' flags =
             do
                 let autoYes = Flags._yes flags
-                resolvedInputFiles <- Program.liftM $ Execute.execute ForHuman undefined autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
+                resolvedInputFiles <- Program.liftM $ Execute.execute ForHuman autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
 
                 whatToDo <- case determineWhatToDoFromConfig flags resolvedInputFiles of
                     Left NoInputs -> Program.showUsage
@@ -209,21 +209,21 @@ doIt :: World m => ElmVersion -> Bool -> WhatToDo -> m Bool
 doIt elmVersion autoYes whatToDo =
     case whatToDo of
         Validate validateMode ->
-            Execute.execute ForMachine elmVersion True $
+            Execute.execute (ForMachine elmVersion) True $
             TransformFiles.validateNoChanges
                 onInfo ProcessingFile
                 (validate elmVersion)
                 validateMode
 
         Format transformMode ->
-            Execute.execute ForHuman elmVersion autoYes $
+            Execute.execute ForHuman autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
-            Execute.execute ForHuman elmVersion autoYes $
+            Execute.execute ForHuman autoYes $
             TransformFiles.applyTransformation
                 onInfo ProcessingFile (approve . FilesWillBeOverwritten)
                 (toJson elmVersion)

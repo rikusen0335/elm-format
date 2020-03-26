@@ -40,22 +40,22 @@ instance InfoFormatter f => InfoFormatter (Free f) where
 
 
 data ExecuteMode
-    = ForMachine
+    = ForMachine ElmVersion
     | ForHuman
 
 
 init :: World m => ExecuteMode -> (m (), Bool)
-init ForMachine = (World.putStr "[", False)
+init (ForMachine _) = (World.putStr "[", False)
 init ForHuman = (return (), undefined)
 
 
 done :: World m => ExecuteMode -> Bool -> m ()
-done ForMachine _ = World.putStrLn "]"
+done (ForMachine _) _ = World.putStrLn "]"
 done ForHuman _ = return ()
 
 
-step :: World m => ExecuteMode -> ElmVersion -> Bool -> InfoFormatterF a -> StateT Bool m a
-step ForMachine elmVersion autoYes infoFormatter =
+step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
+step (ForMachine elmVersion) autoYes infoFormatter =
     case infoFormatter of
         OnInfo (ProcessingFile _) next -> return next
         OnInfo (FileWouldChange file) next ->
@@ -69,7 +69,7 @@ step ForMachine elmVersion autoYes infoFormatter =
             case autoYes of
                 True -> return (next True)
                 False -> return (next False)
-step ForHuman _ autoYes infoFormatter =
+step ForHuman autoYes infoFormatter =
     lift $
     case infoFormatter of
         OnInfo info next ->

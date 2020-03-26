@@ -48,7 +48,7 @@ main' :: World m => Flags.Flags -> ProgramIO m String ()
 main' flags =
     let
         autoYes = True
-        run = Execute.execute ForHuman undefined autoYes
+        run = Execute.execute ForHuman autoYes
 
         readDefinitionFile definitionFile =
             Program.liftME
