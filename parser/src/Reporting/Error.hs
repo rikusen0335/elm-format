@@ -9,7 +9,6 @@ import Prelude hiding (print)
 import qualified Reporting.Annotation as A
 import qualified Reporting.Error.Docs as Docs
 import qualified Reporting.Error.Syntax as Syntax
-import qualified Reporting.Report as Report
 
 
 -- ALL POSSIBLE ERRORS
@@ -18,18 +17,6 @@ data Error
     = Syntax Syntax.Error
     | Docs Docs.Error
     deriving (Eq, Show)
-
-
--- TO REPORT
-
-toReport :: Error -> Report.Report
-toReport err =
-  case err of
-    Syntax syntaxError ->
-        Syntax.toReport syntaxError
-
-    Docs docsError ->
-        Docs.toReport docsError
 
 
 -- TO STRING

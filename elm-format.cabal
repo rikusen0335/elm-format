@@ -116,7 +116,6 @@ library
         Parse.Parse
         Parse.State
         Parse.Whitespace
-        Reporting.Report
         ReversedList
 
     build-depends:
