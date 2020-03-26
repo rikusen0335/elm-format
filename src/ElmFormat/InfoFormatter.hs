@@ -4,7 +4,7 @@ module ElmFormat.InfoFormatter
     , ExecuteMode(..), init, done, step
     ) where
 
-import Prelude hiding (init)
+import Prelude hiding (init, putStrLn)
 
 import Control.Monad.Free
 import Control.Monad.State
@@ -54,42 +54,45 @@ done (ForHuman _) _ = return ()
 
 
 step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
-step (ForMachine elmVersion) autoYes infoFormatter =
+step mode@(ForMachine _) autoYes infoFormatter =
     case infoFormatter of
         OnInfo info next ->
-            let
-                log =
-                    maybe (return ()) json $ jsonMessage elmVersion info
-            in
-            log *> return next
+            logInfo mode info *> return next
 
         Approve _prompt next ->
             case autoYes of
                 True -> return (next True)
                 False -> return (next False)
-step (ForHuman usingStdout) autoYes infoFormatter =
-    let
-        putStrLn =
-            -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
-            case usingStdout of
-                True -> World.putStrLnStderr
-                False -> World.putStrLn
-    in
+step mode@(ForHuman usingStdout) autoYes infoFormatter =
     case infoFormatter of
         OnInfo info next ->
-            let
-                log =
-                    lift $ putStrLn (showInfoMessage info)
-            in
-            log *> return next
+            logInfo mode info *> return next
 
         Approve prompt next ->
             lift $
             case autoYes of
                 True -> return (next True)
                 False ->
-                    putStrLn (showPromptMessage prompt)
+                    putStrLn usingStdout (showPromptMessage prompt)
                         *> fmap next yesOrNo
+
+
+putStrLn :: World m => Bool -> String -> m ()
+putStrLn usingStdout =
+    -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
+    case usingStdout of
+        True -> World.putStrLnStderr
+        False -> World.putStrLn
+
+
+logInfo :: World m => ExecuteMode -> InfoMessage -> StateT Bool m ()
+logInfo mode info =
+    case mode of
+        ForMachine elmVersion ->
+            maybe (return ()) json $ jsonMessage elmVersion info
+
+        ForHuman usingStdout ->
+            lift $ putStrLn usingStdout (showInfoMessage info)
 
 
 jsonMessage :: ElmVersion -> InfoMessage -> Maybe Json.JSValue
