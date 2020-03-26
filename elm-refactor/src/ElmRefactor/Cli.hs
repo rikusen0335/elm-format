@@ -48,12 +48,11 @@ main' :: World m => Flags.Flags -> ProgramIO m String ()
 main' flags =
     let
         autoYes = True
-        run = Execute.execute ForHuman autoYes
 
         readDefinitionFile definitionFile =
             Program.liftME
                 $ fmap (first (\() -> "Failed to parse upgrade definition"))
-                $ parseUpgradeDefinition . snd <$> run (FileStore.readFileWithPath definitionFile)
+                $ parseUpgradeDefinition . snd <$> Execute.execute (ForHuman undefined) autoYes (FileStore.readFileWithPath definitionFile)
     in
     do
         mode <- case Flags._input flags of

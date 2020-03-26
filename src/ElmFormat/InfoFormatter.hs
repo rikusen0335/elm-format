@@ -41,17 +41,17 @@ instance InfoFormatter f => InfoFormatter (Free f) where
 
 data ExecuteMode
     = ForMachine ElmVersion
-    | ForHuman
+    | ForHuman { _usingStdout :: Bool }
 
 
 init :: World m => ExecuteMode -> (m (), Bool)
 init (ForMachine _) = (World.putStr "[", False)
-init ForHuman = (return (), undefined)
+init (ForHuman _) = (return (), undefined)
 
 
 done :: World m => ExecuteMode -> Bool -> m ()
 done (ForMachine _) _ = World.putStrLn "]"
-done ForHuman _ = return ()
+done (ForHuman _) _ = return ()
 
 
 step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
@@ -69,18 +69,25 @@ step (ForMachine elmVersion) autoYes infoFormatter =
             case autoYes of
                 True -> return (next True)
                 False -> return (next False)
-step ForHuman autoYes infoFormatter =
+step (ForHuman usingStdout) autoYes infoFormatter =
+    let
+        putStrLn =
+            -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
+            case usingStdout of
+                True -> World.putStrLnStderr
+                False -> World.putStrLn
+    in
     lift $
     case infoFormatter of
         OnInfo info next ->
-            renderInfo info
+            putStrLn (showInfoMessage info)
                 *> return next
 
         Approve prompt next ->
             case autoYes of
                 True -> return (next True)
                 False ->
-                    World.putStrLn (showPromptMessage prompt)
+                    putStrLn (showPromptMessage prompt)
                         *> fmap next yesOrNo
 
 
@@ -108,14 +115,14 @@ yesOrNo =
                   yesOrNo
 
 
-renderInfo :: World m => InfoMessage -> m ()
-renderInfo (ProcessingFile file) = World.putStrLn $ "Processing file " ++ file
-renderInfo (FileWouldChange file) = World.putStrLn $ "File would be changed " ++ file
-renderInfo (ParseError inputFile _ errs) =
+showInfoMessage :: InfoMessage -> String
+showInfoMessage (ProcessingFile file) = "Processing file " ++ file
+showInfoMessage (FileWouldChange file) = "File would be changed " ++ file
+showInfoMessage (ParseError inputFile _ errs) =
     let
         location =
             case errs of
                 [] -> inputFile
                 (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
     in
-    World.putStrLnStderr $ "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."
+    "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."

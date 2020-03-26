@@ -135,7 +135,7 @@ main' elmFormatVersion experimental args =
         run' flags =
             do
                 let autoYes = Flags._yes flags
-                resolvedInputFiles <- Program.liftM $ Execute.execute ForHuman autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
+                resolvedInputFiles <- Program.liftM $ Execute.execute (ForHuman undefined) autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
 
                 whatToDo <- case determineWhatToDoFromConfig flags resolvedInputFiles of
                     Left NoInputs -> Program.showUsage

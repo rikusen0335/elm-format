@@ -72,7 +72,16 @@ applyTransformation ::
     -> TransformMode
     -> m Bool
 applyTransformation onInfo processingFile approve transform autoYes mode =
-    Execute.execute ForHuman autoYes $
+    let
+        usesStdout =
+            case mode of
+                StdinToStdout -> True
+                StdinToFile _ -> True
+                FileToStdout _ -> True
+                FileToFile _ _ -> False
+                FilesInPlace _ _ -> False
+    in
+    Execute.execute (ForHuman usesStdout) autoYes $
     case mode of
         StdinToStdout ->
             (transform <$> readStdin) >>= logErrorOr onInfo OutputConsole.writeStdout
