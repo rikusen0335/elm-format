@@ -54,27 +54,25 @@ done (ForHuman _) _ = return ()
 
 
 step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
-step mode@(ForMachine _) autoYes infoFormatter =
-    case infoFormatter of
-        OnInfo info next ->
-            logInfo mode info *> return next
-
-        Approve _prompt next ->
-            case autoYes of
-                True -> return (next True)
-                False -> return (next False)
-step mode@(ForHuman usingStdout) autoYes infoFormatter =
+step mode autoYes infoFormatter =
     case infoFormatter of
         OnInfo info next ->
             logInfo mode info *> return next
 
         Approve prompt next ->
-            lift $
-            case autoYes of
-                True -> return (next True)
-                False ->
-                    putStrLn usingStdout (showPromptMessage prompt)
-                        *> fmap next yesOrNo
+            case mode of
+                ForMachine _ ->
+                    case autoYes of
+                        True -> return (next True)
+                        False -> return (next False)
+
+                ForHuman usingStdout ->
+                    lift $
+                    case autoYes of
+                        True -> return (next True)
+                        False ->
+                            putStrLn usingStdout (showPromptMessage prompt)
+                                *> fmap next yesOrNo
 
 
 putStrLn :: World m => Bool -> String -> m ()
