@@ -60,17 +60,15 @@ step mode autoYes infoFormatter =
             logInfo mode info *> return next
 
         Approve prompt next ->
-            case mode of
-                ForMachine _ ->
-                    case autoYes of
-                        True -> return (next True)
-                        False -> return (next False)
+            case autoYes of
+                True -> return (next True)
 
-                ForHuman usingStdout ->
-                    lift $
-                    case autoYes of
-                        True -> return (next True)
-                        False ->
+                False ->
+                    case mode of
+                        ForMachine _ -> return (next False)
+
+                        ForHuman usingStdout ->
+                            lift $
                             putStrLn usingStdout (showPromptMessage prompt)
                                 *> fmap next yesOrNo
 
