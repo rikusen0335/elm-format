@@ -4,7 +4,6 @@ import Prelude ()
 import Relude
 
 import Data.Text (Text)
-import System.Console.ANSI (SGR, hSetSGR)
 import System.IO (hFlush, hPutStr, hPutStrLn)
 import qualified Data.ByteString.Lazy as Lazy
 import qualified System.Directory as Dir
@@ -55,7 +54,6 @@ class Monad m => World m where
     flushStdout :: m ()
     putStrStderr :: String -> m ()
     putStrLnStderr :: String -> m()
-    putSgrStderr :: [SGR] -> m ()
 
     exitFailure :: m ()
     exitSuccess :: m ()
@@ -79,7 +77,6 @@ instance World IO where
     flushStdout = hFlush stdout
     putStrStderr = hPutStr stderr
     putStrLnStderr = hPutStrLn stderr
-    putSgrStderr = hSetSGR stderr
 
     exitFailure = System.Exit.exitFailure
     exitSuccess = System.Exit.exitSuccess

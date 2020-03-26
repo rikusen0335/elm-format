@@ -97,10 +97,6 @@ instance World (State.State TestWorldState) where
             state <- State.get
             State.put $ state { stderr = (string ++ "\n") : stderr state }
 
-    putSgrStderr _ =
-        -- NOTE: tests currently ignore SGRs (used for displaying colors in error messages)
-        return ()
-
     getProgName =
         return "elm-format"
 

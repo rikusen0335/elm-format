@@ -119,7 +119,6 @@ library
         ReversedList
 
     build-depends:
-        ansi-terminal >= 0.8.2 && < 0.9,
         ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base >= 4.12.0.0 && < 5,
         bimap >= 0.3.3 && < 0.4,
