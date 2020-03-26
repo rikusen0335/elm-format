@@ -55,16 +55,20 @@ done (ForHuman _) _ = return ()
 step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
 step (ForMachine elmVersion) autoYes infoFormatter =
     case infoFormatter of
-        OnInfo (ProcessingFile _) next -> return next
-        OnInfo (FileWouldChange file) next ->
-            json file
-                ( "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
-                    ++ " --elm-version=" ++ show elmVersion
-                )
-                *> return next
-        OnInfo (ParseError inputFile _ _) next ->
-            json inputFile "Error parsing the file"
-                *> return next
+        OnInfo info next ->
+            let
+                log =
+                    case info of
+                        ProcessingFile _ -> return ()
+                        FileWouldChange file ->
+                            json file
+                                ( "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
+                                    ++ " --elm-version=" ++ show elmVersion
+                                )
+                        ParseError inputFile _ _ ->
+                            json inputFile "Error parsing the file"
+            in
+            log *> return next
 
         Approve _prompt next ->
             case autoYes of
@@ -78,13 +82,16 @@ step (ForHuman usingStdout) autoYes infoFormatter =
                 True -> World.putStrLnStderr
                 False -> World.putStrLn
     in
-    lift $
     case infoFormatter of
         OnInfo info next ->
-            putStrLn (showInfoMessage info)
-                *> return next
+            let
+                log =
+                    lift $ putStrLn (showInfoMessage info)
+            in
+            log *> return next
 
         Approve prompt next ->
+            lift $
             case autoYes of
                 True -> return (next True)
                 False ->
