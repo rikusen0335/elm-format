@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module ElmFormat.InfoFormatter
-    ( InfoFormatter, InfoFormatterF(..), onInfo, approve
+    ( onInfo, approve
+    , InfoFormatter, InfoFormatterF(..), onInfo_, approve_
     , ExecuteMode(..), init, done, step
     ) where
 
@@ -17,9 +18,17 @@ import Messages.Types
 import qualified Text.JSON as Json
 
 
+onInfo :: InfoFormatter f => InfoMessage -> f ()
+onInfo = onInfo_
+
+
+approve :: InfoFormatter f => PromptMessage -> f Bool
+approve = approve_
+
+
 class Functor f => InfoFormatter f where
-    onInfo :: InfoMessage -> f ()
-    approve :: PromptMessage -> f Bool
+    onInfo_ :: InfoMessage -> f ()
+    approve_ :: PromptMessage -> f Bool
 
 
 data InfoFormatterF a
@@ -29,13 +38,13 @@ data InfoFormatterF a
 
 
 instance InfoFormatter InfoFormatterF where
-    onInfo info = OnInfo info ()
-    approve prompt = Approve prompt id
+    onInfo_ info = OnInfo info ()
+    approve_ prompt = Approve prompt id
 
 
 instance InfoFormatter f => InfoFormatter (Free f) where
-    onInfo info = liftF (onInfo info)
-    approve prompt = liftF (approve prompt)
+    onInfo_ info = liftF (onInfo_ info)
+    approve_ prompt = liftF (approve_ prompt)
 
 
 data ExecuteMode

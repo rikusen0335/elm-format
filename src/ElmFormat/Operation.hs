@@ -31,8 +31,8 @@ instance FileStore OperationF where
 
 
 instance InfoFormatter OperationF where
-    onInfo msg = InInfoFormatter $ onInfo msg
-    approve prompt = InInfoFormatter $ approve prompt
+    onInfo_ msg = InInfoFormatter $ onInfo_ msg
+    approve_ prompt = InInfoFormatter $ approve_ prompt
 
 
 instance InputConsole OperationF where
