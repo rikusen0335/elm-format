@@ -134,8 +134,7 @@ main' elmFormatVersion experimental args =
         run' :: World m => Flags.Config -> ProgramIO m ErrorMessage ()
         run' flags =
             do
-                let autoYes = Flags._yes flags
-                resolvedInputFiles <- Program.liftM $ Execute.execute (ForHuman undefined) autoYes $ ResolveFiles.resolveElmFiles (Flags._input flags)
+                resolvedInputFiles <- Program.liftM $ Execute.execute (ForHuman undefined) $ ResolveFiles.resolveElmFiles (Flags._input flags)
 
                 whatToDo <- case determineWhatToDoFromConfig flags resolvedInputFiles of
                     Left NoInputs -> Program.showUsage
@@ -148,6 +147,7 @@ main' elmFormatVersion experimental args =
 
                 elmVersion <- Program.liftEither $ determineVersion elmVersionChoice (Flags._upgrade flags)
 
+                let autoYes = Flags._yes flags
                 result <- Program.liftM $ doIt elmVersion autoYes whatToDo
                 if result
                     then return ()
@@ -209,7 +209,7 @@ doIt :: World m => ElmVersion -> Bool -> WhatToDo -> m Bool
 doIt elmVersion autoYes whatToDo =
     case whatToDo of
         Validate validateMode ->
-            Execute.execute (ForMachine elmVersion) True $
+            Execute.execute (ForMachine elmVersion) $
             TransformFiles.validateNoChanges
                 onInfo ProcessingFile
                 (validate elmVersion)
@@ -217,12 +217,12 @@ doIt elmVersion autoYes whatToDo =
 
         Format transformMode ->
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve . FilesWillBeOverwritten)
+                onInfo ProcessingFile (approve (ForHuman True) autoYes . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
                 (format elmVersion)
-                autoYes transformMode
+                transformMode
 
         ConvertToJson transformMode ->
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve . FilesWillBeOverwritten)
+                onInfo ProcessingFile (approve (ForHuman True) autoYes . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
                 (toJson elmVersion)
-                autoYes transformMode
+                transformMode

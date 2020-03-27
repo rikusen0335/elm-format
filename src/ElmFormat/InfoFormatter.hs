@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module ElmFormat.InfoFormatter
     ( onInfo, approve
-    , InfoFormatter, InfoFormatterF(..), onInfo_, approve_
+    , InfoFormatter(..), InfoFormatterF(..)
     , ExecuteMode(..), init, done, step
     ) where
 
@@ -9,6 +9,8 @@ import Prelude hiding (init, putStrLn)
 
 import Control.Monad.Free
 import Control.Monad.State
+import Data.Text (Text)
+import qualified Data.Text as Text
 import ElmVersion (ElmVersion)
 import qualified ElmFormat.Version
 import ElmFormat.World (World)
@@ -22,29 +24,42 @@ onInfo :: InfoFormatter f => InfoMessage -> f ()
 onInfo = onInfo_
 
 
-approve :: InfoFormatter f => PromptMessage -> f Bool
-approve = approve_
+approve :: InfoFormatter f => ExecuteMode -> Bool -> PromptMessage -> f Bool
+approve mode autoYes prompt =
+    case autoYes of
+        True -> empty True
+
+        False ->
+            case mode of
+                ForMachine _ -> empty False
+
+                ForHuman usingStdout ->
+                    yesOrNo usingStdout (Text.pack $ showPromptMessage prompt)
 
 
 class Functor f => InfoFormatter f where
     onInfo_ :: InfoMessage -> f ()
-    approve_ :: PromptMessage -> f Bool
+    yesOrNo :: Bool -> Text -> f Bool
+    empty :: Bool -> f Bool
 
 
 data InfoFormatterF a
     = OnInfo InfoMessage a
-    | Approve PromptMessage (Bool -> a)
+    | YesOrNo Bool Text (Bool -> a)
+    | Empty a
     deriving (Functor)
 
 
 instance InfoFormatter InfoFormatterF where
     onInfo_ info = OnInfo info ()
-    approve_ prompt = Approve prompt id
+    yesOrNo usingStdout prompt = YesOrNo usingStdout prompt id
+    empty bool = Empty bool
 
 
 instance InfoFormatter f => InfoFormatter (Free f) where
     onInfo_ info = liftF (onInfo_ info)
-    approve_ prompt = liftF (approve_ prompt)
+    yesOrNo usingStdout prompt = liftF (yesOrNo usingStdout prompt)
+    empty bool = liftF (empty bool)
 
 
 data ExecuteMode
@@ -62,24 +77,17 @@ done (ForMachine _) _ = World.putStrLn "]"
 done (ForHuman _) _ = return ()
 
 
-step :: World m => ExecuteMode -> Bool -> InfoFormatterF a -> StateT Bool m a
-step mode autoYes infoFormatter =
+step :: World m => ExecuteMode -> InfoFormatterF a -> StateT Bool m a
+step mode infoFormatter =
     case infoFormatter of
         OnInfo info next ->
             logInfo mode info *> return next
 
-        Approve prompt next ->
-            case autoYes of
-                True -> return (next True)
+        YesOrNo usingStdout prompt next ->
+            lift $ putStrLn usingStdout (Text.unpack prompt) *> fmap next World.getYesOrNo
 
-                False ->
-                    case mode of
-                        ForMachine _ -> return (next False)
-
-                        ForHuman usingStdout ->
-                            lift $
-                            putStrLn usingStdout (showPromptMessage prompt)
-                                *> fmap next World.getYesOrNo
+        Empty a ->
+            return a
 
 
 putStrLn :: World m => Bool -> String -> m ()

@@ -32,7 +32,8 @@ instance FileStore OperationF where
 
 instance InfoFormatter OperationF where
     onInfo_ msg = InInfoFormatter $ onInfo_ msg
-    approve_ prompt = InInfoFormatter $ approve_ prompt
+    yesOrNo usingStdout prompt = InInfoFormatter $ yesOrNo usingStdout prompt
+    empty bool = InInfoFormatter $ empty bool
 
 
 instance InputConsole OperationF where

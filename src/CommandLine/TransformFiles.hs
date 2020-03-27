@@ -68,10 +68,9 @@ applyTransformation ::
     -> (FilePath -> info)
     -> ([FilePath] -> Free OperationF Bool)
     -> ((FilePath, Text) -> Either info Text)
-    -> Bool
     -> TransformMode
     -> m Bool
-applyTransformation onInfo processingFile approve transform autoYes mode =
+applyTransformation onInfo processingFile approve transform mode =
     let
         usesStdout =
             case mode of
@@ -81,7 +80,7 @@ applyTransformation onInfo processingFile approve transform autoYes mode =
                 FileToFile _ _ -> False
                 FilesInPlace _ _ -> False
     in
-    Execute.execute (ForHuman usesStdout) autoYes $
+    Execute.execute (ForHuman usesStdout) $
     case mode of
         StdinToStdout ->
             (transform <$> readStdin) >>= logErrorOr onInfo OutputConsole.writeStdout

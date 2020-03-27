@@ -52,7 +52,7 @@ main' flags =
         readDefinitionFile definitionFile =
             Program.liftME
                 $ fmap (first (\() -> "Failed to parse upgrade definition"))
-                $ parseUpgradeDefinition . snd <$> Execute.execute (ForHuman undefined) autoYes (FileStore.readFileWithPath definitionFile)
+                $ parseUpgradeDefinition . snd <$> Execute.execute (ForHuman undefined) (FileStore.readFileWithPath definitionFile)
     in
     do
         mode <- case Flags._input flags of
@@ -62,7 +62,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ TransformFiles.applyTransformation onInfo ProcessingFile (approve . FilesWillBeOverwritten) (upgrade definitions) autoYes mode
+        result <- Program.liftM $ TransformFiles.applyTransformation onInfo ProcessingFile (approve (ForHuman undefined) autoYes . FilesWillBeOverwritten) (upgrade definitions) mode
         if result
             then return ()
             else Program.failed

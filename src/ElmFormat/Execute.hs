@@ -19,13 +19,13 @@ import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
 
 
-execute :: World m => InfoFormatter.ExecuteMode -> Bool -> Free OperationF a -> m a
-execute infoMode autoYes operations =
+execute :: World m => InfoFormatter.ExecuteMode -> Free OperationF a -> m a
+execute infoMode operations =
     let
         init = InfoFormatter.init infoMode
         step = \case
             InFileStore op -> lift $ FileStore.execute op
-            InInfoFormatter op -> InfoFormatter.step infoMode autoYes op
+            InInfoFormatter op -> InfoFormatter.step infoMode op
             InInputConsole op -> lift $ InputConsole.execute op
             InOutputConsole op -> lift $ OutputConsole.execute op
             InFileWriter op -> lift $ FileWriter.execute op
