@@ -79,7 +79,7 @@ step mode autoYes infoFormatter =
                         ForHuman usingStdout ->
                             lift $
                             putStrLn usingStdout (showPromptMessage prompt)
-                                *> fmap next yesOrNo
+                                *> fmap next World.getYesOrNo
 
 
 putStrLn :: World m => Bool -> String -> m ()
@@ -126,14 +126,3 @@ json jsvalue =
         when printComma (lift $ World.putStr ",")
         lift $ World.putStrLn $ Json.encode jsvalue
         put True
-
-
-yesOrNo :: World m => m Bool
-yesOrNo =
-  do  World.flushStdout
-      input <- World.getLine
-      case input of
-        "y" -> return True
-        "n" -> return False
-        _   -> do World.putStr "Must type 'y' for yes or 'n' for no: "
-                  yesOrNo

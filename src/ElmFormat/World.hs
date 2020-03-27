@@ -1,7 +1,7 @@
 module ElmFormat.World where
 
 import Prelude ()
-import Relude
+import Relude hiding (getLine, putStr)
 
 import Data.Text (Text)
 import System.IO (hFlush, hPutStr, hPutStrLn)
@@ -48,6 +48,14 @@ class Monad m => World m where
 
     getStdin :: m Text
     getLine :: m String
+    getYesOrNo :: m Bool
+    getYesOrNo =
+      do  flushStdout
+          input <- getLine
+          case input of
+            "y" -> return True
+            "n" -> return False
+            _   -> putStr "Must type 'y' for yes or 'n' for no: " *> getYesOrNo
     putStr :: String -> m ()
     putStrLn :: String -> m ()
     writeStdout :: Text -> m ()
