@@ -8,6 +8,7 @@ module CommandLine.TransformFiles
 -- transform files.
 
 import Control.Monad.Free
+import Control.Monad.State hiding (runState)
 import Data.Text (Text)
 import qualified ElmFormat.Execute as Execute
 import ElmFormat.FileStore (FileStore)
@@ -15,9 +16,10 @@ import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InfoFormatter (ExecuteMode(..))
 import ElmFormat.InputConsole (InputConsole)
 import ElmFormat.Operation (OperationF)
-import ElmFormat.OutputConsole (OutputConsole)
 import ElmFormat.World (World)
+import ElmVersion
 
+import qualified ElmFormat.InfoFormatter as InfoFormatter
 import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.FileWriter as FileWriter
@@ -48,10 +50,10 @@ readStdin =
     (,) "<STDIN>" <$> InputConsole.readStdin
 
 
-readFromFile :: FileStore f => (FilePath -> Free f ()) -> FilePath -> Free f (FilePath, Text)
+readFromFile :: FileStore f => (FilePath -> StateT s (Free f) ()) -> FilePath -> StateT s (Free f) (FilePath, Text)
 readFromFile onProcessingFile filePath =
     onProcessingFile filePath
-        *> FileStore.readFileWithPath filePath
+        *> lift (FileStore.readFileWithPath filePath)
 
 
 data TransformMode
@@ -64,13 +66,13 @@ data TransformMode
 
 applyTransformation ::
     World m =>
-    (info -> Free OperationF ())
-    -> (FilePath -> info)
+    InfoFormatter.Loggable info =>
+    (FilePath -> info)
     -> ([FilePath] -> Free OperationF Bool)
     -> ((FilePath, Text) -> Either info Text)
     -> TransformMode
     -> m Bool
-applyTransformation onInfo processingFile approve transform mode =
+applyTransformation processingFile approve transform mode =
     let
         usesStdout =
             case mode of
@@ -79,29 +81,34 @@ applyTransformation onInfo processingFile approve transform mode =
                 FileToStdout _ -> True
                 FileToFile _ _ -> False
                 FilesInPlace _ _ -> False
+
+        infoMode = ForHuman usesStdout
+
+        onInfo = InfoFormatter.onInfo infoMode
     in
-    Execute.execute (ForHuman usesStdout) $
+    foldFree Execute.execute $
+    runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         StdinToStdout ->
-            (transform <$> readStdin) >>= logErrorOr onInfo OutputConsole.writeStdout
+            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . OutputConsole.writeStdout)
 
         StdinToFile outputFile ->
-            (transform <$> readStdin) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
+            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . FileWriter.overwriteFile outputFile)
 
         FileToStdout inputFile ->
-            (transform <$> FileStore.readFileWithPath inputFile) >>= logErrorOr onInfo OutputConsole.writeStdout
+            lift (transform <$> FileStore.readFileWithPath inputFile) >>= logErrorOr onInfo (lift . OutputConsole.writeStdout)
 
         FileToFile inputFile outputFile ->
-            (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (FileWriter.overwriteFile outputFile)
+            (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (lift . FileWriter.overwriteFile outputFile)
 
         FilesInPlace first rest ->
             do
-                canOverwrite <- approve (first:rest)
+                canOverwrite <- lift $ approve (first:rest)
                 if canOverwrite
                     then all id <$> mapM formatFile (first:rest)
                     else return True
             where
-                formatFile file = ((\i -> checkChange i <$> transform i) <$> readFromFile (onInfo . processingFile) file) >>= logErrorOr onInfo updateFile
+                formatFile file = ((\i -> checkChange i <$> transform i) <$> readFromFile (onInfo . processingFile) file) >>= logErrorOr onInfo (lift . updateFile)
 
 
 data ValidateMode
@@ -110,16 +117,23 @@ data ValidateMode
 
 
 validateNoChanges ::
-    (InputConsole f, OutputConsole f, FileStore f, FileWriter f) =>
-    (info -> Free f ())
+    World m =>
+    InfoFormatter.Loggable info =>
+    ElmVersion
     -> (FilePath -> info)
     -> ((FilePath, Text) -> Either info ())
     -> ValidateMode
-    -> Free f Bool
-validateNoChanges onInfo processingFile validate mode =
+    -> m Bool
+validateNoChanges elmVersion processingFile validate mode =
+    let
+        infoMode = ForMachine elmVersion
+        onInfo = InfoFormatter.onInfo infoMode
+    in
+    foldFree Execute.execute $
+    runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         ValidateStdin ->
-            (validate <$> readStdin) >>= logError onInfo
+            lift (validate <$> readStdin) >>= logError onInfo
 
         ValidateFiles first rest ->
             and <$> mapM validateFile (first:rest)
@@ -141,3 +155,13 @@ logErrorOr onInfo fn result =
 logError :: Monad m => (error -> m ()) -> Either error () -> m Bool
 logError onInfo =
     logErrorOr onInfo return
+
+
+
+runState :: Monad m => (m (), state) -> (state -> m ()) -> StateT state m result -> m result
+runState (initM, initialState) done run =
+    do
+        initM
+        (result, finalState) <- runStateT run initialState
+        done finalState
+        return result

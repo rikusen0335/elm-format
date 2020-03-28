@@ -31,7 +31,9 @@ instance FileStore OperationF where
 
 
 instance InfoFormatter OperationF where
-    onInfo_ msg = InInfoFormatter $ onInfo_ msg
+    putInfoToStderr text = InInfoFormatter $ putInfoToStderr text
+    putInfoToStdout text = InInfoFormatter $ putInfoToStdout text
+    putInfoToStdoutN text = InInfoFormatter $ putInfoToStdoutN text
     yesOrNo usingStdout prompt = InInfoFormatter $ yesOrNo usingStdout prompt
     empty bool = InInfoFormatter $ empty bool
 

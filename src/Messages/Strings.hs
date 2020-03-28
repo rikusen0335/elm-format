@@ -1,8 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage, showErrorMessage) where
 
 import CommandLine.ResolveFiles (ResolveFileError(..))
-import ElmVersion (ElmVersion)
+import qualified Data.Text as Text
+import ElmFormat.InfoFormatter (Loggable(..))
 import qualified ElmFormat.Version
 import Messages.Types
 import qualified Reporting.Annotation as RA
@@ -27,41 +29,40 @@ showPromptMessage (FilesWillBeOverwritten filePaths) =
         ]
 
 
-showInfoMessage :: InfoMessage -> String
+instance Loggable InfoMessage where
+    showInfoMessage (ProcessingFile file) =
+        "Processing file " <> Text.pack file
 
-showInfoMessage (ProcessingFile file) =
-    "Processing file " ++ file
+    showInfoMessage (FileWouldChange file) =
+        "File would be changed " <> Text.pack file
 
-showInfoMessage (FileWouldChange file) =
-    "File would be changed " ++ file
-
-showInfoMessage (ParseError inputFile _ errs) =
-    let
-        location =
-            case errs of
-                [] -> inputFile
-                (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
-    in
-    "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."
+    showInfoMessage (ParseError inputFile _ errs) =
+        let
+            location =
+                Text.pack $
+                case errs of
+                    [] -> inputFile
+                    (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
+        in
+        "Unable to parse file " <> location <> " To see a detailed explanation, run elm make on the file."
 
 
-jsonInfoMessage :: ElmVersion -> InfoMessage -> Maybe Json.JSValue
-jsonInfoMessage elmVersion =
-    let
-        fileMessage filename message =
-            Json.makeObj
-                [ ( "path", Json.JSString $ Json.toJSString filename )
-                , ( "message", Json.JSString $ Json.toJSString message )
-                ]
-    in
-    \case
-    ProcessingFile _ -> Nothing
-    FileWouldChange file ->
-        Just $ fileMessage file $
-            "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
-            ++ " --elm-version=" ++ show elmVersion
-    ParseError inputFile _ _ ->
-        Just $ fileMessage inputFile "Error parsing the file"
+    jsonInfoMessage elmVersion =
+        let
+            fileMessage filename message =
+                Json.makeObj
+                    [ ( "path", Json.JSString $ Json.toJSString filename )
+                    , ( "message", Json.JSString $ Json.toJSString message )
+                    ]
+        in
+        \case
+        ProcessingFile _ -> Nothing
+        FileWouldChange file ->
+            Just $ fileMessage file $
+                "File is not formatted with elm-format-" <> ElmFormat.Version.asString
+                <> " --elm-version=" <> show elmVersion
+        ParseError inputFile _ _ ->
+            Just $ fileMessage inputFile "Error parsing the file"
 
 
 showErrorMessage :: ErrorMessage -> String

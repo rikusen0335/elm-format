@@ -6,9 +6,6 @@ perform IO.
 -}
 
 import Prelude hiding (init)
-import Elm.Utils ((|>))
-import Control.Monad.State
-import Control.Monad.Free
 import ElmFormat.Operation
 import ElmFormat.World
 
@@ -19,24 +16,11 @@ import qualified ElmFormat.InputConsole as InputConsole
 import qualified ElmFormat.OutputConsole as OutputConsole
 
 
-execute :: World m => InfoFormatter.ExecuteMode -> Free OperationF a -> m a
-execute infoMode operations =
-    let
-        init = InfoFormatter.init infoMode
-        step = \case
-            InFileStore op -> lift $ FileStore.execute op
-            InInfoFormatter op -> InfoFormatter.step infoMode op
-            InInputConsole op -> lift $ InputConsole.execute op
-            InOutputConsole op -> lift $ OutputConsole.execute op
-            InFileWriter op -> lift $ FileWriter.execute op
-        done = InfoFormatter.done infoMode
-    in
-    do
-        let (initIO, initState) = init
-        initIO
-        (result, finalState) <-
-            operations
-                |> foldFree step
-                |> flip runStateT initState
-        done finalState
-        return result
+-- TODO: move this to Operation
+execute :: World m => OperationF a -> m a
+execute = \case
+    InFileStore op -> FileStore.execute op
+    InInfoFormatter op -> InfoFormatter.execute op
+    InInputConsole op -> InputConsole.execute op
+    InOutputConsole op -> OutputConsole.execute op
+    InFileWriter op -> FileWriter.execute op

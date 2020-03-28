@@ -13,7 +13,7 @@ import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
 import ElmVersion
-import ElmFormat.InfoFormatter (ExecuteMode(..), onInfo, approve)
+import ElmFormat.InfoFormatter (ExecuteMode(..), approve)
 import ElmFormat.World
 import Reporting.Annotation (Located)
 
@@ -23,7 +23,6 @@ import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified CommandLine.TransformFiles as TransformFiles
 import qualified Data.Text as Text
 import qualified ElmFormat.CliFlags as Flags
-import qualified ElmFormat.Execute as Execute
 import qualified ElmFormat.Parse as Parse
 import qualified ElmFormat.Render.Text as Render
 import qualified ElmFormat.Version
@@ -134,7 +133,7 @@ main' elmFormatVersion experimental args =
         run' :: World m => Flags.Config -> ProgramIO m ErrorMessage ()
         run' flags =
             do
-                resolvedInputFiles <- Program.liftM $ Execute.execute (ForHuman undefined) $ ResolveFiles.resolveElmFiles (Flags._input flags)
+                resolvedInputFiles <- Program.liftM $ ResolveFiles.resolveElmFiles (Flags._input flags)
 
                 whatToDo <- case determineWhatToDoFromConfig flags resolvedInputFiles of
                     Left NoInputs -> Program.showUsage
@@ -209,20 +208,25 @@ doIt :: World m => ElmVersion -> Bool -> WhatToDo -> m Bool
 doIt elmVersion autoYes whatToDo =
     case whatToDo of
         Validate validateMode ->
-            Execute.execute (ForMachine elmVersion) $
             TransformFiles.validateNoChanges
-                onInfo ProcessingFile
+                elmVersion ProcessingFile
                 (validate elmVersion)
                 validateMode
 
         Format transformMode ->
+            let
+                infoMode = ForHuman True -- XXX: usingStdout should be determined by applyTransformation
+            in
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve (ForHuman True) autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
+                ProcessingFile (approve infoMode autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten)
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
+            let
+                infoMode = ForHuman True -- XXX: usingStdout should be determined by applyTransformation
+            in
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve (ForHuman True) autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
+                ProcessingFile (approve infoMode autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten)
                 (toJson elmVersion)
                 transformMode

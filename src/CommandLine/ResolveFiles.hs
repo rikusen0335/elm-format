@@ -6,9 +6,10 @@ import Prelude ()
 import Relude
 
 import Control.Monad.Free
-import ElmFormat.FileStore (FileStore)
+import qualified ElmFormat.Execute as Execute
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.Filesystem as FS
+import ElmFormat.World (World)
 
 
 data ResolveFileError
@@ -16,8 +17,9 @@ data ResolveFileError
     | NoElmFiles FilePath
 
 
-resolveFile :: FileStore f => FilePath -> Free f (Either ResolveFileError [FilePath])
+resolveFile :: World m => FilePath -> m (Either ResolveFileError [FilePath])
 resolveFile path =
+    foldFree Execute.execute $
     do
         fileType <- FileStore.stat path
 
@@ -56,7 +58,7 @@ collectErrors list =
         foldl' step (Right []) list
 
 
-resolveElmFiles :: FileStore f => [FilePath] -> Free f (Either [ResolveFileError] [FilePath])
+resolveElmFiles :: World m => [FilePath] -> m (Either [ResolveFileError] [FilePath])
 resolveElmFiles inputFiles =
     do
         result <- collectErrors <$> mapM resolveFile inputFiles

@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module ElmFormat.InfoFormatter
-    ( onInfo, approve
-    , InfoFormatter(..), InfoFormatterF(..)
-    , ExecuteMode(..), init, done, step
+    ( Loggable(..), onInfo, approve
+    , InfoFormatter(..), InfoFormatterF(..), execute
+    , ExecuteMode(..), init, done
     ) where
 
 import Prelude hiding (init, putStrLn)
@@ -14,13 +14,22 @@ import qualified Data.Text as Text
 import ElmVersion (ElmVersion)
 import ElmFormat.World (World)
 import qualified ElmFormat.World as World
-import Messages.Strings (showInfoMessage, jsonInfoMessage)
-import Messages.Types
 import qualified Text.JSON as Json
 
 
-onInfo :: InfoFormatter f => InfoMessage -> f ()
-onInfo = onInfo_
+class Loggable a where
+    showInfoMessage :: a -> Text
+    jsonInfoMessage :: ElmVersion -> a -> Maybe Json.JSValue -- TODO: remove ElmVersion
+
+
+onInfo :: (Monad f, InfoFormatter f, Loggable info) => ExecuteMode -> info -> StateT Bool f ()
+onInfo mode info =
+    case mode of
+        ForMachine elmVersion ->
+            maybe (lift $ empty ()) json $ jsonInfoMessage elmVersion info
+
+        ForHuman usingStdout ->
+            lift $ putStrLn' usingStdout (showInfoMessage info)
 
 
 approve :: InfoFormatter f => ExecuteMode -> Bool -> Text -> f Bool
@@ -37,28 +46,35 @@ approve mode autoYes prompt =
 
 
 class Functor f => InfoFormatter f where
-    onInfo_ :: InfoMessage -> f ()
+    putInfoToStderr :: Text -> f () -- with trailing newline
+    putInfoToStdout :: Text -> f () -- with trailing newline
+    putInfoToStdoutN :: Text -> f () -- without trailing newline
     yesOrNo :: Bool -> Text -> f Bool
-    empty :: Bool -> f Bool
+    empty :: a -> f a
 
 
 data InfoFormatterF a
-    = OnInfo InfoMessage a
+    = PutInfoToStderr Text a
+    | PutInfoToStdout Text a
     | YesOrNo Bool Text (Bool -> a)
     | Empty a
     deriving (Functor)
 
 
 instance InfoFormatter InfoFormatterF where
-    onInfo_ info = OnInfo info ()
+    putInfoToStderr text = PutInfoToStderr (text <> "\n") ()
+    putInfoToStdout text = PutInfoToStdout (text <> "\n") ()
+    putInfoToStdoutN text = PutInfoToStdout text ()
     yesOrNo usingStdout prompt = YesOrNo usingStdout prompt id
-    empty bool = Empty bool
+    empty value = Empty value
 
 
 instance InfoFormatter f => InfoFormatter (Free f) where
-    onInfo_ info = liftF (onInfo_ info)
+    putInfoToStderr text = liftF (putInfoToStderr text)
+    putInfoToStdout text = liftF (putInfoToStdout text)
+    putInfoToStdoutN text = liftF (putInfoToStdoutN text)
     yesOrNo usingStdout prompt = liftF (yesOrNo usingStdout prompt)
-    empty bool = liftF (empty bool)
+    empty value = liftF (empty value)
 
 
 data ExecuteMode
@@ -66,51 +82,51 @@ data ExecuteMode
     | ForHuman { _usingStdout :: Bool }
 
 
-init :: World m => ExecuteMode -> (m (), Bool)
-init (ForMachine _) = (World.putStr "[", False)
-init (ForHuman _) = (return (), undefined)
+init :: InfoFormatter f => ExecuteMode -> (f (), Bool)
+init (ForMachine _) = (putInfoToStdoutN "[", False)
+init (ForHuman _) = (empty (), undefined)
 
 
-done :: World m => ExecuteMode -> Bool -> m ()
-done (ForMachine _) _ = World.putStrLn "]"
-done (ForHuman _) _ = return ()
+done :: InfoFormatter f => ExecuteMode -> Bool -> f ()
+done (ForMachine _) _ = putInfoToStdout "]"
+done (ForHuman _) _ = empty ()
 
 
-step :: World m => ExecuteMode -> InfoFormatterF a -> StateT Bool m a
-step mode infoFormatter =
-    case infoFormatter of
-        OnInfo info next ->
-            logInfo mode info *> return next
+execute :: World m => InfoFormatterF a -> m a
+execute = \case
+    PutInfoToStderr text next ->
+        World.putStrStderr (Text.unpack text) *> return next
 
-        YesOrNo usingStdout prompt next ->
-            lift $ putStrLn usingStdout (Text.unpack prompt) *> fmap next World.getYesOrNo
+    PutInfoToStdout text next ->
+        World.putStr (Text.unpack text) *> return next
 
-        Empty a ->
-            return a
+    YesOrNo usingStdout prompt next ->
+        putStrLn usingStdout prompt *> fmap next World.getYesOrNo
+
+    Empty a ->
+        return a
 
 
-putStrLn :: World m => Bool -> String -> m ()
+putStrLn :: World m => Bool -> Text -> m ()
 putStrLn usingStdout =
     -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
     case usingStdout of
-        True -> World.putStrLnStderr
-        False -> World.putStrLn
+        True -> World.putStrLnStderr . Text.unpack
+        False -> World.putStrLn . Text.unpack
 
 
-logInfo :: World m => ExecuteMode -> InfoMessage -> StateT Bool m ()
-logInfo mode info =
-    case mode of
-        ForMachine elmVersion ->
-            maybe (return ()) json $ jsonInfoMessage elmVersion info
-
-        ForHuman usingStdout ->
-            lift $ putStrLn usingStdout (showInfoMessage info)
+putStrLn' :: InfoFormatter f => Bool -> Text -> f ()
+putStrLn' usingStdout =
+    -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
+    case usingStdout of
+        True -> putInfoToStderr
+        False -> putInfoToStdout
 
 
-json :: World m => Json.JSValue -> StateT Bool m ()
+json :: (Monad f, InfoFormatter f) => Json.JSValue -> StateT Bool f ()
 json jsvalue =
     do
         printComma <- get
-        when printComma (lift $ World.putStr ",")
-        lift $ World.putStrLn $ Json.encode jsvalue
+        when printComma (lift $ putInfoToStdoutN ",")
+        lift $ putInfoToStdout $ Text.pack $ Json.encode jsvalue
         put True
