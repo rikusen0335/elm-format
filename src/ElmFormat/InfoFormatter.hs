@@ -12,10 +12,9 @@ import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as Text
 import ElmVersion (ElmVersion)
-import qualified ElmFormat.Version
 import ElmFormat.World (World)
 import qualified ElmFormat.World as World
-import Messages.Strings (showPromptMessage, showInfoMessage)
+import Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage)
 import Messages.Types
 import qualified Text.JSON as Json
 
@@ -102,29 +101,10 @@ logInfo :: World m => ExecuteMode -> InfoMessage -> StateT Bool m ()
 logInfo mode info =
     case mode of
         ForMachine elmVersion ->
-            maybe (return ()) json $ jsonMessage elmVersion info
+            maybe (return ()) json $ jsonInfoMessage elmVersion info
 
         ForHuman usingStdout ->
             lift $ putStrLn usingStdout (showInfoMessage info)
-
-
-jsonMessage :: ElmVersion -> InfoMessage -> Maybe Json.JSValue
-jsonMessage elmVersion =
-    let
-        fileMessage filename message =
-            Json.makeObj
-                [ ( "path", Json.JSString $ Json.toJSString filename )
-                , ( "message", Json.JSString $ Json.toJSString message )
-                ]
-    in
-    \case
-    ProcessingFile _ -> Nothing
-    FileWouldChange file ->
-        Just $ fileMessage file $
-            "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
-            ++ " --elm-version=" ++ show elmVersion
-    ParseError inputFile _ _ ->
-        Just $ fileMessage inputFile "Error parsing the file"
 
 
 json :: World m => Json.JSValue -> StateT Bool m ()

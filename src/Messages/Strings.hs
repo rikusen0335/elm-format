@@ -1,9 +1,13 @@
-module Messages.Strings (showPromptMessage, showInfoMessage, showErrorMessage) where
+{-# LANGUAGE LambdaCase #-}
+module Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage, showErrorMessage) where
 
 import CommandLine.ResolveFiles (ResolveFileError(..))
+import ElmVersion (ElmVersion)
+import qualified ElmFormat.Version
 import Messages.Types
 import qualified Reporting.Annotation as RA
 import Reporting.Region (Region(..), Position(..))
+import qualified Text.JSON as Json
 
 
 showFiles :: [FilePath] -> String
@@ -39,6 +43,25 @@ showInfoMessage (ParseError inputFile _ errs) =
                 (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
     in
     "Unable to parse file " ++ location ++ " To see a detailed explanation, run elm make on the file."
+
+
+jsonInfoMessage :: ElmVersion -> InfoMessage -> Maybe Json.JSValue
+jsonInfoMessage elmVersion =
+    let
+        fileMessage filename message =
+            Json.makeObj
+                [ ( "path", Json.JSString $ Json.toJSString filename )
+                , ( "message", Json.JSString $ Json.toJSString message )
+                ]
+    in
+    \case
+    ProcessingFile _ -> Nothing
+    FileWouldChange file ->
+        Just $ fileMessage file $
+            "File is not formatted with elm-format-" ++ ElmFormat.Version.asString
+            ++ " --elm-version=" ++ show elmVersion
+    ParseError inputFile _ _ ->
+        Just $ fileMessage inputFile "Error parsing the file"
 
 
 showErrorMessage :: ErrorMessage -> String
