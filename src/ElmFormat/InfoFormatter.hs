@@ -14,7 +14,7 @@ import qualified Data.Text as Text
 import ElmVersion (ElmVersion)
 import ElmFormat.World (World)
 import qualified ElmFormat.World as World
-import Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage)
+import Messages.Strings (showInfoMessage, jsonInfoMessage)
 import Messages.Types
 import qualified Text.JSON as Json
 
@@ -23,7 +23,7 @@ onInfo :: InfoFormatter f => InfoMessage -> f ()
 onInfo = onInfo_
 
 
-approve :: InfoFormatter f => ExecuteMode -> Bool -> PromptMessage -> f Bool
+approve :: InfoFormatter f => ExecuteMode -> Bool -> Text -> f Bool
 approve mode autoYes prompt =
     case autoYes of
         True -> empty True
@@ -33,7 +33,7 @@ approve mode autoYes prompt =
                 ForMachine _ -> empty False
 
                 ForHuman usingStdout ->
-                    yesOrNo usingStdout (Text.pack $ showPromptMessage prompt)
+                    yesOrNo usingStdout prompt
 
 
 class Functor f => InfoFormatter f where

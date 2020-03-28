@@ -8,7 +8,7 @@ import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
 import Messages.Types
-import Messages.Strings (showErrorMessage)
+import Messages.Strings (showPromptMessage, showErrorMessage)
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
@@ -217,12 +217,12 @@ doIt elmVersion autoYes whatToDo =
 
         Format transformMode ->
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve (ForHuman True) autoYes . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
+                onInfo ProcessingFile (approve (ForHuman True) autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
             TransformFiles.applyTransformation
-                onInfo ProcessingFile (approve (ForHuman True) autoYes . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
+                onInfo ProcessingFile (approve (ForHuman True) autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten) -- XXX: usingStdout should be determined by applyTransformation
                 (toJson elmVersion)
                 transformMode

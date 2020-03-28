@@ -10,8 +10,9 @@ import ElmFormat.InfoFormatter (ExecuteMode(..), onInfo, approve)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
 import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
+import ElmRefactor.Messages
 import ElmVersion
-import Messages.Types
+import Messages.Types hiding (PromptMessage(..))
 
 import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles
@@ -62,7 +63,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ TransformFiles.applyTransformation onInfo ProcessingFile (approve (ForHuman undefined) autoYes . FilesWillBeOverwritten) (upgrade definitions) mode
+        result <- Program.liftM $ TransformFiles.applyTransformation onInfo ProcessingFile (approve (ForHuman undefined) autoYes . showPromptMessage . FilesWillBeOverwritten) (upgrade definitions) mode
         if result
             then return ()
             else Program.failed

@@ -54,6 +54,7 @@ executable elm-refactor
     other-modules:
         ElmRefactor.Cli
         ElmRefactor.CliFlags
+        ElmRefactor.Messages
         Prelude
 
 
