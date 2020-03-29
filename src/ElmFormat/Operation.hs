@@ -34,7 +34,7 @@ instance InfoFormatter OperationF where
     putInfoToStderr text = InInfoFormatter $ putInfoToStderr text
     putInfoToStdout text = InInfoFormatter $ putInfoToStdout text
     putInfoToStdoutN text = InInfoFormatter $ putInfoToStdoutN text
-    yesOrNo usingStdout prompt = InInfoFormatter $ yesOrNo usingStdout prompt
+    yesOrNo = InInfoFormatter yesOrNo
     empty bool = InInfoFormatter $ empty bool
 
 

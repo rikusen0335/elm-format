@@ -32,7 +32,7 @@ onInfo mode info =
             lift $ putStrLn' usingStdout (showInfoMessage info)
 
 
-approve :: InfoFormatter f => ExecuteMode -> Bool -> Text -> f Bool
+approve :: (Monad f, InfoFormatter f) => ExecuteMode -> Bool -> Text -> f Bool
 approve mode autoYes prompt =
     case autoYes of
         True -> empty True
@@ -42,21 +42,21 @@ approve mode autoYes prompt =
                 ForMachine _ -> empty False
 
                 ForHuman usingStdout ->
-                    yesOrNo usingStdout prompt
+                    putStrLn' usingStdout prompt *> yesOrNo
 
 
 class Functor f => InfoFormatter f where
     putInfoToStderr :: Text -> f () -- with trailing newline
     putInfoToStdout :: Text -> f () -- with trailing newline
     putInfoToStdoutN :: Text -> f () -- without trailing newline
-    yesOrNo :: Bool -> Text -> f Bool
+    yesOrNo :: f Bool
     empty :: a -> f a
 
 
 data InfoFormatterF a
     = PutInfoToStderr Text a
     | PutInfoToStdout Text a
-    | YesOrNo Bool Text (Bool -> a)
+    | YesOrNo (Bool -> a)
     | Empty a
     deriving (Functor)
 
@@ -65,7 +65,7 @@ instance InfoFormatter InfoFormatterF where
     putInfoToStderr text = PutInfoToStderr (text <> "\n") ()
     putInfoToStdout text = PutInfoToStdout (text <> "\n") ()
     putInfoToStdoutN text = PutInfoToStdout text ()
-    yesOrNo usingStdout prompt = YesOrNo usingStdout prompt id
+    yesOrNo = YesOrNo id
     empty value = Empty value
 
 
@@ -73,7 +73,7 @@ instance InfoFormatter f => InfoFormatter (Free f) where
     putInfoToStderr text = liftF (putInfoToStderr text)
     putInfoToStdout text = liftF (putInfoToStdout text)
     putInfoToStdoutN text = liftF (putInfoToStdoutN text)
-    yesOrNo usingStdout prompt = liftF (yesOrNo usingStdout prompt)
+    yesOrNo = liftF yesOrNo
     empty value = liftF (empty value)
 
 
@@ -100,19 +100,11 @@ execute = \case
     PutInfoToStdout text next ->
         World.putStr (Text.unpack text) *> return next
 
-    YesOrNo usingStdout prompt next ->
-        putStrLn usingStdout prompt *> fmap next World.getYesOrNo
+    YesOrNo next ->
+        fmap next World.getYesOrNo
 
     Empty a ->
         return a
-
-
-putStrLn :: World m => Bool -> Text -> m ()
-putStrLn usingStdout =
-    -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
-    case usingStdout of
-        True -> World.putStrLnStderr . Text.unpack
-        False -> World.putStrLn . Text.unpack
 
 
 putStrLn' :: InfoFormatter f => Bool -> Text -> f ()
