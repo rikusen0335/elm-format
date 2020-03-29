@@ -4,7 +4,8 @@ import Prelude ()
 import Relude hiding (getLine, putStr)
 
 import Data.Text (Text)
-import System.IO (hFlush, hPutStr, hPutStrLn)
+import qualified Data.Text.IO
+import System.IO (hFlush, hPutStr)
 import qualified Data.ByteString.Lazy as Lazy
 import qualified System.Directory as Dir
 import qualified System.Environment
@@ -61,7 +62,7 @@ class Monad m => World m where
     writeStdout :: Text -> m ()
     flushStdout :: m ()
     putStrStderr :: String -> m ()
-    putStrLnStderr :: String -> m()
+    putStrLnStderr :: Text -> m()
 
     exitFailure :: m ()
     exitSuccess :: m ()
@@ -84,7 +85,7 @@ instance World IO where
     writeStdout content = putBS $ encodeUtf8 content
     flushStdout = hFlush stdout
     putStrStderr = hPutStr stderr
-    putStrLnStderr = hPutStrLn stderr
+    putStrLnStderr = Data.Text.IO.hPutStrLn stderr
 
     exitFailure = System.Exit.exitFailure
     exitSuccess = System.Exit.exitSuccess

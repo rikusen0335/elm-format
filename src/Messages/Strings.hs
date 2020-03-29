@@ -2,7 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage, showErrorMessage) where
 
+import Prelude ()
+import Relude
+
 import CommandLine.ResolveFiles (ResolveFileError(..))
+import Data.Text (Text)
 import qualified Data.Text as Text
 import ElmFormat.InfoFormatter (Loggable(..))
 import qualified ElmFormat.Version
@@ -12,11 +16,11 @@ import Reporting.Region (Region(..), Position(..))
 import qualified Text.JSON as Json
 
 
-showFiles :: [FilePath] -> String
-showFiles = unlines . map ("    " ++)
+showFiles :: [FilePath] -> Text
+showFiles = unlines . fmap (\filename -> "    " <> Text.pack filename)
 
 
-showPromptMessage :: PromptMessage -> String
+showPromptMessage :: PromptMessage -> Text
 
 showPromptMessage (FilesWillBeOverwritten filePaths) =
     unlines
@@ -65,13 +69,13 @@ instance Loggable InfoMessage where
             Just $ fileMessage inputFile "Error parsing the file"
 
 
-showErrorMessage :: ErrorMessage -> String
+showErrorMessage :: ErrorMessage -> Text
 
 showErrorMessage (BadInputFiles filePaths) =
   unlines
     [ "There was a problem reading one or more of the specified INPUT paths:"
     , ""
-    , unlines $ map ((++) "    " . showInputMessage) filePaths
+    , unlines $ map ((<>) "    " . showInputMessage) filePaths
     , "Please check the given paths."
     ]
 
@@ -89,14 +93,14 @@ showErrorMessage OutputAndValidate =
     "Cannot use --output and --validate together"
 
 showErrorMessage (MustSpecifyVersionWithUpgrade elmVersion) =
-    "I can only upgrade code to specific Elm versions.  To make sure I'm doing what you expect, you must also specify --elm-version=" ++ show elmVersion ++ " when you use --upgrade."
+    "I can only upgrade code to specific Elm versions.  To make sure I'm doing what you expect, you must also specify --elm-version=" <> Text.pack (show elmVersion) <> " when you use --upgrade."
 
 showErrorMessage NoInputs =
     error "Error case NoInputs should be handled elsewhere.  Please report this issue at https://github.com/avh4/elm-format/issues"
 
 
-showInputMessage :: ResolveFileError -> String
+showInputMessage :: ResolveFileError -> Text
 showInputMessage (FileDoesNotExist path) =
-    path ++ ": No such file or directory"
+    Text.pack path <> ": No such file or directory"
 showInputMessage (NoElmFiles path) =
-    path ++ ": Directory does not contain any *.elm files"
+    Text.pack path <> ": Directory does not contain any *.elm files"

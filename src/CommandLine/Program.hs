@@ -5,6 +5,7 @@ module CommandLine.Program (ProgramResult(..), ProgramIO, run, failed, CommandLi
 import Prelude ()
 import Relude hiding (putStrLn, exitSuccess, exitFailure)
 
+import qualified Data.Text as Text
 import ElmFormat.World
 import System.Exit (ExitCode(..))
 
@@ -80,7 +81,7 @@ liftME m = ProgramIO (m >>= ((\(ProgramIO z) -> z) . liftEither))
 run ::
     World m =>
     OptParse.ParserInfo flags
-    -> (err -> String)
+    -> (err -> Text)
     -> (flags -> ProgramIO m err ())
     -> [String]
     -> m ()
@@ -124,7 +125,7 @@ handleParseResult (OptParse.Failure failure) = do
     let (msg, exit) = OptParse.renderFailure failure progn
     case exit of
         ExitSuccess -> putStrLn msg *> exitSuccess *> return Nothing
-        _           -> putStrLnStderr msg *> exitFailure *> return Nothing
+        _           -> putStrLnStderr (Text.pack msg) *> exitFailure *> return Nothing
 handleParseResult (OptParse.CompletionInvoked _) =
     -- do
     --     progn <- getProgName

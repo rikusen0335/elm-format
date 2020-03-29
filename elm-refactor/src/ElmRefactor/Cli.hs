@@ -45,7 +45,7 @@ upgrade upgradeDefinitions (_, inputText) =
             -- TODO: return an error message
             error "TODO: couldn't parse source file"
 
-main' :: World m => Flags.Flags -> ProgramIO m String ()
+main' :: World m => Flags.Flags -> ProgramIO m Text () -- TODO: define ErrorMessage type instead of Text
 main' flags =
     let
         autoYes = True

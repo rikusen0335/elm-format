@@ -95,7 +95,7 @@ instance World (State.State TestWorldState) where
     putStrLnStderr string =
         do
             state <- State.get
-            State.put $ state { stderr = (string ++ "\n") : stderr state }
+            State.put $ state { stderr = (StrictText.unpack string ++ "\n") : stderr state }
 
     getProgName =
         return "elm-format"

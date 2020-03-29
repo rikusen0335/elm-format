@@ -214,12 +214,12 @@ doIt elmVersion autoYes whatToDo =
 
         Format transformMode ->
             TransformFiles.applyTransformation
-                ProcessingFile autoYes (Text.pack . showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten)
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
             TransformFiles.applyTransformation
-                ProcessingFile autoYes (Text.pack . showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten)
                 (toJson elmVersion)
                 transformMode
