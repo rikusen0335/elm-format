@@ -26,7 +26,7 @@ onInfo :: (Monad f, InfoFormatter f, Loggable info) => ExecuteMode -> info -> St
 onInfo mode info =
     case mode of
         ForMachine elmVersion ->
-            maybe (lift $ empty ()) json $ jsonInfoMessage elmVersion info
+            maybe (lift $ return ()) json $ jsonInfoMessage elmVersion info
 
         ForHuman usingStdout ->
             lift $ putStrLn' usingStdout (showInfoMessage info)
@@ -35,11 +35,11 @@ onInfo mode info =
 approve :: (Monad f, InfoFormatter f) => ExecuteMode -> Bool -> Text -> f Bool
 approve mode autoYes prompt =
     case autoYes of
-        True -> empty True
+        True -> return True
 
         False ->
             case mode of
-                ForMachine _ -> empty False
+                ForMachine _ -> return False
 
                 ForHuman usingStdout ->
                     putStrLn' usingStdout prompt *> yesOrNo
@@ -50,14 +50,12 @@ class Functor f => InfoFormatter f where
     putInfoToStdout :: Text -> f () -- with trailing newline
     putInfoToStdoutN :: Text -> f () -- without trailing newline
     yesOrNo :: f Bool
-    empty :: a -> f a
 
 
 data InfoFormatterF a
     = PutInfoToStderr Text a
     | PutInfoToStdout Text a
     | YesOrNo (Bool -> a)
-    | Empty a
     deriving (Functor)
 
 
@@ -66,7 +64,6 @@ instance InfoFormatter InfoFormatterF where
     putInfoToStdout text = PutInfoToStdout (text <> "\n") ()
     putInfoToStdoutN text = PutInfoToStdout text ()
     yesOrNo = YesOrNo id
-    empty value = Empty value
 
 
 instance InfoFormatter f => InfoFormatter (Free f) where
@@ -74,7 +71,6 @@ instance InfoFormatter f => InfoFormatter (Free f) where
     putInfoToStdout text = liftF (putInfoToStdout text)
     putInfoToStdoutN text = liftF (putInfoToStdoutN text)
     yesOrNo = liftF yesOrNo
-    empty value = liftF (empty value)
 
 
 data ExecuteMode
@@ -82,14 +78,14 @@ data ExecuteMode
     | ForHuman { _usingStdout :: Bool }
 
 
-init :: InfoFormatter f => ExecuteMode -> (f (), Bool)
+init :: (Monad f, InfoFormatter f) => ExecuteMode -> (f (), Bool)
 init (ForMachine _) = (putInfoToStdoutN "[", False)
-init (ForHuman _) = (empty (), undefined)
+init (ForHuman _) = (return (), undefined)
 
 
-done :: InfoFormatter f => ExecuteMode -> Bool -> f ()
+done :: (Monad f, InfoFormatter f) => ExecuteMode -> Bool -> f ()
 done (ForMachine _) _ = putInfoToStdout "]"
-done (ForHuman _) _ = empty ()
+done (ForHuman _) _ = return ()
 
 
 execute :: World m => InfoFormatterF a -> m a
@@ -102,9 +98,6 @@ execute = \case
 
     YesOrNo next ->
         fmap next World.getYesOrNo
-
-    Empty a ->
-        return a
 
 
 putStrLn' :: InfoFormatter f => Bool -> Text -> f ()

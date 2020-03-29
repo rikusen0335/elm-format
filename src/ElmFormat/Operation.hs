@@ -37,7 +37,6 @@ instance InfoFormatter OperationF where
     putInfoToStdout text = InInfoFormatter $ putInfoToStdout text
     putInfoToStdoutN text = InInfoFormatter $ putInfoToStdoutN text
     yesOrNo = InInfoFormatter yesOrNo
-    empty bool = InInfoFormatter $ empty bool
 
 
 instance InputConsole OperationF where
