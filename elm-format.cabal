@@ -70,6 +70,7 @@ library
         AST.V0_16
         Box
         Data.Coapplicative
+        Data.Either.Extra
         Data.Indexed
         Elm.Utils
         ElmFormat.FileStore

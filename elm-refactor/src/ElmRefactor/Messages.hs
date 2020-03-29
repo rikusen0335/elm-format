@@ -1,5 +1,6 @@
-module ElmRefactor.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..)) where
+module ElmRefactor.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..), ErrorMessage(..), showErrorMessage) where
 
+import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified Data.Text as Text
 import ElmFormat.InfoFormatter (Loggable(..))
 import qualified ElmRefactor.Version
@@ -71,3 +72,26 @@ instance Loggable InfoMessage where
                 <> " --elm-version=" <> show elmVersion -- TODO: elm-refactor doesn't yet support --elm-version
         ParseError inputFile _ _ ->
             Just $ fileMessage inputFile "Error parsing the file"
+
+
+data ErrorMessage
+    = BadInputFiles [ResolveFiles.Error]
+    | BadUpgradeDefinitions [FilePath]
+
+
+showErrorMessage :: ErrorMessage -> Text
+
+showErrorMessage (BadInputFiles filePaths) =
+    unlines
+        [ "There was a problem reading one or more of the specified INPUT paths:"
+        , ""
+        , unlines $ fmap ((<>) "    " . ResolveFiles.showError) filePaths
+        , "Please check the given paths."
+        ]
+
+showErrorMessage (BadUpgradeDefinitions filePaths) =
+    unlines
+        [ "There was a problem reading one or more of the specified UPGRDATE_DEFINITION files:"
+        ,""
+        , unlines $ fmap (\file -> "    " <> Text.pack file <> ": Failed to parse upgrade definition. It is not valid Elm syntax.") filePaths
+        ]

@@ -6,7 +6,7 @@ module ElmFormat.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..)
 import Prelude ()
 import Relude
 
-import CommandLine.ResolveFiles (ResolveFileError(..))
+import CommandLine.ResolveFiles as ResolveFiles
 import Data.Text (Text)
 import qualified Data.Text as Text
 import ElmFormat.InfoFormatter (Loggable(..))
@@ -29,7 +29,7 @@ data PromptMessage
 
 
 data ErrorMessage
-  = BadInputFiles [ResolveFileError]
+  = BadInputFiles [ResolveFiles.Error]
   | NoInputs
   | SingleOutputWithMultipleInputs
   | TooManyInputs
@@ -96,7 +96,7 @@ showErrorMessage (BadInputFiles filePaths) =
   unlines
     [ "There was a problem reading one or more of the specified INPUT paths:"
     , ""
-    , unlines $ map ((<>) "    " . showInputMessage) filePaths
+    , unlines $ map ((<>) "    " . ResolveFiles.showError) filePaths
     , "Please check the given paths."
     ]
 
@@ -118,10 +118,3 @@ showErrorMessage (MustSpecifyVersionWithUpgrade elmVersion) =
 
 showErrorMessage NoInputs =
     error "Error case NoInputs should be handled elsewhere.  Please report this issue at https://github.com/avh4/elm-format/issues"
-
-
-showInputMessage :: ResolveFileError -> Text
-showInputMessage (FileDoesNotExist path) =
-    Text.pack path <> ": No such file or directory"
-showInputMessage (NoElmFiles path) =
-    Text.pack path <> ": Directory does not contain any *.elm files"

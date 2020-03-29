@@ -1,4 +1,4 @@
-module CommandLine.Program (ProgramResult(..), ProgramIO, run, failed, CommandLine.Program.error, showUsage, liftEither, liftM, liftME) where
+module CommandLine.Program (ProgramResult(..), ProgramIO, run, failed, CommandLine.Program.error, showUsage, liftEither, liftM, liftME, mapError) where
 
 -- Common handling for command line programs
 
@@ -12,12 +12,23 @@ import System.Exit (ExitCode(..))
 import qualified Options.Applicative as OptParse
 
 
+class MapError f where
+    mapError :: (x -> y) -> f x a -> f y a
+
+
 data ProgramResult err a
     = ShowUsage
     | ProgramError err
     | ProgramSuccess a
     | ProgramFailed
     deriving (Functor)
+
+instance MapError ProgramResult where
+    mapError f = \case
+        ShowUsage -> ShowUsage
+        ProgramError x -> ProgramError $ f x
+        ProgramSuccess a -> ProgramSuccess a
+        ProgramFailed -> ProgramFailed
 
 instance Applicative (ProgramResult err) where
     pure a = ProgramSuccess a
@@ -39,6 +50,9 @@ instance Monad (ProgramResult err) where
 newtype ProgramIO m x a =
     ProgramIO (m (ProgramResult x a))
     deriving (Functor)
+
+instance Functor m => MapError (ProgramIO m) where
+    mapError f (ProgramIO m) = ProgramIO (fmap (mapError f) m)
 
 instance Monad m => Applicative (ProgramIO m x) where
     pure a = ProgramIO $ return $ pure a

@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module ElmRefactor.Cli (main) where
 
 import Elm.Utils ((|>))
@@ -7,6 +8,7 @@ import CommandLine.TransformFiles (TransformMode(..))
 import CommandLine.World
 import Control.Monad.Free
 import Data.Coapplicative
+import Data.Either.Extra (collectErrors)
 import Data.Text (Text)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
 import ElmRefactor.CliFlags as Flags
@@ -14,6 +16,7 @@ import ElmRefactor.Messages
 import ElmVersion
 
 import qualified CommandLine.Program as Program
+import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified CommandLine.TransformFiles as TransformFiles
 import qualified Data.Indexed as I
 import qualified ElmFormat.FileStore as FileStore
@@ -45,23 +48,24 @@ upgrade upgradeDefinitions (_, inputText) =
             -- TODO: return an error message
             error "TODO: couldn't parse source file"
 
-main' :: World m => Flags.Flags -> ProgramIO m Text () -- TODO: define ErrorMessage type instead of Text
+main' :: forall m. World m => Flags.Flags -> ProgramIO m ErrorMessage ()
 main' flags =
     let
         autoYes = True
 
+        readDefinitionFile :: FilePath -> m (Either FilePath UpgradeDefinition)
         readDefinitionFile definitionFile =
-            Program.liftME
-                $ fmap (first (\() -> "Failed to parse upgrade definition"))
+            fmap (first $ \() -> definitionFile)
                 $ parseUpgradeDefinition . snd <$> foldFree Operation.execute (FileStore.readFileWithPath definitionFile)
     in
     do
-        mode <- case Flags._input flags of
+        resolvedInputFiles <- Program.mapError BadInputFiles $ Program.liftME $ ResolveFiles.resolveElmFiles (Flags._input flags)
+        mode <- case resolvedInputFiles of
             [] -> Program.showUsage
             first:rest -> return $ FilesInPlace first rest
 
         let definitionFiles = Flags._upgradeDefinitions flags
-        definitions <- mapM readDefinitionFile definitionFiles
+        definitions <- Program.mapError BadUpgradeDefinitions $ Program.liftME $ collectErrors <$> mapM readDefinitionFile definitionFiles
 
         result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten) (upgrade definitions) mode
         if result
@@ -71,4 +75,4 @@ main' flags =
 
 main :: World m => [String] -> m ()
 main args =
-    Program.run (Flags.parser ElmRefactor.Version.asString) id main' args
+    Program.run (Flags.parser ElmRefactor.Version.asString) showErrorMessage main' args

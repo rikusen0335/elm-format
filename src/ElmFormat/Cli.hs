@@ -8,7 +8,6 @@ import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
 import CommandLine.Program (ProgramIO)
-import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
 import CommandLine.World
 import ElmFormat.Messages
@@ -50,7 +49,7 @@ data Mode
     | ValidateMode
 
 
-determineSource :: Bool -> Either [ResolveFileError] [FilePath] -> Either ErrorMessage Source
+determineSource :: Bool -> Either [ResolveFiles.Error] [FilePath] -> Either ErrorMessage Source
 determineSource stdin inputFiles =
     case ( stdin, inputFiles ) of
         ( _, Left fileErrors ) -> Left $ BadInputFiles fileErrors
@@ -93,7 +92,7 @@ determineWhatToDo source destination mode =
         ( _, FromFiles _ _, ToFile _ ) -> Left SingleOutputWithMultipleInputs
 
 
-determineWhatToDoFromConfig :: Flags.Config -> Either [ResolveFileError] [FilePath] -> Either ErrorMessage WhatToDo
+determineWhatToDoFromConfig :: Flags.Config -> Either [ResolveFiles.Error] [FilePath] -> Either ErrorMessage WhatToDo
 determineWhatToDoFromConfig config resolvedInputFiles =
     do
         source <- determineSource (Flags._stdin config) resolvedInputFiles
