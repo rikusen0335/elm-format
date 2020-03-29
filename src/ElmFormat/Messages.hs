@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
 module ElmFormat.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..), showInfoMessage, jsonInfoMessage, ErrorMessage(..), showErrorMessage) where
 
 -- inspired by:

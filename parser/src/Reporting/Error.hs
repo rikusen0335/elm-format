@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE OverloadedStrings #-}
 module Reporting.Error where
 
 import Data.Aeson ((.=))

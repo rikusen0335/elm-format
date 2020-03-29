@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Integration.CliTest (tests) where
 
 import CommandLine.World (readUtf8File)

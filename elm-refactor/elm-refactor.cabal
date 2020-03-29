@@ -34,6 +34,8 @@ common common-options
     ghc-options:
         -threaded -O2 -Wall -Wno-name-shadowing
     default-extensions:
+        DeriveFunctor
+        LambdaCase
         OverloadedStrings
     build-depends:
         ansi-wl-pprint >= 0.6.8.2 && < 0.7,

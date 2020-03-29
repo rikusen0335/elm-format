@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module ElmFormat.Operation (Operation, OperationF(..), ElmFormat.Operation.execute) where
 
 import Prelude hiding (readFile, writeFile)

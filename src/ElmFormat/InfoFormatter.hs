@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module ElmFormat.InfoFormatter
     ( Loggable(..), onInfo, approve
     , InfoFormatter(..), InfoFormatterF(..), execute

@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module ElmRefactor.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..)) where
 
 import qualified Data.Text as Text
