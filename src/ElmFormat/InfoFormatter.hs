@@ -1,5 +1,6 @@
 module ElmFormat.InfoFormatter
-    ( Loggable(..), onInfo, approve
+    ( ToConsole(..), Loggable(..)
+    , onInfo, approve
     , InfoFormatter(..), InfoFormatterF(..), execute
     , ExecuteMode(..), init, done
     ) where
@@ -16,8 +17,11 @@ import ElmVersion (ElmVersion)
 import qualified Text.JSON as Json
 
 
-class Loggable a where
-    showInfoMessage :: a -> Text
+class ToConsole a where
+    toConsole :: a -> Text
+
+
+class ToConsole a => Loggable a where
     jsonInfoMessage :: ElmVersion -> a -> Maybe Json.JSValue -- TODO: remove ElmVersion
 
 
@@ -28,10 +32,10 @@ onInfo mode info =
             maybe (lift $ return ()) json $ jsonInfoMessage elmVersion info
 
         ForHuman usingStdout ->
-            lift $ putStrLn' usingStdout (showInfoMessage info)
+            lift $ putStrLn' usingStdout (toConsole info)
 
 
-approve :: (Monad f, InfoFormatter f) => ExecuteMode -> Bool -> Text -> f Bool
+approve :: (Monad f, InfoFormatter f, ToConsole prompt) => ExecuteMode -> Bool -> prompt -> f Bool
 approve mode autoYes prompt =
     case autoYes of
         True -> return True
@@ -41,7 +45,7 @@ approve mode autoYes prompt =
                 ForMachine _ -> return False
 
                 ForHuman usingStdout ->
-                    putStrLn' usingStdout prompt *> yesOrNo
+                    putStrLn' usingStdout (toConsole prompt) *> yesOrNo
 
 
 class Functor f => InfoFormatter f where

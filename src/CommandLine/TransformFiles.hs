@@ -66,9 +66,10 @@ data TransformMode
 applyTransformation ::
     World m =>
     InfoFormatter.Loggable info =>
+    InfoFormatter.ToConsole prompt =>
     (FilePath -> info)
     -> Bool
-    -> ([FilePath] -> Text)
+    -> ([FilePath] -> prompt)
     -> ((FilePath, Text) -> Either info Text)
     -> TransformMode
     -> m Bool

@@ -66,7 +66,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- Program.mapError BadUpgradeDefinitions $ Program.liftME $ collectErrors <$> mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten) (upgrade definitions) mode
+        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes FilesWillBeOverwritten (upgrade definitions) mode
         if result
             then return ()
             else Program.failed
@@ -74,4 +74,4 @@ main' flags =
 
 main :: World m => [String] -> m ()
 main args =
-    Program.run (Flags.parser ElmRefactor.Version.asString) showErrorMessage main' args
+    Program.run (Flags.parser ElmRefactor.Version.asString) main' args

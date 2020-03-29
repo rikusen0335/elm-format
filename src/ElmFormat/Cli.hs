@@ -125,7 +125,7 @@ main =
 
 main' :: World m => String -> Maybe String -> [String] -> m ()
 main' elmFormatVersion experimental args =
-    Program.run (Flags.parser elmFormatVersion experimental) showErrorMessage run' args
+    Program.run (Flags.parser elmFormatVersion experimental) run' args
     where
         run' :: World m => Flags.Config -> ProgramIO m ErrorMessage ()
         run' flags =
@@ -212,12 +212,12 @@ doIt elmVersion autoYes whatToDo =
 
         Format transformMode ->
             TransformFiles.applyTransformation
-                ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes FilesWillBeOverwritten
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
             TransformFiles.applyTransformation
-                ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes FilesWillBeOverwritten
                 (toJson elmVersion)
                 transformMode

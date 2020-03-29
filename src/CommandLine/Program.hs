@@ -7,6 +7,7 @@ import Relude hiding (putStrLn, exitSuccess, exitFailure)
 
 import CommandLine.World
 import qualified Data.Text as Text
+import ElmFormat.InfoFormatter (ToConsole(..))
 import System.Exit (ExitCode(..))
 
 import qualified Options.Applicative as OptParse
@@ -94,12 +95,12 @@ liftME m = ProgramIO (m >>= ((\(ProgramIO z) -> z) . liftEither))
 
 run ::
     World m =>
+    ToConsole err =>
     OptParse.ParserInfo flags
-    -> (err -> Text)
     -> (flags -> ProgramIO m err ())
     -> [String]
     -> m ()
-run flagsParser formatError run' args =
+run flagsParser run' args =
     let
         parsePreferences =
             OptParse.prefs (mempty <> OptParse.showHelpOnError)
@@ -121,7 +122,7 @@ run flagsParser formatError run' args =
                                 >> exitFailure
 
                         ProgramError err ->
-                            putStrLnStderr (formatError err)
+                            putStrLnStderr (toConsole err)
                                 >> exitFailure
 
                         ProgramSuccess () ->
