@@ -13,7 +13,6 @@ import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
 import ElmVersion
-import ElmFormat.InfoFormatter (ExecuteMode(..), approve)
 import ElmFormat.World
 import Reporting.Annotation (Located)
 
@@ -214,19 +213,13 @@ doIt elmVersion autoYes whatToDo =
                 validateMode
 
         Format transformMode ->
-            let
-                infoMode = ForHuman True -- XXX: usingStdout should be determined by applyTransformation
-            in
             TransformFiles.applyTransformation
-                ProcessingFile (approve infoMode autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes (Text.pack . showPromptMessage . FilesWillBeOverwritten)
                 (format elmVersion)
                 transformMode
 
         ConvertToJson transformMode ->
-            let
-                infoMode = ForHuman True -- XXX: usingStdout should be determined by applyTransformation
-            in
             TransformFiles.applyTransformation
-                ProcessingFile (approve infoMode autoYes . Text.pack . showPromptMessage . FilesWillBeOverwritten)
+                ProcessingFile autoYes (Text.pack . showPromptMessage . FilesWillBeOverwritten)
                 (toJson elmVersion)
                 transformMode

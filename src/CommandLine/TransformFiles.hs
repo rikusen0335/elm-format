@@ -14,7 +14,6 @@ import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InfoFormatter (ExecuteMode(..))
 import ElmFormat.InputConsole (InputConsole)
-import ElmFormat.Operation (OperationF)
 import qualified ElmFormat.Operation as Operation
 import ElmFormat.World (World)
 import ElmVersion
@@ -68,11 +67,12 @@ applyTransformation ::
     World m =>
     InfoFormatter.Loggable info =>
     (FilePath -> info)
-    -> ([FilePath] -> Free OperationF Bool)
+    -> Bool
+    -> ([FilePath] -> Text)
     -> ((FilePath, Text) -> Either info Text)
     -> TransformMode
     -> m Bool
-applyTransformation processingFile approve transform mode =
+applyTransformation processingFile autoYes confirmPrompt transform mode =
     let
         usesStdout =
             case mode of
@@ -85,6 +85,8 @@ applyTransformation processingFile approve transform mode =
         infoMode = ForHuman usesStdout
 
         onInfo = InfoFormatter.onInfo infoMode
+
+        approve = InfoFormatter.approve infoMode autoYes . confirmPrompt
     in
     foldFree Operation.execute $
     runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $

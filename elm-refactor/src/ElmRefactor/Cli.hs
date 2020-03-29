@@ -7,7 +7,6 @@ import CommandLine.TransformFiles (TransformMode(..))
 import Control.Monad.Free
 import Data.Coapplicative
 import Data.Text (Text)
-import ElmFormat.InfoFormatter (ExecuteMode(..), approve)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
 import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
@@ -64,7 +63,7 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile (approve (ForHuman undefined) autoYes . showPromptMessage . FilesWillBeOverwritten) (upgrade definitions) mode
+        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes (showPromptMessage . FilesWillBeOverwritten) (upgrade definitions) mode
         if result
             then return ()
             else Program.failed
