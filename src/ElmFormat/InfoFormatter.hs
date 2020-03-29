@@ -7,13 +7,13 @@ module ElmFormat.InfoFormatter
 
 import Prelude hiding (init, putStrLn)
 
+import CommandLine.World (World)
+import qualified CommandLine.World as World
 import Control.Monad.Free
 import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as Text
 import ElmVersion (ElmVersion)
-import ElmFormat.World (World)
-import qualified ElmFormat.World as World
 import qualified Text.JSON as Json
 
 

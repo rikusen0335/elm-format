@@ -1,9 +1,9 @@
 module ElmFormat.InputConsole (InputConsole, InputConsoleF(..), readStdin, execute) where
 
+import CommandLine.World (World)
+import qualified CommandLine.World as World
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World (World)
-import qualified ElmFormat.World as World
 
 
 class Functor f => InputConsole f where

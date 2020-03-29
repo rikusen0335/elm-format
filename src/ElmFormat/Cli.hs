@@ -10,8 +10,8 @@ import AST.V0_16
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
+import CommandLine.World
 import ElmFormat.Messages
-import ElmFormat.World
 import ElmVersion
 import Reporting.Annotation (Located)
 

@@ -4,11 +4,11 @@ import Elm.Utils ((|>))
 
 import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))
+import CommandLine.World
 import Control.Monad.Free
 import Data.Coapplicative
 import Data.Text (Text)
 import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
-import ElmFormat.World
 import ElmRefactor.CliFlags as Flags
 import ElmRefactor.Messages
 import ElmVersion

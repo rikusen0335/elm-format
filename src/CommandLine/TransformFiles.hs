@@ -7,6 +7,7 @@ module CommandLine.TransformFiles
 -- This module provides reusable functions for command line tools that
 -- transform files.
 
+import CommandLine.World (World)
 import Control.Monad.Free
 import Control.Monad.State hiding (runState)
 import Data.Text (Text)
@@ -15,7 +16,6 @@ import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InfoFormatter (ExecuteMode(..))
 import ElmFormat.InputConsole (InputConsole)
 import qualified ElmFormat.Operation as Operation
-import ElmFormat.World (World)
 import ElmVersion
 
 import qualified ElmFormat.InfoFormatter as InfoFormatter

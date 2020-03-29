@@ -1,4 +1,4 @@
-module ElmFormat.World where
+module CommandLine.World where
 
 import Prelude ()
 import Relude hiding (getLine, putStr)

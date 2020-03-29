@@ -1,10 +1,10 @@
 module ElmFormat.FileStore (FileStore, FileStoreF(..), FileType(..), readFile, readFileWithPath, stat, listDirectory, execute) where
 
+import CommandLine.World (World, FileType)
+import qualified CommandLine.World as World
 import Prelude hiding (readFile, writeFile)
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World (World, FileType)
-import qualified ElmFormat.World as World
 
 
 class Functor f => FileStore f where

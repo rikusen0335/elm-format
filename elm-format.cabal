@@ -55,8 +55,8 @@ library
         CommandLine.Program
         CommandLine.ResolveFiles
         CommandLine.TransformFiles
+        CommandLine.World
         ElmFormat.Upgrade_0_19
-        ElmFormat.World
         -- exposed for tests
         AST.Helpers
         AST.Listing
@@ -174,11 +174,11 @@ test-Suite elm-format-tests
     other-modules:
         AST.MatchReferencesTest
         BoxTest
+        CommandLine.TestWorld
         CommonMarkTests
         ElmFormat.ImportInfoTest
         ElmFormat.Render.ElmStructureTest
         ElmFormat.Upgrade_0_19Test
-        ElmFormat.TestWorld
         Expect
         Integration.CliTest
         Integration.LiteralTest

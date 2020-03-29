@@ -1,12 +1,12 @@
 module Integration.CliTest (tests) where
 
+import CommandLine.World (readUtf8File)
+import CommandLine.TestWorld (TestWorld, run, expectExit, goldenExitStdout, expectFileContents)
+import qualified CommandLine.TestWorld as TestWorld
 import Elm.Utils ((|>))
 import Test.Tasty
 import Test.Tasty.HUnit
-import ElmFormat.World (readUtf8File)
-import ElmFormat.TestWorld (TestWorld, run, expectExit, goldenExitStdout, expectFileContents)
 import qualified ElmFormat.Cli as ElmFormat
-import qualified ElmFormat.TestWorld as TestWorld
 import qualified Data.Text as Text
 
 

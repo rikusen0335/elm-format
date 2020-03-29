@@ -1,9 +1,9 @@
 module ElmFormat.OutputConsole (OutputConsole, OutputConsoleF(..), writeStdout, execute) where
 
+import CommandLine.World (World)
+import qualified CommandLine.World as World
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World (World)
-import qualified ElmFormat.World as World
 
 
 class Functor f => OutputConsole f where

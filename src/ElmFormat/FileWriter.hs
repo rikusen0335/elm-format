@@ -1,10 +1,11 @@
 module ElmFormat.FileWriter (FileWriter, FileWriterF(..), writeFile, overwriteFile, execute) where
 
 import Prelude hiding (writeFile)
+
+import CommandLine.World (World)
+import qualified CommandLine.World as World
 import Control.Monad.Free
 import Data.Text (Text)
-import ElmFormat.World (World)
-import qualified ElmFormat.World as World
 
 
 class Functor f => FileWriter f where

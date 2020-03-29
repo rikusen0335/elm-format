@@ -2,13 +2,14 @@
 module ElmFormat.Operation (Operation, OperationF(..), ElmFormat.Operation.execute) where
 
 import Prelude hiding (readFile, writeFile)
+
+import CommandLine.World (World)
 import Control.Monad.Free
 import ElmFormat.FileStore as FileStore
 import ElmFormat.FileWriter as FileWriter
 import ElmFormat.InfoFormatter as InfoFormatter
 import ElmFormat.InputConsole as InputConsole
 import ElmFormat.OutputConsole as OutputConsole
-import ElmFormat.World (World)
 
 
 class (FileStore f, InfoFormatter f, OutputConsole f) => Operation f

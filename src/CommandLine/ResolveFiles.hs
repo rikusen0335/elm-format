@@ -5,11 +5,11 @@ module CommandLine.ResolveFiles (resolveElmFiles, ResolveFileError(..)) where
 import Prelude ()
 import Relude
 
+import CommandLine.World (World)
 import Control.Monad.Free
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.Filesystem as FS
 import qualified ElmFormat.Operation as Operation
-import ElmFormat.World (World)
 
 
 data ResolveFileError

@@ -1,8 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
-module ElmFormat.TestWorld where
+module CommandLine.TestWorld where
 
-import ElmFormat.World
-
+import CommandLine.World
 import Elm.Utils ((|>))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (Assertion, assertBool, assertEqual, testCase)
