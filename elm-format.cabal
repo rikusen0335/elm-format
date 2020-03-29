@@ -38,6 +38,7 @@ common common-options
         DeriveFunctor
         LambdaCase
         OverloadedStrings
+        ScopedTypeVariables
 
 
 library

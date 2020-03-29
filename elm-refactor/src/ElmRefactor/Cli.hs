@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 module ElmRefactor.Cli (main) where
 
 import Elm.Utils ((|>))

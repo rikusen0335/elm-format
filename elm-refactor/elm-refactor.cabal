@@ -37,6 +37,7 @@ common common-options
         DeriveFunctor
         LambdaCase
         OverloadedStrings
+        ScopedTypeVariables
     build-depends:
         ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base-noprelude >= 4.12.0.0 && < 5,
