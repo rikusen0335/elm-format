@@ -91,10 +91,10 @@ done (ForHuman _) _ = return ()
 execute :: World m => InfoFormatterF a -> m a
 execute = \case
     PutInfoToStderr text next ->
-        World.putStrStderr (Text.unpack text) *> return next
+        World.putStrStderr text *> return next
 
     PutInfoToStdout text next ->
-        World.putStr (Text.unpack text) *> return next
+        World.putStr text *> return next
 
     YesOrNo next ->
         fmap next World.getYesOrNo

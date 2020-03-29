@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 module CommandLine.TestWorld where
 
 import CommandLine.World
@@ -10,17 +11,18 @@ import Test.Tasty.Golden (goldenVsStringDiff)
 import Prelude hiding (putStr, readFile, writeFile)
 import qualified Control.Monad.State.Lazy as State
 import qualified Data.Map.Strict as Dict
-import qualified Data.Text.Lazy as Text
-import qualified Data.Text.Lazy.Encoding as Text
-import qualified Data.Text as StrictText
+import qualified Data.Text.Lazy as LazyText
+import qualified Data.Text.Lazy.Encoding as LazyText
+import Data.Text (Text)
+import qualified Data.Text as Text
 
 
 data TestWorldState =
     TestWorldState
-        { filesystem :: Dict.Map FilePath StrictText.Text
-        , queuedStdin :: String
-        , stdout :: [String]
-        , stderr :: [String]
+        { filesystem :: Dict.Map FilePath Text
+        , queuedStdin :: Text
+        , stdout :: [Text]
+        , stderr :: [Text]
         , programs :: Dict.Map String ([String] -> State.State TestWorld ())
         , lastExitCode :: Maybe Int
         }
@@ -29,18 +31,18 @@ data TestWorldState =
 type TestWorld = TestWorldState
 
 
-fullStdout :: TestWorldState -> String
+fullStdout :: TestWorldState -> Text
 fullStdout state =
     stdout state
         |> reverse
-        |> concat
+        |> mconcat
 
 
-fullStderr :: TestWorldState -> String
+fullStderr :: TestWorldState -> Text
 fullStderr state =
     stderr state
         |> reverse
-        |> concat
+        |> mconcat
 
 
 instance World (State.State TestWorldState) where
@@ -70,8 +72,8 @@ instance World (State.State TestWorldState) where
     getStdin =
         do
             state <- State.get
-            State.put $ state { queuedStdin = [] }
-            return $ StrictText.pack (queuedStdin state)
+            State.put $ state { queuedStdin = "" }
+            return $ queuedStdin state
 
     putStr string =
         do
@@ -81,10 +83,10 @@ instance World (State.State TestWorldState) where
     putStrLn string =
         do
             state <- State.get
-            State.put $ state { stdout = (string ++ "\n") : stdout state }
+            State.put $ state { stdout = (string <> "\n") : stdout state }
 
     writeStdout text =
-        putStr (StrictText.unpack text)
+        putStr text
 
     putStrStderr string =
         do
@@ -94,7 +96,7 @@ instance World (State.State TestWorldState) where
     putStrLnStderr string =
         do
             state <- State.get
-            State.put $ state { stderr = (StrictText.unpack string ++ "\n") : stderr state }
+            State.put $ state { stderr = (string <> "\n") : stderr state }
 
     getProgName =
         return "elm-format"
@@ -113,7 +115,7 @@ instance World (State.State TestWorldState) where
 testWorld :: [(String, String)] -> TestWorldState
 testWorld files =
       TestWorldState
-          { filesystem = Dict.fromList (fmap (fmap StrictText.pack) files)
+          { filesystem = Dict.fromList (fmap (fmap Text.pack) files)
           , queuedStdin = ""
           , stdout = []
           , stderr = []
@@ -130,7 +132,7 @@ eval :: State.State s a -> s -> a
 eval = State.evalState
 
 
-queueStdin :: String -> TestWorldState -> TestWorldState
+queueStdin :: Text -> TestWorldState -> TestWorldState
 queueStdin newStdin state =
     state { queuedStdin = newStdin }
 
@@ -139,7 +141,7 @@ assertOutput :: [(String, String)] -> TestWorldState -> Assertion
 assertOutput expectedFiles context =
     assertBool
         ("Expected filesystem to contain: " ++ show expectedFiles ++ "\nActual: " ++ show (filesystem context))
-        (all (\(k,v) -> Dict.lookup k (filesystem context) == Just (StrictText.pack v)) expectedFiles)
+        (all (\(k,v) -> Dict.lookup k (filesystem context) == Just (Text.pack v)) expectedFiles)
 
 
 goldenStdout :: String -> FilePath -> TestWorldState -> TestTree
@@ -152,12 +154,12 @@ goldenStderr =
     goldenOutputStream fullStderr
 
 
-goldenOutputStream :: (TestWorldState -> String) -> String -> FilePath -> TestWorldState -> TestTree
+goldenOutputStream :: (TestWorldState -> Text) -> String -> FilePath -> TestWorldState -> TestTree
 goldenOutputStream getStream testName goldenFile state =
     goldenVsStringDiff testName
         (\ref new -> ["diff", "-u", ref, new])
         goldenFile
-        (return $ Text.encodeUtf8 $ Text.pack $ getStream state)
+        (return $ LazyText.encodeUtf8 $ LazyText.fromStrict $ getStream state)
 
 
 goldenExitStdout :: String -> Int -> String -> TestWorldState -> TestTree
@@ -174,12 +176,12 @@ init = testWorld []
 
 uploadFile :: String -> String -> TestWorld -> TestWorld
 uploadFile name content world =
-    world { filesystem = Dict.insert name (StrictText.pack content) (filesystem world) }
+    world { filesystem = Dict.insert name (Text.pack content) (filesystem world) }
 
 
 downloadFile :: String -> TestWorld -> Maybe String
 downloadFile name world =
-    fmap StrictText.unpack $ Dict.lookup name (filesystem world)
+    fmap Text.unpack $ Dict.lookup name (filesystem world)
 
 
 installProgram :: String -> ([String] -> State.State TestWorld ()) -> TestWorld -> TestWorld
@@ -192,7 +194,7 @@ run name args testWorld =
     case Dict.lookup name (programs testWorld) of
         Nothing ->
             testWorld
-                { stdout = (name ++ ": command not found") : stdout testWorld
+                { stdout = Text.pack (name ++ ": command not found") : stdout testWorld
                 , lastExitCode = Just 127
                 }
 

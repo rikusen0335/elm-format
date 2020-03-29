@@ -4,8 +4,8 @@ import Prelude ()
 import Relude hiding (getLine, putStr)
 
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Data.Text.IO
-import System.IO (hFlush, hPutStr)
 import qualified Data.ByteString.Lazy as Lazy
 import qualified System.Directory as Dir
 import qualified System.Environment
@@ -45,10 +45,10 @@ class Monad m => World m where
                 ( _, True ) -> IsDirectory
                 ( False, False ) -> DoesNotExist
 
-    getProgName :: m String
+    getProgName :: m Text
 
     getStdin :: m Text
-    getLine :: m String
+    getLine :: m Text
     getYesOrNo :: m Bool
     getYesOrNo =
       do  flushStdout
@@ -57,11 +57,11 @@ class Monad m => World m where
             "y" -> return True
             "n" -> return False
             _   -> putStr "Must type 'y' for yes or 'n' for no: " *> getYesOrNo
-    putStr :: String -> m ()
-    putStrLn :: String -> m ()
+    putStr :: Text -> m ()
+    putStrLn :: Text -> m ()
     writeStdout :: Text -> m ()
     flushStdout :: m ()
-    putStrStderr :: String -> m ()
+    putStrStderr :: Text -> m ()
     putStrLnStderr :: Text -> m()
 
     exitFailure :: m ()
@@ -76,15 +76,15 @@ instance World IO where
     doesDirectoryExist = Dir.doesDirectoryExist
     listDirectory = Dir.listDirectory
 
-    getProgName = System.Environment.getProgName
+    getProgName = fmap Text.pack System.Environment.getProgName
 
     getStdin = decodeUtf8 <$> toStrict <$> Lazy.getContents
-    getLine = System.IO.getLine
-    putStr = System.IO.putStr
-    putStrLn = System.IO.putStrLn
+    getLine = Data.Text.IO.getLine
+    putStr = Data.Text.IO.putStr
+    putStrLn = Data.Text.IO.putStrLn
     writeStdout content = putBS $ encodeUtf8 content
-    flushStdout = hFlush stdout
-    putStrStderr = hPutStr stderr
+    flushStdout = System.IO.hFlush stdout
+    putStrStderr = Data.Text.IO.hPutStr stderr
     putStrLnStderr = Data.Text.IO.hPutStrLn stderr
 
     exitFailure = System.Exit.exitFailure

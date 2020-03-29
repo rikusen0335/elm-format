@@ -122,9 +122,9 @@ handleParseResult :: World m => OptParse.ParserResult a -> m (Maybe a)
 handleParseResult (OptParse.Success a) = return (Just a)
 handleParseResult (OptParse.Failure failure) = do
     progn <- getProgName
-    let (msg, exit) = OptParse.renderFailure failure progn
+    let (msg, exit) = OptParse.renderFailure failure (Text.unpack progn)
     case exit of
-        ExitSuccess -> putStrLn msg *> exitSuccess *> return Nothing
+        ExitSuccess -> putStrLn (Text.pack msg) *> exitSuccess *> return Nothing
         _           -> putStrLnStderr (Text.pack msg) *> exitFailure *> return Nothing
 handleParseResult (OptParse.CompletionInvoked _) =
     -- do
