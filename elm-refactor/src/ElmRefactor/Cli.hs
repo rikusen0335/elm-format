@@ -17,8 +17,8 @@ import ElmVersion
 import qualified CommandLine.Program as Program
 import qualified CommandLine.TransformFiles as TransformFiles
 import qualified Data.Indexed as I
-import qualified ElmFormat.Execute as Execute
 import qualified ElmFormat.FileStore as FileStore
+import qualified ElmFormat.Operation as Operation
 import qualified ElmFormat.Parse as Parse
 import qualified ElmFormat.Render.Text as Render
 import qualified ElmRefactor.Version
@@ -54,7 +54,7 @@ main' flags =
         readDefinitionFile definitionFile =
             Program.liftME
                 $ fmap (first (\() -> "Failed to parse upgrade definition"))
-                $ parseUpgradeDefinition . snd <$> foldFree Execute.execute (FileStore.readFileWithPath definitionFile)
+                $ parseUpgradeDefinition . snd <$> foldFree Operation.execute (FileStore.readFileWithPath definitionFile)
     in
     do
         mode <- case Flags._input flags of

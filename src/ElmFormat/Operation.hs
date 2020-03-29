@@ -1,12 +1,14 @@
-module ElmFormat.Operation (Operation, OperationF(..)) where
+{-# LANGUAGE LambdaCase #-}
+module ElmFormat.Operation (Operation, OperationF(..), ElmFormat.Operation.execute) where
 
 import Prelude hiding (readFile, writeFile)
 import Control.Monad.Free
-import ElmFormat.FileStore
-import ElmFormat.FileWriter
-import ElmFormat.InfoFormatter
-import ElmFormat.InputConsole
-import ElmFormat.OutputConsole
+import ElmFormat.FileStore as FileStore
+import ElmFormat.FileWriter as FileWriter
+import ElmFormat.InfoFormatter as InfoFormatter
+import ElmFormat.InputConsole as InputConsole
+import ElmFormat.OutputConsole as OutputConsole
+import ElmFormat.World (World)
 
 
 class (FileStore f, InfoFormatter f, OutputConsole f) => Operation f
@@ -52,3 +54,12 @@ instance FileWriter OperationF where
 
 
 instance Operation f => Operation (Free f)
+
+
+execute :: World m => OperationF a -> m a
+execute = \case
+    InFileStore op -> FileStore.execute op
+    InInfoFormatter op -> InfoFormatter.execute op
+    InInputConsole op -> InputConsole.execute op
+    InOutputConsole op -> OutputConsole.execute op
+    InFileWriter op -> FileWriter.execute op

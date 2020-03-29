@@ -68,12 +68,12 @@ library
         Data.Coapplicative
         Data.Indexed
         Elm.Utils
-        ElmFormat.Execute
         ElmFormat.FileStore
         ElmFormat.FileWriter
         ElmFormat.ImportInfo
         ElmFormat.InfoFormatter
         ElmFormat.InputConsole
+        ElmFormat.Operation
         ElmFormat.OutputConsole
         ElmFormat.Parse
         ElmFormat.Render.Box
@@ -104,7 +104,6 @@ library
         Cheapskate.Util
         ElmFormat.CliFlags
         ElmFormat.Filesystem
-        ElmFormat.Operation
         ElmFormat.Version
         Messages.Strings
         Paths_elm_format

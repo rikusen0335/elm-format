@@ -10,12 +10,12 @@ module CommandLine.TransformFiles
 import Control.Monad.Free
 import Control.Monad.State hiding (runState)
 import Data.Text (Text)
-import qualified ElmFormat.Execute as Execute
 import ElmFormat.FileStore (FileStore)
 import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InfoFormatter (ExecuteMode(..))
 import ElmFormat.InputConsole (InputConsole)
 import ElmFormat.Operation (OperationF)
+import qualified ElmFormat.Operation as Operation
 import ElmFormat.World (World)
 import ElmVersion
 
@@ -86,7 +86,7 @@ applyTransformation processingFile approve transform mode =
 
         onInfo = InfoFormatter.onInfo infoMode
     in
-    foldFree Execute.execute $
+    foldFree Operation.execute $
     runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         StdinToStdout ->
@@ -129,7 +129,7 @@ validateNoChanges elmVersion processingFile validate mode =
         infoMode = ForMachine elmVersion
         onInfo = InfoFormatter.onInfo infoMode
     in
-    foldFree Execute.execute $
+    foldFree Operation.execute $
     runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         ValidateStdin ->

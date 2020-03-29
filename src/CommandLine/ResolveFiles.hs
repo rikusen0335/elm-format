@@ -6,9 +6,9 @@ import Prelude ()
 import Relude
 
 import Control.Monad.Free
-import qualified ElmFormat.Execute as Execute
 import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.Filesystem as FS
+import qualified ElmFormat.Operation as Operation
 import ElmFormat.World (World)
 
 
@@ -19,7 +19,7 @@ data ResolveFileError
 
 resolveFile :: World m => FilePath -> m (Either ResolveFileError [FilePath])
 resolveFile path =
-    foldFree Execute.execute $
+    foldFree Operation.execute $
     do
         fileType <- FileStore.stat path
 
