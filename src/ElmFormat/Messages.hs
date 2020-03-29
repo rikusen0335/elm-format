@@ -1,6 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Messages.Strings (showPromptMessage, showInfoMessage, jsonInfoMessage, showErrorMessage) where
+module ElmFormat.Messages (PromptMessage(..), showPromptMessage, InfoMessage(..), showInfoMessage, jsonInfoMessage, ErrorMessage(..), showErrorMessage) where
+
+-- inspired by:
+-- https://wiki.haskell.org/Internationalization_of_Haskell_programs_using_Haskell_data_types
 
 import Prelude ()
 import Relude
@@ -10,10 +13,30 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import ElmFormat.InfoFormatter (Loggable(..))
 import qualified ElmFormat.Version
-import Messages.Types
-import qualified Reporting.Annotation as RA
+import ElmVersion
+import qualified Reporting.Annotation as A
+import qualified Reporting.Error.Syntax as Syntax
 import Reporting.Region (Region(..), Position(..))
 import qualified Text.JSON as Json
+
+
+data InfoMessage
+  = ProcessingFile FilePath
+  | FileWouldChange FilePath
+  | ParseError FilePath String [A.Located Syntax.Error]
+
+
+data PromptMessage
+    = FilesWillBeOverwritten [FilePath]
+
+
+data ErrorMessage
+  = BadInputFiles [ResolveFileError]
+  | NoInputs
+  | SingleOutputWithMultipleInputs
+  | TooManyInputs
+  | OutputAndValidate
+  | MustSpecifyVersionWithUpgrade ElmVersion
 
 
 showFiles :: [FilePath] -> Text
@@ -46,7 +69,7 @@ instance Loggable InfoMessage where
                 Text.pack $
                 case errs of
                     [] -> inputFile
-                    (RA.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
+                    (A.A (Region (Position line col) _) _) : _ -> inputFile ++ ":" ++ show line ++ ":" ++ show col
         in
         "Unable to parse file " <> location <> " To see a detailed explanation, run elm make on the file."
 

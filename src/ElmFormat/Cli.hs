@@ -7,13 +7,12 @@ import Relude hiding (exitFailure, exitSuccess, putStr, putStrLn)
 import AST.Module (Module)
 import AST.Structure
 import AST.V0_16
-import Messages.Types
-import Messages.Strings (showPromptMessage, showErrorMessage)
 import CommandLine.Program (ProgramIO)
 import CommandLine.ResolveFiles (ResolveFileError)
 import CommandLine.TransformFiles (TransformMode(..), ValidateMode(..))
-import ElmVersion
+import ElmFormat.Messages
 import ElmFormat.World
+import ElmVersion
 import Reporting.Annotation (Located)
 
 import qualified AST.Json

@@ -80,7 +80,6 @@ library
         ElmFormat.Render.ElmStructure
         ElmFormat.Render.Markdown
         ElmFormat.Render.Text
-        Messages.Types
         Parse.Expression
         Parse.Helpers
         Parse.IParser
@@ -104,8 +103,8 @@ library
         Cheapskate.Util
         ElmFormat.CliFlags
         ElmFormat.Filesystem
+        ElmFormat.Messages
         ElmFormat.Version
-        Messages.Strings
         Paths_elm_format
         Parse.Binop
         Parse.Common
