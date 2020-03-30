@@ -41,7 +41,6 @@ common common-options
     build-depends:
         ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base-noprelude >= 4.12.0.0 && < 5,
-        free >= 5.1.1 && < 6,
         json >= 0.9.3 && < 0.10,
         optparse-applicative >= 0.14.3.0 && < 0.15,
         relude >= 0.4.0 && < 0.5,

@@ -74,13 +74,8 @@ library
         Data.Either.Extra
         Data.Indexed
         Elm.Utils
-        ElmFormat.FileStore
-        ElmFormat.FileWriter
         ElmFormat.ImportInfo
         ElmFormat.InfoFormatter
-        ElmFormat.InputConsole
-        ElmFormat.Operation
-        ElmFormat.OutputConsole
         ElmFormat.Parse
         ElmFormat.Render.Box
         ElmFormat.Render.ElmStructure
@@ -132,7 +127,6 @@ library
         data-fix >= 0.2.0 && < 0.3,
         directory >= 1.3.3.0 && < 2,
         filepath >= 1.4.2.1 && < 2,
-        free >= 5.1.1 && < 6,
         indents >= 0.3.3 && < 0.4,
         json >= 0.9.3 && < 0.10,
         mtl >= 2.2.2 && < 3,

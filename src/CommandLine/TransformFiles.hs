@@ -8,21 +8,13 @@ module CommandLine.TransformFiles
 -- transform files.
 
 import CommandLine.World (World)
-import Control.Monad.Free
+import qualified CommandLine.World as World
 import Control.Monad.State hiding (runState)
 import Data.Text (Text)
-import ElmFormat.FileStore (FileStore)
-import ElmFormat.FileWriter (FileWriter)
 import ElmFormat.InfoFormatter (ExecuteMode(..))
-import ElmFormat.InputConsole (InputConsole)
-import qualified ElmFormat.Operation as Operation
 import ElmVersion
 
 import qualified ElmFormat.InfoFormatter as InfoFormatter
-import qualified ElmFormat.InputConsole as InputConsole
-import qualified ElmFormat.FileStore as FileStore
-import qualified ElmFormat.FileWriter as FileWriter
-import qualified ElmFormat.OutputConsole as OutputConsole
 
 
 data Result a
@@ -37,22 +29,22 @@ checkChange (inputFile, inputText) outputText =
         else Changed inputFile outputText
 
 
-updateFile :: FileWriter f => Result Text -> Free f ()
+updateFile :: World m => Result Text -> m ()
 updateFile result =
     case result of
         NoChange _ _ -> return ()
-        Changed outputFile outputText -> FileWriter.overwriteFile outputFile outputText
+        Changed outputFile outputText -> World.writeUtf8File outputFile outputText
 
 
-readStdin :: InputConsole f => Free f (FilePath, Text)
+readStdin :: World m => m (FilePath, Text)
 readStdin =
-    (,) "<STDIN>" <$> InputConsole.readStdin
+    (,) "<STDIN>" <$> World.getStdin
 
 
-readFromFile :: FileStore f => (FilePath -> StateT s (Free f) ()) -> FilePath -> StateT s (Free f) (FilePath, Text)
+readFromFile :: World m => (FilePath -> StateT s m ()) -> FilePath -> StateT s m (FilePath, Text)
 readFromFile onProcessingFile filePath =
     onProcessingFile filePath
-        *> lift (FileStore.readFileWithPath filePath)
+        *> lift (World.readUtf8FileWithPath filePath)
 
 
 data TransformMode
@@ -89,20 +81,19 @@ applyTransformation processingFile autoYes confirmPrompt transform mode =
 
         approve = InfoFormatter.approve infoMode autoYes . confirmPrompt
     in
-    foldFree Operation.execute $
     runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         StdinToStdout ->
-            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . OutputConsole.writeStdout)
+            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . World.writeStdout)
 
         StdinToFile outputFile ->
-            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . FileWriter.overwriteFile outputFile)
+            lift (transform <$> readStdin) >>= logErrorOr onInfo (lift . World.writeUtf8File outputFile)
 
         FileToStdout inputFile ->
-            lift (transform <$> FileStore.readFileWithPath inputFile) >>= logErrorOr onInfo (lift . OutputConsole.writeStdout)
+            lift (transform <$> World.readUtf8FileWithPath inputFile) >>= logErrorOr onInfo (lift . World.writeStdout)
 
         FileToFile inputFile outputFile ->
-            (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (lift . FileWriter.overwriteFile outputFile)
+            (transform <$> readFromFile (onInfo . processingFile) inputFile) >>= logErrorOr onInfo (lift . World.writeUtf8File outputFile)
 
         FilesInPlace first rest ->
             do
@@ -132,7 +123,6 @@ validateNoChanges elmVersion processingFile validate mode =
         infoMode = ForMachine elmVersion
         onInfo = InfoFormatter.onInfo infoMode
     in
-    foldFree Operation.execute $
     runState (InfoFormatter.init infoMode) (InfoFormatter.done infoMode) $
     case mode of
         ValidateStdin ->

@@ -21,6 +21,9 @@ data FileType
 
 class Monad m => World m where
     readUtf8File :: FilePath -> m Text
+    readUtf8FileWithPath :: FilePath -> m (FilePath, Text)
+    readUtf8FileWithPath filePath =
+        (,) filePath <$> readUtf8File filePath
     writeUtf8File :: FilePath -> Text -> m ()
     writeUtf8FileNoOverwrite :: FilePath -> Text -> m ()
     writeUtf8FileNoOverwrite path content =

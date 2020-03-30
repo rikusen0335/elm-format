@@ -5,7 +5,7 @@ import Elm.Utils ((|>))
 import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))
 import CommandLine.World
-import Control.Monad.Free
+import qualified CommandLine.World as World
 import Data.Coapplicative
 import Data.Either.Extra (collectErrors)
 import Data.Text (Text)
@@ -18,8 +18,6 @@ import qualified CommandLine.Program as Program
 import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified CommandLine.TransformFiles as TransformFiles
 import qualified Data.Indexed as I
-import qualified ElmFormat.FileStore as FileStore
-import qualified ElmFormat.Operation as Operation
 import qualified ElmFormat.Parse as Parse
 import qualified ElmFormat.Render.Text as Render
 import qualified ElmRefactor.Version
@@ -55,7 +53,7 @@ main' flags =
         readDefinitionFile :: FilePath -> m (Either FilePath UpgradeDefinition)
         readDefinitionFile definitionFile =
             fmap (first $ \() -> definitionFile)
-                $ parseUpgradeDefinition . snd <$> foldFree Operation.execute (FileStore.readFileWithPath definitionFile)
+                $ parseUpgradeDefinition . snd <$> World.readUtf8FileWithPath definitionFile
     in
     do
         resolvedInputFiles <- Program.mapError BadInputFiles $ Program.liftME $ ResolveFiles.resolveElmFiles (Flags._input flags)

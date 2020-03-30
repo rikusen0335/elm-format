@@ -1,7 +1,6 @@
 module ElmFormat.Filesystem where
 
-import Control.Monad.Free
-import ElmFormat.FileStore
+import CommandLine.World
 import System.FilePath ((</>))
 import qualified System.FilePath as FilePath
 
@@ -14,21 +13,12 @@ collectFiles children root =
         return $ root : concat subChildren
 
 
-listDir :: FileStore f => FilePath -> Free f [FilePath]
+listDir :: World m => FilePath -> m [FilePath]
 listDir path =
     map (path </>) <$> listDirectory path
 
 
-doesDirectoryExist :: FileStore f => FilePath -> Free f Bool
-doesDirectoryExist path =
-    do
-        fileType <- stat path
-        case fileType of
-            IsDirectory -> return True
-            _ -> return False
-
-
-fileList :: FileStore f => FilePath -> Free f [FilePath]
+fileList :: World m => FilePath -> m [FilePath]
 fileList =
   let
       children path =
@@ -55,7 +45,7 @@ hasExtension ext path =
     ext == FilePath.takeExtension path
 
 
-findAllElmFiles :: FileStore f => FilePath -> Free f [FilePath]
+findAllElmFiles :: World m => FilePath -> m [FilePath]
 findAllElmFiles inputFile =
     filter (hasExtension ".elm") <$> fileList inputFile
 

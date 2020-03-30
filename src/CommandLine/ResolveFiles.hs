@@ -5,14 +5,12 @@ module CommandLine.ResolveFiles (resolveElmFiles, Error(..)) where
 import Prelude ()
 import Relude
 
-import CommandLine.World (World)
-import Control.Monad.Free
+import CommandLine.World (World, FileType(..))
+import qualified CommandLine.World as World
 import Data.Either.Extra (collectErrors)
 import qualified Data.Text as Text
 import ElmFormat.InfoFormatter (ToConsole(..))
-import qualified ElmFormat.FileStore as FileStore
 import qualified ElmFormat.Filesystem as FS
-import qualified ElmFormat.Operation as Operation
 
 
 data Error
@@ -28,22 +26,21 @@ instance ToConsole Error where
 
 resolveFile :: World m => FilePath -> m (Either Error [FilePath])
 resolveFile path =
-    foldFree Operation.execute $
     do
-        fileType <- FileStore.stat path
+        fileType <- World.stat path
 
         case fileType of
-            FileStore.IsFile ->
+            IsFile ->
                 return $ Right [path]
 
-            FileStore.IsDirectory ->
+            IsDirectory ->
                 do
                     elmFiles <- FS.findAllElmFiles path
                     case elmFiles of
                         [] -> return $ Left $ NoElmFiles path
                         _ -> return $ Right elmFiles
 
-            FileStore.DoesNotExist ->
+            DoesNotExist ->
                 return $ Left $ FileDoesNotExist path
 
 

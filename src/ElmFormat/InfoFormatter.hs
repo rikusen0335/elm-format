@@ -1,7 +1,6 @@
 module ElmFormat.InfoFormatter
     ( ToConsole(..), Loggable(..)
     , onInfo, approve
-    , InfoFormatter(..), InfoFormatterF(..), execute
     , ExecuteMode(..), init, done
     ) where
 
@@ -9,7 +8,6 @@ import Prelude hiding (init, putStrLn)
 
 import CommandLine.World (World)
 import qualified CommandLine.World as World
-import Control.Monad.Free
 import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -25,7 +23,7 @@ class ToConsole a => Loggable a where
     jsonInfoMessage :: ElmVersion -> a -> Maybe Json.JSValue -- TODO: remove ElmVersion
 
 
-onInfo :: (Monad f, InfoFormatter f, Loggable info) => ExecuteMode -> info -> StateT Bool f ()
+onInfo :: (World m, Loggable info) => ExecuteMode -> info -> StateT Bool m ()
 onInfo mode info =
     case mode of
         ForMachine elmVersion ->
@@ -35,7 +33,7 @@ onInfo mode info =
             lift $ putStrLn' usingStdout (toConsole info)
 
 
-approve :: (Monad f, InfoFormatter f, ToConsole prompt) => ExecuteMode -> Bool -> prompt -> f Bool
+approve :: (World m, ToConsole prompt) => ExecuteMode -> Bool -> prompt -> m Bool
 approve mode autoYes prompt =
     case autoYes of
         True -> return True
@@ -45,35 +43,7 @@ approve mode autoYes prompt =
                 ForMachine _ -> return False
 
                 ForHuman usingStdout ->
-                    putStrLn' usingStdout (toConsole prompt) *> yesOrNo
-
-
-class Functor f => InfoFormatter f where
-    putInfoToStderr :: Text -> f () -- with trailing newline
-    putInfoToStdout :: Text -> f () -- with trailing newline
-    putInfoToStdoutN :: Text -> f () -- without trailing newline
-    yesOrNo :: f Bool
-
-
-data InfoFormatterF a
-    = PutInfoToStderr Text a
-    | PutInfoToStdout Text a
-    | YesOrNo (Bool -> a)
-    deriving (Functor)
-
-
-instance InfoFormatter InfoFormatterF where
-    putInfoToStderr text = PutInfoToStderr (text <> "\n") ()
-    putInfoToStdout text = PutInfoToStdout (text <> "\n") ()
-    putInfoToStdoutN text = PutInfoToStdout text ()
-    yesOrNo = YesOrNo id
-
-
-instance InfoFormatter f => InfoFormatter (Free f) where
-    putInfoToStderr text = liftF (putInfoToStderr text)
-    putInfoToStdout text = liftF (putInfoToStdout text)
-    putInfoToStdoutN text = liftF (putInfoToStdoutN text)
-    yesOrNo = liftF yesOrNo
+                    putStrLn' usingStdout (toConsole prompt) *> World.getYesOrNo
 
 
 data ExecuteMode
@@ -81,40 +51,28 @@ data ExecuteMode
     | ForHuman { _usingStdout :: Bool }
 
 
-init :: (Monad f, InfoFormatter f) => ExecuteMode -> (f (), Bool)
-init (ForMachine _) = (putInfoToStdoutN "[", False)
+init :: World m => ExecuteMode -> (m (), Bool)
+init (ForMachine _) = (World.putStr "[", False)
 init (ForHuman _) = (return (), undefined)
 
 
-done :: (Monad f, InfoFormatter f) => ExecuteMode -> Bool -> f ()
-done (ForMachine _) _ = putInfoToStdout "]"
+done :: World m => ExecuteMode -> Bool -> m ()
+done (ForMachine _) _ = World.putStrLn "]"
 done (ForHuman _) _ = return ()
 
 
-execute :: World m => InfoFormatterF a -> m a
-execute = \case
-    PutInfoToStderr text next ->
-        World.putStrStderr text *> return next
-
-    PutInfoToStdout text next ->
-        World.putStr text *> return next
-
-    YesOrNo next ->
-        fmap next World.getYesOrNo
-
-
-putStrLn' :: InfoFormatter f => Bool -> Text -> f ()
+putStrLn' :: World m => Bool -> Text -> m ()
 putStrLn' usingStdout =
     -- we log to stdout unless it is being used for file output (in that case, we log to stderr)
     case usingStdout of
-        True -> putInfoToStderr
-        False -> putInfoToStdout
+        True -> World.putStrLnStderr
+        False -> World.putStrLn
 
 
-json :: (Monad f, InfoFormatter f) => Json.JSValue -> StateT Bool f ()
+json :: World m => Json.JSValue -> StateT Bool m ()
 json jsvalue =
     do
         printComma <- get
-        when printComma (lift $ putInfoToStdoutN ",")
-        lift $ putInfoToStdout $ Text.pack $ Json.encode jsvalue
+        when printComma (lift $ World.putStr ",")
+        lift $ World.putStrLn $ Text.pack $ Json.encode jsvalue
         put True
