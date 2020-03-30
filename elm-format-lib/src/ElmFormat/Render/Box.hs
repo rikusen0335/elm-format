@@ -22,9 +22,12 @@ import qualified Data.Foldable as Foldable
 import Data.Functor.Identity
 import qualified Data.Indexed as I
 import qualified Data.List as List
+import Data.List.Extra
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, maybeToList)
 import qualified Data.Maybe as Maybe
+import Data.ReversedList (Reversed)
+import qualified Data.ReversedList as ReversedList
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -34,21 +37,18 @@ import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified ElmFormat.Render.ElmStructure as ElmStructure
 import qualified ElmFormat.Render.Markdown
 import qualified ElmFormat.Upgrade_0_19 as Upgrade_0_19
-import qualified ElmFormat.Version
 import qualified ElmVersion
 import qualified Parse.Parse as Parse
 import qualified Reporting.Annotation as RA
 import qualified Reporting.Region as Region
 import qualified Reporting.Result as Result
-import qualified ReversedList
-import ReversedList (Reversed)
 import Text.Printf (printf)
-import Util.List
 
 
 pleaseReport'' :: String -> String -> String
 pleaseReport'' what details =
-    "<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >"
+    -- TODO: include version in the message
+    "<elm-format: "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >"
 
 
 pleaseReport' :: String -> String -> Line

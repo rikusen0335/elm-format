@@ -6,6 +6,7 @@ import qualified Test.Property
 import qualified AST.MatchReferencesTest
 import qualified BoxTest
 -- import qualified CommonMarkTests
+import qualified Data.List.ExtraTest
 import qualified ElmFormat.ImportInfoTest
 import qualified ElmFormat.Render.ElmStructureTest
 import qualified ElmFormat.Upgrade_0_19Test
@@ -17,7 +18,6 @@ import qualified Parse.LiteralTest
 import qualified Parse.PatternTest
 import qualified Parse.TypeTest
 import qualified Parse.TestHelpersTest
-import qualified Util.ListTest
 
 
 main :: IO ()
@@ -28,6 +28,7 @@ main =
             [ Test.Property.propertyTests
             , AST.MatchReferencesTest.tests
             , BoxTest.tests
+            , Data.List.ExtraTest.tests
             , ElmFormat.ImportInfoTest.tests
             , ElmFormat.Render.ElmStructureTest.tests
             , ElmFormat.Upgrade_0_19Test.tests
@@ -39,6 +40,5 @@ main =
             , Parse.PatternTest.tests
             , Parse.TypeTest.tests
             , Parse.TestHelpersTest.tests
-            , Util.ListTest.tests
             -- , markdownTests
             ]

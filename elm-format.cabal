@@ -40,131 +40,46 @@ common common-options
         OverloadedStrings
         ScopedTypeVariables
 
-
-library
-    import: common-options
-
-    default-extensions:
-        MultiParamTypeClasses
-
     hs-source-dirs:
         src
-        parser/src
-        markdown
         generated
-
-    exposed-modules:
-        ElmFormat.Cli
-        ElmVersion
-        -- exposed for elm-refactor
-        CommandLine.InfoFormatter
-        CommandLine.Program
-        CommandLine.ResolveFiles
-        CommandLine.TransformFiles
-        CommandLine.World
-        ElmFormat.Upgrade_0_19
-        -- exposed for tests
-        AST.Helpers
-        AST.Listing
-        AST.MatchReferences
-        AST.Module
-        AST.Structure
-        AST.V0_16
-        Box
-        Data.Coapplicative
-        Data.Either.Extra
-        Data.Indexed
-        Elm.Utils
-        ElmFormat.ImportInfo
-        ElmFormat.Parse
-        ElmFormat.Render.Box
-        ElmFormat.Render.ElmStructure
-        ElmFormat.Render.Markdown
-        ElmFormat.Render.Text
-        Parse.Expression
-        Parse.Helpers
-        Parse.IParser
-        Parse.Literal
-        Parse.Markdown
-        Parse.Pattern
-        Parse.Type
-        Reporting.Annotation
-        Reporting.Error.Syntax
-        Reporting.Region
-        Reporting.Result
-        Util.List
 
     other-modules:
         AST.Json
         Build_elm_format
-        Cheapskate.Inlines
-        Cheapskate.Parse
-        Cheapskate.ParserCombinators
-        Cheapskate.Types
-        Cheapskate.Util
-        CommandLine.Filesystem
+        ElmFormat.Cli
         ElmFormat.CliFlags
         ElmFormat.Messages
         ElmFormat.Version
-        Paths_elm_format
-        Parse.Binop
-        Parse.Common
-        Parse.Comments
-        Parse.Declaration
-        Parse.Module
-        Parse.Parse
-        Parse.State
-        Parse.Whitespace
-        ReversedList
 
     build-depends:
         ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base >= 4.12.0.0 && < 5,
-        bimap >= 0.3.3 && < 0.4,
-        binary >= 0.8.7.0 && < 0.9,
-        bytestring >= 0.10.8.2 && < 0.11,
         containers >= 0.6.0.1 && < 0.7,
-        data-fix >= 0.2.0 && < 0.3,
-        directory >= 1.3.3.0 && < 2,
-        filepath >= 1.4.2.1 && < 2,
-        indents >= 0.3.3 && < 0.4,
         json >= 0.9.3 && < 0.10,
-        mtl >= 2.2.2 && < 3,
         optparse-applicative >= 0.14.3.0 && < 0.15,
-        parsec >= 3.1.13.0 && < 4,
-        process >= 1.6.5.0 && < 2,
         relude >= 0.4.0 && < 0.5,
-        split >= 0.2.3.3 && < 0.3,
-        text >= 1.2.3.1 && < 2
+        text >= 1.2.3.1 && < 2,
+        elm-format-lib
 
 
 executable elm-format
     import: common-options
-
-    hs-source-dirs:
-        src-cli
-
     main-is: Main.hs
-
-    build-depends:
-        base >= 4.12.0.0 && < 5,
-        elm-format
 
 
 test-Suite elm-format-tests
     import: common-options
     type: exitcode-stdio-1.0
 
-    hs-source-dirs:
-        tests
-
+    hs-source-dirs: tests
     main-is: Test.hs
 
     other-modules:
         AST.MatchReferencesTest
         BoxTest
-        CommandLine.TestWorld
         CommonMarkTests
+        Data.List.ExtraTest
         ElmFormat.ImportInfoTest
         ElmFormat.Render.ElmStructureTest
         ElmFormat.Upgrade_0_19Test
@@ -181,23 +96,15 @@ test-Suite elm-format-tests
         Test.ElmSourceGenerators
         Test.Generators
         Test.Property
-        Util.ListTest
 
     build-depends:
         tasty >= 1.2 && < 2,
-        tasty-golden >= 2.3.2 && < 3,
         tasty-hunit >= 0.10.0.1 && < 0.11,
         tasty-quickcheck >= 0.10.1 && < 0.11,
-        HUnit >= 1.6.0.0 && < 2,
         QuickCheck >= 2.12.6.1 && < 3,
         quickcheck-io >= 0.2.0 && < 0.3,
-        base >= 4.12.0.0 && < 5,
         bimap >= 0.3.3 && < 0.4,
         cmark >= 0.5.6.3 && < 0.6,
-        containers >= 0.6.0.1 && < 0.7,
-        data-fix >= 0.2.0 && < 0.3,
-        mtl >= 2.2.2 && < 3,
         parsec >= 3.1.13.0 && < 4,
         split >= 0.2.3.3 && < 0.3,
-        text >= 1.2.3.1 && < 2,
-        elm-format
+        elm-format-test-lib

@@ -45,14 +45,7 @@ common common-options
         optparse-applicative >= 0.14.3.0 && < 0.15,
         relude >= 0.4.0 && < 0.5,
         text >= 1.2.3.1 && < 2,
-        elm-format
-
-
-executable elm-refactor
-    import: common-options
-
-    hs-source-dirs: src
-    main-is: Main.hs
+        elm-format-lib
 
     other-modules:
         ElmRefactor.Cli
@@ -60,6 +53,13 @@ executable elm-refactor
         ElmRefactor.Messages
         ElmRefactor.Version
         Prelude
+
+
+executable elm-refactor
+    import: common-options
+
+    hs-source-dirs: src
+    main-is: Main.hs
 
 
 test-suite elm-refactor-tests
@@ -71,7 +71,6 @@ test-suite elm-refactor-tests
 
     other-modules:
         ElmRefactor.Integration.NormalizingReferencesTest
-        Prelude
 
     build-depends:
         tasty >= 1.2 && < 2,
@@ -80,4 +79,5 @@ test-suite elm-refactor-tests
         tasty-quickcheck >= 0.10.1 && < 0.11,
         HUnit >= 1.6.0.0 && < 2,
         QuickCheck >= 2.12.6.1 && < 3,
-        quickcheck-io >= 0.2.0 && < 0.3
+        quickcheck-io >= 0.2.0 && < 0.3,
+        elm-format-test-lib

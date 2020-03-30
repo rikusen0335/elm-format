@@ -90,7 +90,7 @@ main = do
         need libFiles
         need sourceFiles
         need generatedSourceFiles
-        cmd_ "stack build elm-refactor:exe:elm-refactor"
+        cmd_ "stack build elm-refactor:exe:elm-refactor --test --no-run-tests"
 
     "_build/bin/elm-format-prof" %> \out -> do
         StdoutTrim profileInstallRoot <- liftIO $ cmd "stack path --profile --local-install-root"

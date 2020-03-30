@@ -23,8 +23,8 @@ import qualified Data.Maybe as Maybe
 import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified ElmFormat.Version
 import qualified Reporting.Region as Region
-import qualified ReversedList
-import ReversedList (Reversed)
+import Data.ReversedList (Reversed)
+import qualified Data.ReversedList as ReversedList
 
 
 pleaseReport :: String -> String -> a

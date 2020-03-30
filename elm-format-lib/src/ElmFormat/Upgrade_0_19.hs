@@ -34,7 +34,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified ElmFormat.Parse
-import qualified ElmFormat.Version
 import qualified Reporting.Result as Result
 
 
@@ -550,7 +549,8 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
 
 pleaseReport'' :: String -> String -> String
 pleaseReport'' what details =
-    "<elm-format-" ++ ElmFormat.Version.asString ++ ": "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >"
+    -- TODO: include version in the message
+    "<elm-format: "++ what ++ ": " ++ details ++ " -- please report this at https://github.com/avh4/elm-format/issues >"
 
 
 makeArg :: Applicative annf => String -> C1 before (ASTNS annf ns 'PatternNK)

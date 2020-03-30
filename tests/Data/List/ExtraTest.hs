@@ -1,9 +1,9 @@
-module Util.ListTest where
+module Data.List.ExtraTest where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Util.List
+import Data.List.Extra
 
 
 tests :: TestTree

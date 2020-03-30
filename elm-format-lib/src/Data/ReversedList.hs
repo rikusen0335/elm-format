@@ -1,4 +1,4 @@
-module ReversedList where
+module Data.ReversedList where
 
 {-|
 ReversedList can be used to avoid accidentally forgetting to reverse a list

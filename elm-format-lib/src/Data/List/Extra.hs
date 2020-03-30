@@ -1,4 +1,4 @@
-module Util.List where
+module Data.List.Extra where
 
 import Elm.Utils ((|>))
 import qualified Data.List as List
