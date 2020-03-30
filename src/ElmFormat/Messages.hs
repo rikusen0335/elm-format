@@ -6,10 +6,10 @@ module ElmFormat.Messages (PromptMessage(..), InfoMessage(..), ErrorMessage(..))
 import Prelude ()
 import Relude
 
+import CommandLine.InfoFormatter (ToConsole(..), Loggable(..))
 import CommandLine.ResolveFiles as ResolveFiles
 import Data.Text (Text)
 import qualified Data.Text as Text
-import ElmFormat.InfoFormatter (ToConsole(..), Loggable(..))
 import qualified ElmFormat.Version
 import ElmVersion
 import qualified Reporting.Annotation as A

@@ -5,12 +5,12 @@ module CommandLine.ResolveFiles (resolveElmFiles, Error(..)) where
 import Prelude ()
 import Relude
 
+import CommandLine.InfoFormatter (ToConsole(..))
+import qualified CommandLine.Filesystem as Filesystem
 import CommandLine.World (World, FileType(..))
 import qualified CommandLine.World as World
 import Data.Either.Extra (collectErrors)
 import qualified Data.Text as Text
-import ElmFormat.InfoFormatter (ToConsole(..))
-import qualified ElmFormat.Filesystem as FS
 
 
 data Error
@@ -35,7 +35,7 @@ resolveFile path =
 
             IsDirectory ->
                 do
-                    elmFiles <- FS.findAllElmFiles path
+                    elmFiles <- Filesystem.findAllElmFiles path
                     case elmFiles of
                         [] -> return $ Left $ NoElmFiles path
                         _ -> return $ Right elmFiles

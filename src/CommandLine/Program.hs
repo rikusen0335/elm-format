@@ -5,9 +5,9 @@ module CommandLine.Program (ProgramResult(..), ProgramIO, run, failed, CommandLi
 import Prelude ()
 import Relude hiding (putStrLn, exitSuccess, exitFailure)
 
+import CommandLine.InfoFormatter (ToConsole(..))
 import CommandLine.World
 import qualified Data.Text as Text
-import ElmFormat.InfoFormatter (ToConsole(..))
 import System.Exit (ExitCode(..))
 
 import qualified Options.Applicative as OptParse

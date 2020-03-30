@@ -1,8 +1,8 @@
 module ElmRefactor.Messages (PromptMessage(..), InfoMessage(..), ErrorMessage(..)) where
 
+import CommandLine.InfoFormatter (ToConsole(..), Loggable(..))
 import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified Data.Text as Text
-import ElmFormat.InfoFormatter (ToConsole(..), Loggable(..))
 import qualified ElmRefactor.Version
 import qualified Text.JSON as Json
 import qualified Reporting.Annotation as A

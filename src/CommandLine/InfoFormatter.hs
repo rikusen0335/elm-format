@@ -1,4 +1,4 @@
-module ElmFormat.InfoFormatter
+module CommandLine.InfoFormatter
     ( ToConsole(..), Loggable(..)
     , onInfo, approve
     , ExecuteMode(..), init, done

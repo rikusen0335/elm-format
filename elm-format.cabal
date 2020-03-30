@@ -57,6 +57,7 @@ library
         ElmFormat.Cli
         ElmVersion
         -- exposed for elm-refactor
+        CommandLine.InfoFormatter
         CommandLine.Program
         CommandLine.ResolveFiles
         CommandLine.TransformFiles
@@ -75,7 +76,6 @@ library
         Data.Indexed
         Elm.Utils
         ElmFormat.ImportInfo
-        ElmFormat.InfoFormatter
         ElmFormat.Parse
         ElmFormat.Render.Box
         ElmFormat.Render.ElmStructure
@@ -102,8 +102,8 @@ library
         Cheapskate.ParserCombinators
         Cheapskate.Types
         Cheapskate.Util
+        CommandLine.Filesystem
         ElmFormat.CliFlags
-        ElmFormat.Filesystem
         ElmFormat.Messages
         ElmFormat.Version
         Paths_elm_format

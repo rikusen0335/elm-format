@@ -1,4 +1,4 @@
-module ElmFormat.Filesystem where
+module CommandLine.Filesystem where
 
 import CommandLine.World
 import System.FilePath ((</>))
