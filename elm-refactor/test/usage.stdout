@@ -1,0 +1,16 @@
+elm-refactor dev
+
+Usage: elm-format [--upgrade UPGRADE_DEFINITION] INPUT
+  Refactor Elm source files.
+
+Available options:
+  -h,--help                Show this help text
+  --upgrade UPGRADE_DEFINITION
+                           A file specifying an upgrade transformation to apply.
+                           You may specify this more than once.
+  INPUT                    The .elm file to transform. You may specify more than
+                           one.
+
+Examples:
+  elm-refactor Upgrade.elm Main.elm      # refactors Main.elm
+  elm-refactor Upgrade.elm src/          # refactors all *.elm files in the src directory
