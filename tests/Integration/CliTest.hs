@@ -7,6 +7,7 @@ import Elm.Utils ((|>))
 import Test.Tasty
 import Test.Tasty.HUnit
 import qualified ElmFormat.Cli as ElmFormat
+import Data.Text (Text)
 import qualified Data.Text as Text
 
 
@@ -77,16 +78,16 @@ tests =
             ]
         ]
 
-unformatted_elm :: String
+unformatted_elm :: Text
 unformatted_elm =
-    unlines
+    Text.unlines
         [ "module MyMain exposing (x)"
         , "x = ()"
         ]
 
-formatted_elm :: String
+formatted_elm :: Text
 formatted_elm =
-    unlines
+    Text.unlines
         [ "module MyMain exposing (x)"
         , ""
         , ""
@@ -94,7 +95,7 @@ formatted_elm =
         , "    ()"
         ]
 
-assertPrefix :: String -> Text.Text -> Assertion
+assertPrefix :: String -> Text -> Assertion
 assertPrefix prefix str =
     assertEqual ("should start with " ++ prefix) prefix (take (length prefix) (Text.unpack str))
 

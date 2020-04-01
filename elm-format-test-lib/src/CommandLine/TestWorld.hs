@@ -173,14 +173,14 @@ init :: TestWorld
 init = testWorld []
 
 
-uploadFile :: String -> String -> TestWorld -> TestWorld
+uploadFile :: FilePath -> Text -> TestWorld -> TestWorld
 uploadFile name content world =
-    world { filesystem = Dict.insert name (Text.pack content) (filesystem world) }
+    world { filesystem = Dict.insert name content (filesystem world) }
 
 
-downloadFile :: String -> TestWorld -> Maybe String
+downloadFile :: String -> TestWorld -> Maybe Text
 downloadFile name world =
-    fmap Text.unpack $ Dict.lookup name (filesystem world)
+    Dict.lookup name (filesystem world)
 
 
 installProgram :: String -> ([String] -> State.State TestWorld ()) -> TestWorld -> TestWorld
@@ -214,7 +214,7 @@ expectExit expectedExitCode testWorld =
             assertEqual "last exit code" expectedExitCode actualExitCode
 
 
-expectFileContents :: String -> String -> TestWorld -> Assertion
+expectFileContents :: String -> Text -> TestWorld -> Assertion
 expectFileContents filename expectedContent testWorld =
     case downloadFile filename testWorld of
         Nothing ->
