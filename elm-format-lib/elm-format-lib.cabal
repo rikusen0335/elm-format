@@ -32,7 +32,6 @@ library
 
     hs-source-dirs:
         src
-        ../markdown
 
     exposed-modules:
         CommandLine.InfoFormatter
@@ -75,11 +74,6 @@ library
         Reporting.Result
 
     other-modules:
-        Cheapskate.Inlines
-        Cheapskate.Parse
-        Cheapskate.ParserCombinators
-        Cheapskate.Types
-        Cheapskate.Util
         CommandLine.Filesystem
         Parse.Binop
         Parse.Common
@@ -91,17 +85,12 @@ library
         Parse.Whitespace
 
     build-depends:
-        ansi-terminal >= 0.8.2 && < 0.9,
-        ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base >= 4.12.0.0 && < 5,
         bimap >= 0.3.3 && < 0.4,
-        binary >= 0.8.7.0 && < 0.9,
         bytestring >= 0.10.8.2 && < 0.11,
         containers >= 0.6.0.1 && < 0.7,
-        data-fix >= 0.2.0 && < 0.3,
         directory >= 1.3.3.0 && < 2,
         filepath >= 1.4.2.1 && < 2,
-        free >= 5.1.1 && < 6,
         indents >= 0.3.3 && < 0.4,
         json >= 0.9.3 && < 0.10,
         mtl >= 2.2.2 && < 3,
@@ -109,5 +98,5 @@ library
         parsec >= 3.1.13.0 && < 4,
         process >= 1.6.5.0 && < 2,
         relude >= 0.4.0 && < 0.5,
-        split >= 0.2.3.3 && < 0.3,
-        text >= 1.2.3.1 && < 2
+        text >= 1.2.3.1 && < 2,
+        elm-format-markdown

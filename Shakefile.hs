@@ -71,12 +71,19 @@ main = do
             , "gitDescribe = " ++ show (gitDescribe :: String)
             ]
 
+    Shakefiles.Haskell.cabalProject "elm-format-markdown"
+        [ "elm-format-markdown/elm-format-markdown.cabal"
+        , "elm-format-markdown/src//*.hs"
+        , "elm-format-markdown//*.hs"
+        ]
+        [] [] []
+
     Shakefiles.Haskell.cabalProject "elm-format-lib"
         [ "elm-format-lib/elm-format-lib.cabal"
         , "elm-format-lib/src//*.hs"
-        , "markdown//*.hs"
         ]
-        [] [] []
+        [ "elm-format-markdown" ]
+        [] []
 
     Shakefiles.Haskell.cabalProject "elm-format-test-lib"
         [ "elm-format-test-lib/elm-format-test-lib.cabal"
