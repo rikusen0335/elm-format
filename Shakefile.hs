@@ -4,6 +4,7 @@ import Development.Shake.FilePath
 import Development.Shake.Util
 import Control.Monad (forM_)
 
+import qualified Shakefiles.Haskell
 import qualified Shakefiles.Shellcheck
 import qualified Shakefiles.Dependencies
 
@@ -37,7 +38,12 @@ main = do
     phony "build" $ need [ "elm-format", "elm-refactor" ]
     phony "elm-format" $ need [ elmFormat ]
     phony "elm-refactor" $ need [ elmRefactor ]
-    phony "stack-test" $ need [ "_build/stack-test.ok" ]
+    phony "stack-test" $ need
+        [ "_build/stack/elm-format-lib/test.ok"
+        , "_build/stack/elm-format-test-lib/test.ok"
+        , "_build/stack/elm-format/test.ok"
+        , "_build/stack/elm-refactor/test.ok"
+        ]
     phony "profile" $ need [ "_build/tests/test-files/prof.ok" ]
 
     phony "clean" $ do
@@ -51,18 +57,10 @@ main = do
             , "_stdout.txt"
             ]
 
+
     --
     -- build
     --
-
-    let generatedSourceFiles = [ "generated/Build_elm_format.hs" ]
-    let sourceFilesPattern =
-          [ "src//*.hs"
-          , "parser/src//*.hs"
-          , "markdown//*.hs"
-          , "elm-format.cabal"
-          , "stack.yaml"
-          ]
 
     "generated/Build_elm_format.hs" %> \out -> do
         alwaysRerun
@@ -73,50 +71,45 @@ main = do
             , "gitDescribe = " ++ show (gitDescribe :: String)
             ]
 
-    elmFormat %> \out -> do
-        libFiles <- getDirectoryFiles "" sourceFilesPattern
-        sourceFiles <- getDirectoryFiles "" [ "src-cli//*.hs" ]
-        need libFiles
-        need sourceFiles
-        need generatedSourceFiles
-        cmd_ "stack build elm-format:exe:elm-format --test --no-run-tests"
+    Shakefiles.Haskell.cabalProject "elm-format-lib"
+        [ "elm-format-lib/elm-format-lib.cabal"
+        , "elm-format-lib/src//*.hs"
+        , "markdown//*.hs"
+        ]
+        [] [] []
 
-    elmRefactor %> \out -> do
-        libFiles <- getDirectoryFiles "" sourceFilesPattern
-        sourceFiles <- getDirectoryFiles ""
-            [ "elm-refactor/elm-refactor.cabal"
-            , "elm-refactor/src//*.hs"
-            ]
-        need libFiles
-        need sourceFiles
-        need generatedSourceFiles
-        cmd_ "stack build elm-refactor:exe:elm-refactor --test --no-run-tests"
+    Shakefiles.Haskell.cabalProject "elm-format-test-lib"
+        [ "elm-format-test-lib/elm-format-test-lib.cabal"
+        , "elm-format-test-lib/src//*.hs"
+        ]
+        [ "elm-format-lib" ] [] []
 
-    "_build/bin/elm-format-prof" %> \out -> do
-        StdoutTrim profileInstallRoot <- liftIO $ cmd "stack path --profile --local-install-root"
-        sourceFiles <- getDirectoryFiles "" sourceFilesPattern
-        need sourceFiles
-        need generatedSourceFiles
-        cmd_ "stack build --profile --executable-profiling --library-profiling"
-        copyFileChanged (profileInstallRoot </> "bin/elm-format" <.> exe) out
+    Shakefiles.Haskell.cabalProject "elm-format"
+        [ "elm-format.cabal"
+        , "generated/Build_elm_format.hs"
+        , "src//*.hs"
+        ]
+        [ "elm-format-lib" ]
+        [ "tests//*.hs"
+        , "tests//*.stdout"
+        , "tests//*.stderr"
+        ]
+        [ "elm-format-test-lib" ]
 
+    Shakefiles.Haskell.exe elmFormat "elm-format"
 
-    --
-    -- Haskell tests
-    --
+    Shakefiles.Haskell.cabalProject "elm-refactor"
+        [ "elm-refactor/elm-refactor.cabal"
+        , "elm-refactor/src//*.hs"
+        ]
+        [ "elm-format-lib" ]
+        [ "elm-refactor/test//*.hs"
+        , "elm-refactor/test//*.stdout"
+        , "elm-refactor/test//*.stderr"
+        ]
+        [ "elm-format-test-lib" ]
 
-    "_build/stack-test.ok" %> \out -> do
-        testFiles <- getDirectoryFiles ""
-            [ "tests//*.hs"
-            , "tests//*.stdout"
-            , "tests//*.stderr"
-            ]
-        need testFiles
-        sourceFiles <- getDirectoryFiles "" sourceFilesPattern
-        need sourceFiles
-        need generatedSourceFiles
-        cmd_ "stack test --test-arguments=--hide-successes"
-        writeFile' out ""
+    Shakefiles.Haskell.exe elmRefactor "elm-refactor"
 
 
     --

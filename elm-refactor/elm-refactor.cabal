@@ -47,6 +47,7 @@ common common-options
         text >= 1.2.3.1 && < 2,
         elm-format-lib
 
+    hs-source-dirs: src
     other-modules:
         ElmRefactor.Cli
         ElmRefactor.CliFlags
@@ -57,8 +58,6 @@ common common-options
 
 executable elm-refactor
     import: common-options
-
-    hs-source-dirs: src
     main-is: Main.hs
 
 
@@ -66,7 +65,7 @@ test-suite elm-refactor-tests
     import: common-options
 
     type: exitcode-stdio-1.0
-    hs-source-dirs: src test
+    hs-source-dirs: test
     main-is: Tests.hs
 
     other-modules:
