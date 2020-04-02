@@ -10,6 +10,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 data Flags = Flags
     { _upgradeDefinitions :: [FilePath]
     , _input :: [FilePath]
+    , _autoYes :: Bool
     }
 
 
@@ -28,6 +29,7 @@ flags =
     Flags
       <$> upgradeDefinition
       <*> Opt.some input
+      <*> yes
 
 
 -- HELP
@@ -77,4 +79,13 @@ input =
         mconcat
         [ Opt.metavar "INPUT"
         , Opt.help "The .elm file to transform. You may specify more than one."
+        ]
+
+
+yes :: Opt.Parser Bool
+yes =
+    Opt.switch $
+        mconcat
+        [ Opt.long "yes"
+        , Opt.help "Reply 'yes' to all automated prompts."
         ]

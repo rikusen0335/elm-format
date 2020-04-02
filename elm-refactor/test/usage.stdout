@@ -1,6 +1,6 @@
 elm-refactor dev
 
-Usage: elm-format [--upgrade UPGRADE_DEFINITION] INPUT
+Usage: elm-format [--upgrade UPGRADE_DEFINITION] INPUT [--yes]
   Refactor Elm source files.
 
 Available options:
@@ -10,6 +10,7 @@ Available options:
                            You may specify this more than once.
   INPUT                    The .elm file to transform. You may specify more than
                            one.
+  --yes                    Reply 'yes' to all automated prompts.
 
 Examples:
   elm-refactor Upgrade.elm Main.elm      # refactors Main.elm

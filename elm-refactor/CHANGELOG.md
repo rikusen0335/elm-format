@@ -1,10 +1,17 @@
 ## upgrade-tool
 
+Usage changes:
+
 - there's now usage info `elm-refactor --help`
 - upgrade definitions are specified with `--upgrade`, and you can specify more than one
 - specifying no upgrade definitions will normalize references
 - you can now specify multiple files to transform
 - you can now specify directories containing .elm files to transform
+- you will now be prompted before files are overwritten
+- you can specify `--yes` to skip interactive prompts
+
+Transformation changes:
+
 - types can be upgraded with `type alias Upgrade_SomeModule_OldType a = SomeModule.NewType a`
 - variables and types that are referenced via `exposing (SomeType, someVar)` will now be upgraded
 - variables and types that are references via `exposing (..)` will now be upgraded

@@ -24,7 +24,7 @@ test_tests =
                 [ "import Maybe"
                 , "upgrade_Data_Maybe_maybe onNothing onJust maybe = maybe |> Maybe.map onJust |> Maybe.withDefault onNothing"
                 ]
-            |> run "elm-refactor" [ "--upgrade", "upgrade.elm", "Main.elm" ]
+            |> run "elm-refactor" [ "--yes", "--upgrade", "upgrade.elm", "Main.elm" ]
             |> assertFile "Main.elm"
                 [ "module Main exposing (..)"
                 , ""
@@ -44,7 +44,7 @@ test_tests =
                 [ "import Maybe"
                 , "upgrade_Data_Maybe_maybe onNothing onJust maybe = maybe |> Maybe.map onJust |> Maybe.withDefault onNothing"
                 ]
-            |> run "elm-refactor" [ "--upgrade", "upgrade.elm", "src" ]
+            |> run "elm-refactor" [ "--yes", "--upgrade", "upgrade.elm", "src" ]
             |> assertFile "src/Main.elm"
                 [ "module Main exposing (..)"
                 , ""

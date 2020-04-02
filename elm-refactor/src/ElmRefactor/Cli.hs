@@ -48,7 +48,7 @@ upgrade upgradeDefinitions (_, inputText) =
 main' :: forall m. World m => Flags.Flags -> ProgramIO m ErrorMessage ()
 main' flags =
     let
-        autoYes = True
+        autoYes = _autoYes flags
 
         readDefinitionFile :: FilePath -> m (Either FilePath UpgradeDefinition)
         readDefinitionFile definitionFile =
