@@ -9,6 +9,8 @@ import Test.Tasty.Golden (goldenVsStringDiff)
 
 import Prelude hiding (putStr, readFile, writeFile)
 import qualified Control.Monad.State.Lazy as State
+import Data.FileTree (FileTree)
+import qualified Data.FileTree as FileTree
 import qualified Data.Map.Strict as Dict
 import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Encoding as LazyText
@@ -18,7 +20,7 @@ import qualified Data.Text as Text
 
 data TestWorldState =
     TestWorldState
-        { filesystem :: Dict.Map FilePath Text
+        { filesystem :: FileTree Text
         , queuedStdin :: Text
         , stdout :: [Text]
         , stderr :: [Text]
@@ -48,15 +50,22 @@ instance World (State.State TestWorldState) where
     doesFileExist path =
         do
             state <- State.get
-            return $ Dict.member path (filesystem state)
+            return $ FileTree.doesFileExist path (filesystem state)
 
-    doesDirectoryExist _path =
-        return False
+    doesDirectoryExist path =
+        do
+            state <- State.get
+            return $ FileTree.doesDirectoryExist path (filesystem state)
+
+    listDirectory path =
+        do
+            state <- State.get
+            return $ FileTree.listDirectory path (filesystem state)
 
     readUtf8File path =
         do
             state <- State.get
-            case Dict.lookup path (filesystem state) of
+            case FileTree.read path (filesystem state) of
                 Nothing ->
                     error $ path ++ ": does not exist"
 
@@ -66,7 +75,7 @@ instance World (State.State TestWorldState) where
     writeUtf8File path content =
         do
             state <- State.get
-            State.put $ state { filesystem = Dict.insert path content (filesystem state) }
+            State.put $ state { filesystem = FileTree.write path content (filesystem state) }
 
     getStdin =
         do
@@ -114,7 +123,7 @@ instance World (State.State TestWorldState) where
 testWorld :: [(String, String)] -> TestWorldState
 testWorld files =
       TestWorldState
-          { filesystem = Dict.fromList (fmap (fmap Text.pack) files)
+          { filesystem = foldl (\t (p, c) -> FileTree.write p c t) mempty $ fmap (fmap Text.pack) files
           , queuedStdin = ""
           , stdout = []
           , stderr = []
@@ -140,7 +149,7 @@ assertOutput :: [(String, String)] -> TestWorldState -> Assertion
 assertOutput expectedFiles context =
     assertBool
         ("Expected filesystem to contain: " ++ show expectedFiles ++ "\nActual: " ++ show (filesystem context))
-        (all (\(k,v) -> Dict.lookup k (filesystem context) == Just (Text.pack v)) expectedFiles)
+        (all (\(k,v) -> FileTree.read k (filesystem context) == Just (Text.pack v)) expectedFiles)
 
 
 goldenStdout :: String -> FilePath -> TestWorldState -> TestTree
@@ -175,12 +184,12 @@ init = testWorld []
 
 uploadFile :: FilePath -> Text -> TestWorld -> TestWorld
 uploadFile name content world =
-    world { filesystem = Dict.insert name content (filesystem world) }
+    world { filesystem = FileTree.write name content (filesystem world) }
 
 
 downloadFile :: String -> TestWorld -> Maybe Text
 downloadFile name world =
-    Dict.lookup name (filesystem world)
+    FileTree.read name (filesystem world)
 
 
 installProgram :: String -> ([String] -> State.State TestWorld ()) -> TestWorld -> TestWorld
