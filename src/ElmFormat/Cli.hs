@@ -187,7 +187,7 @@ parseModule elmVersion (inputFile, inputText) =
             Right modu
 
         Result.Result _ (Result.Err errs) ->
-            Left $ ParseError inputFile (toString inputText) errs
+            Left $ ParseError inputFile errs
 
 
 format :: ElmVersion -> (FilePath, Text.Text) -> Either InfoMessage Text.Text

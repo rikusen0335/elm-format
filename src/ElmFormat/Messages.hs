@@ -21,7 +21,7 @@ import qualified Text.JSON as Json
 data InfoMessage
   = ProcessingFile FilePath
   | FileWouldChange FilePath
-  | ParseError FilePath String [A.Located Syntax.Error]
+  | ParseError FilePath [A.Located Syntax.Error]
 
 
 data PromptMessage
@@ -62,7 +62,7 @@ instance ToConsole InfoMessage where
         FileWouldChange file ->
             "File would be changed " <> Text.pack file
 
-        ParseError inputFile _ errs ->
+        ParseError inputFile errs ->
             let
                 location =
                     Text.pack $
@@ -88,7 +88,7 @@ instance Loggable InfoMessage where
             Just $ fileMessage file $
                 "File is not formatted with elm-format-" <> ElmFormat.Version.asString
                 <> " --elm-version=" <> show elmVersion
-        ParseError inputFile _ _ ->
+        ParseError inputFile _ ->
             Just $ fileMessage inputFile "Error parsing the file"
 
 
