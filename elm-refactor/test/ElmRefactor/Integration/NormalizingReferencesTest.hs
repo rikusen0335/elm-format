@@ -1,4 +1,4 @@
-module ElmRefactor.Integration.NormalizingReferencesTest (tests) where
+module ElmRefactor.Integration.NormalizingReferencesTest where
 
 import Elm.Utils ((|>))
 import Test.Tasty
@@ -21,8 +21,8 @@ refactorTest testName inputFile upgradeFile expectedOutputFile =
             (Right $ unlines expectedOutputFile)
             (refactor (unlines upgradeFile) (unlines inputFile))
 
-tests :: TestTree
-tests =
+test_tests :: TestTree
+test_tests =
     testGroup "normalizing references"
         [ refactorTest "exposing (..) in an import prevents unqualifying references to things explicitly exposed"
             [ "import A exposing (a)"

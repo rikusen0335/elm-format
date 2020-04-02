@@ -1,4 +1,4 @@
-module ElmRefactor.CliTest (tests) where
+module ElmRefactor.CliTest where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -9,8 +9,8 @@ import qualified CommandLine.World as World
 import qualified ElmRefactor.Cli as ElmRefactor
 
 
-tests :: TestTree
-tests =
+test_tests :: TestTree
+test_tests =
     testGroup "CLI"
         [ goldenExitStdout "usage instructions" 0 "test/usage.stdout" $ world
             |> run "elm-refactor" [ "--help" ]

@@ -74,6 +74,7 @@ test-suite elm-refactor-tests
 
     build-depends:
         tasty >= 1.2 && < 2,
+        tasty-discover >= 4.2.1 && < 5,
         tasty-golden >= 2.3.2 && < 3,
         tasty-hunit >= 0.10.0.1 && < 0.11,
         tasty-quickcheck >= 0.10.1 && < 0.11,
