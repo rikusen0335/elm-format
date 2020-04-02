@@ -6,15 +6,16 @@ import Development.Shake.FilePath
 import Development.Shake.Util
 
 
-cabalProject :: String -> [String] -> [String] -> [String] -> [String] -> Rules ()
-cabalProject name sourcePatterns deps testPatterns testDeps =
+cabalProject :: String -> [String] -> [String] -> [String] -> [String] -> [String] -> Rules ()
+cabalProject name sourceFiles sourcePatterns deps testPatterns testDeps =
     do
         "_build/stack/" </> name </> "build.ok" %> \out -> do
-            sourceFiles <- getDirectoryFiles "" sourcePatterns
+            sourceFilesFromPatterns <- getDirectoryFiles "" sourcePatterns
             let allFiles = mconcat
                     [ [ "stack.yaml" ]
                     , fmap (\d -> "_build/stack" </> d </> "build.ok") deps
                     , sourceFiles
+                    , sourceFilesFromPatterns
                     ]
             need allFiles
             hash <- liftIO $ getHashedShakeVersion allFiles
@@ -25,8 +26,9 @@ cabalProject name sourcePatterns deps testPatterns testDeps =
             need [ "stack.yaml" ]
             need $ fmap (\d -> "_build/stack" </> d </> "build.ok") deps
             need $ fmap (\d -> "_build/stack" </> d </> "build.ok") testDeps
-            sourceFiles <- getDirectoryFiles "" sourcePatterns
             need sourceFiles
+            sourceFilesFromPatterns <- getDirectoryFiles "" sourcePatterns
+            need sourceFilesFromPatterns
             testFiles <- getDirectoryFiles "" testPatterns
             need testFiles
             cmd_ "stack" "test" name "--test-arguments=--hide-successes"

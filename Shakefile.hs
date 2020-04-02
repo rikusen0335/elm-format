@@ -72,23 +72,21 @@ main = do
             ]
 
     Shakefiles.Haskell.cabalProject "elm-format-markdown"
-        [ "elm-format-markdown/elm-format-markdown.cabal"
-        , "elm-format-markdown/src//*.hs"
+        [ "elm-format-markdown/elm-format-markdown.cabal" ]
+        [ "elm-format-markdown/src//*.hs"
         , "elm-format-markdown//*.hs"
         ]
         [] [] []
 
     Shakefiles.Haskell.cabalProject "elm-format-lib"
-        [ "elm-format-lib/elm-format-lib.cabal"
-        , "elm-format-lib/src//*.hs"
-        ]
+        [ "elm-format-lib/elm-format-lib.cabal" ]
+        [ "elm-format-lib/src//*.hs" ]
         [ "elm-format-markdown" ]
         [] []
 
     Shakefiles.Haskell.cabalProject "elm-format-test-lib"
-        [ "elm-format-test-lib/elm-format-test-lib.cabal"
-        , "elm-format-test-lib/src//*.hs"
-        ]
+        [ "elm-format-test-lib/elm-format-test-lib.cabal" ]
+        [ "elm-format-test-lib/src//*.hs" ]
         [ "elm-format-lib" ]
         [ "elm-format-test-lib/test//*.hs" ]
         []
@@ -96,8 +94,8 @@ main = do
     Shakefiles.Haskell.cabalProject "elm-format"
         [ "elm-format.cabal"
         , "generated/Build_elm_format.hs"
-        , "src//*.hs"
         ]
+        [ "src//*.hs" ]
         [ "elm-format-lib" ]
         [ "tests//*.hs"
         , "tests//*.stdout"
@@ -108,9 +106,8 @@ main = do
     Shakefiles.Haskell.exe elmFormat "elm-format"
 
     Shakefiles.Haskell.cabalProject "elm-refactor"
-        [ "elm-refactor/elm-refactor.cabal"
-        , "elm-refactor/src//*.hs"
-        ]
+        [ "elm-refactor/elm-refactor.cabal" ]
+        [ "elm-refactor/src//*.hs" ]
         [ "elm-format-lib" ]
         [ "elm-refactor/test//*.hs"
         , "elm-refactor/test//*.stdout"
