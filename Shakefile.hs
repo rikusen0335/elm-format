@@ -89,7 +89,9 @@ main = do
         [ "elm-format-test-lib/elm-format-test-lib.cabal"
         , "elm-format-test-lib/src//*.hs"
         ]
-        [ "elm-format-lib" ] [] []
+        [ "elm-format-lib" ]
+        [ "elm-format-test-lib/test//*.hs" ]
+        []
 
     Shakefiles.Haskell.cabalProject "elm-format"
         [ "elm-format.cabal"

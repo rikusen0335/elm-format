@@ -16,7 +16,7 @@ Copyright:  See https://github.com/avh4/elm-format/blob/master/LICENSE
 build-type: Simple
 
 
-library
+common common-options
     ghc-options:
         -O2 -Wall -Wno-name-shadowing
 
@@ -28,18 +28,40 @@ library
         OverloadedStrings
         ScopedTypeVariables
 
-    hs-source-dirs:
-        src
-
-    exposed-modules:
-        CommandLine.TestWorld
+    hs-source-dirs: src
 
     build-depends:
         base >= 4.12.0.0 && < 5,
         containers >= 0.6.0.1 && < 0.7,
         mtl >= 2.2.2 && < 3,
+        split >= 0.2.3.3 && < 0.3,
         tasty >= 1.2 && < 2,
         tasty-golden >= 2.3.2 && < 3,
+        tasty-hspec >= 1.1.5.1 && < 1.2,
         tasty-hunit >= 0.10.0.1 && < 0.11,
         text >= 1.2.3.1 && < 2,
         elm-format-lib
+
+
+library
+    import: common-options
+
+    exposed-modules:
+        CommandLine.TestWorld
+        Data.FileTree
+
+
+test-Suite elm-format-test-lib-tests
+    import: common-options
+    type: exitcode-stdio-1.0
+
+    hs-source-dirs: test
+    main-is: Tests.hs
+
+    other-modules:
+        Data.FileTree
+        Data.FileTreeTest
+
+    build-depends:
+        tasty-discover >= 4.2.1 && < 5,
+        elm-format-test-lib
