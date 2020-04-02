@@ -34,6 +34,26 @@ tests =
                 , "x ="
                 , "    \\maybe -> maybe |> Maybe.map increment |> Maybe.withDefault 0"
                 ]
+        , testCase "transforms all files in a directory" $ world
+            |> uploadFile "src/Main.elm"
+                [ "module Main exposing (..)"
+                , "import Data.Maybe"
+                , "x = Data.Maybe.maybe 0 increment"
+                ]
+            |> uploadFile "upgrade.elm"
+                [ "import Maybe"
+                , "upgrade_Data_Maybe_maybe onNothing onJust maybe = maybe |> Maybe.map onJust |> Maybe.withDefault onNothing"
+                ]
+            |> run "elm-refactor" [ "--upgrade", "upgrade.elm", "src" ]
+            |> assertFile "src/Main.elm"
+                [ "module Main exposing (..)"
+                , ""
+                , "import Maybe"
+                , ""
+                , ""
+                , "x ="
+                , "    \\maybe -> maybe |> Maybe.map increment |> Maybe.withDefault 0"
+                ]
         ]
 
 
