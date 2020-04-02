@@ -34,7 +34,7 @@ instance ToConsole PromptMessage where
 data InfoMessage
   = ProcessingFile FilePath
   | FileWouldChange FilePath
-  | ParseError FilePath String [A.Located Syntax.Error]
+  | ParseError FilePath [A.Located Syntax.Error]
 
 
 instance ToConsole InfoMessage where
@@ -45,7 +45,7 @@ instance ToConsole InfoMessage where
         FileWouldChange file ->
             "File would be changed " <> Text.pack file
 
-        ParseError inputFile _ errs ->
+        ParseError inputFile errs ->
             let
                 location =
                     Text.pack $
@@ -72,7 +72,7 @@ instance Loggable InfoMessage where
                 "File would be changed by elm-refactor-" <> ElmRefactor.Version.asString
                 -- TODO: add arguments that were passed to elm-refactor
                 <> " --elm-version=" <> show elmVersion -- TODO: elm-refactor doesn't yet support --elm-version
-        ParseError inputFile _ _ ->
+        ParseError inputFile _ ->
             Just $ fileMessage inputFile "Error parsing the file"
 
 

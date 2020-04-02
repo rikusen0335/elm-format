@@ -25,7 +25,7 @@ import qualified Reporting.Result as Result
 
 
 upgrade :: [UpgradeDefinition] -> (FilePath, Text) -> Either InfoMessage Text
-upgrade upgradeDefinitions (_, inputText) =
+upgrade upgradeDefinitions (inputFile, inputText) =
     let
         elmVersion = Elm_0_19
     in
@@ -41,9 +41,9 @@ upgrade upgradeDefinitions (_, inputText) =
                 |> Render.render elmVersion
                 |> Right
 
-        Result.Result _ (Result.Err _ ) ->
-            -- TODO: return an error message
-            error "TODO: couldn't parse source file"
+        Result.Result _ (Result.Err errs) ->
+            Left $ ParseError inputFile errs
+
 
 main' :: forall m. World m => Flags.Flags -> ProgramIO m ErrorMessage ()
 main' flags =
