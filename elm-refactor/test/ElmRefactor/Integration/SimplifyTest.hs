@@ -46,6 +46,17 @@ test_tests =
             , "x ="
             , "    \"special\" == \"other\""
             ]
+        , refactorTest "evaluates `++`"
+            [ "import A exposing (a)"
+            , "x = A.f [1, 2] [3, 4]"
+            ]
+            [ "upgrade_A_f a b = a ++ b" ]
+            [ "module Main exposing (x)"
+            , ""
+            , ""
+            , "x ="
+            , "    [ 1, 2, 3, 4 ]"
+            ]
         ]
 
 

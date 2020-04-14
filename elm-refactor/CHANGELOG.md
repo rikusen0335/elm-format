@@ -3,7 +3,12 @@
 Changes:
 
 - `ElmFix.remove` is renamed to `ElmRefactor.remove`
-- comparison of literals with `==` will be simplified if possible
+
+New features:
+
+- certain binary operator expressions will now be simplified if possible:
+  - `==` if both arguments are literals
+  - `++` if both arguments are literal lists
 
 
 ## alpha-206-gfa0fcf5

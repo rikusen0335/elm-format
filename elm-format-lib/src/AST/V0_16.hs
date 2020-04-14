@@ -25,6 +25,9 @@ newtype ForceMultiline =
     ForceMultiline Bool
     deriving (Eq, Show)
 
+instance Semigroup ForceMultiline where
+    (ForceMultiline a) <> (ForceMultiline b) = ForceMultiline (a || b)
+
 
 data LowercaseIdentifier =
     LowercaseIdentifier String
@@ -81,6 +84,9 @@ newtype Sequence a =
 
 instance Foldable Sequence where
     foldMap f (Sequence items) = foldMap (f . extract) items
+
+instance Semigroup (Sequence a) where
+    (Sequence left) <> (Sequence right) = Sequence (left <> right)
 
 sequenceToList :: Sequence a -> List (C2Eol BeforeSeparator AfterSeparator a)
 sequenceToList (Sequence items) = items

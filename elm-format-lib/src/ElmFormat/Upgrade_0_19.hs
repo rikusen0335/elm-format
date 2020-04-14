@@ -461,6 +461,10 @@ simplify expr =
         (FromUpgradeDefinition, Binops (I.Fix (Compose (Identity (_, Literal left)))) [BinopsClause preOp (OpRef (SymbolIdentifier "==")) postOp (I.Fix (Compose (Identity (_, Literal right))))] _) ->
             I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ Literal $ Boolean (left == right)
 
+        -- Evaluate `++` when the args are literal lists
+        (source, Binops (I.Fix (Compose (Identity (_, ExplicitList left postLeft mlLeft)))) [BinopsClause preOp (OpRef (SymbolIdentifier "++")) postOp (I.Fix (Compose (Identity (_, ExplicitList right postRight mlRight))))] _) ->
+            I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ ExplicitList (left <> right) postRight (mlLeft <> mlRight)
+
         -- Remove ElmRefactor.remove from lists
         (source, ExplicitList terms' trailing multiline) ->
             I.Fix $ Compose $ Identity $ (,) source $ ExplicitList
