@@ -71,6 +71,7 @@ test-suite elm-refactor-tests
     other-modules:
         ElmRefactor.CliTest
         ElmRefactor.Integration.NormalizingReferencesTest
+        ElmRefactor.Integration.SimplifyTest
 
     build-depends:
         tasty >= 1.2 && < 2,

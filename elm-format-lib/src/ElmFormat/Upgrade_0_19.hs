@@ -457,6 +457,10 @@ simplify expr =
         (source, App fn args multiline) ->
             simplifyFunctionApplication source fn args multiline
 
+        -- Evaluate certain binary operators when the args are literals
+        (FromUpgradeDefinition, Binops (I.Fix (Compose (Identity (_, Literal left)))) [BinopsClause preOp (OpRef (SymbolIdentifier "==")) postOp (I.Fix (Compose (Identity (_, Literal right))))] _) ->
+            I.Fix $ Compose $ Identity $ (,) FromUpgradeDefinition $ Literal $ Boolean (left == right)
+
         -- Remove ElmRefactor.remove from lists
         (source, ExplicitList terms' trailing multiline) ->
             I.Fix $ Compose $ Identity $ (,) source $ ExplicitList

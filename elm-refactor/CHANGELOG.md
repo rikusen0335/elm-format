@@ -3,6 +3,7 @@
 Changes:
 
 - `ElmFix.remove` is renamed to `ElmRefactor.remove`
+- comparison of literals with `==` will be simplified if possible
 
 
 ## alpha-206-gfa0fcf5
