@@ -447,20 +447,20 @@ applyUpgrades upgradeDefinition importInfo expr =
 simplify :: UAST kind -> UAST kind
 simplify expr =
     let
-        isElmFixRemove :: (Source, AST typeRef ctorRef (Ref (MatchedNamespace [UppercaseIdentifier])) getType 'ExpressionNK) -> Bool
-        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
-        isElmFixRemove (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmFix"]) (LowercaseIdentifier "remove"))) = True
-        isElmFixRemove _ = False
+        isElmRefactorRemove :: (Source, AST typeRef ctorRef (Ref (MatchedNamespace [UppercaseIdentifier])) getType 'ExpressionNK) -> Bool
+        isElmRefactorRemove (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "ElmRefactor"]) (LowercaseIdentifier "remove"))) = True
+        isElmRefactorRemove (FromUpgradeDefinition, VarExpr (VarRef (Unmatched [UppercaseIdentifier "ElmRefactor"]) (LowercaseIdentifier "remove"))) = True
+        isElmRefactorRemove _ = False
     in
     case runIdentity $ getCompose $ I.unFix expr of
         -- apply arguments to special functions (like literal lambdas)
         (source, App fn args multiline) ->
             simplifyFunctionApplication source fn args multiline
 
-        -- Remove ElmFix.remove from lists
+        -- Remove ElmRefactor.remove from lists
         (source, ExplicitList terms' trailing multiline) ->
             I.Fix $ Compose $ Identity $ (,) source $ ExplicitList
-                (Sequence $ filter (not . isElmFixRemove . runIdentity . getCompose. I.unFix . extract) $ sequenceToList terms')
+                (Sequence $ filter (not . isElmRefactorRemove . runIdentity . getCompose. I.unFix . extract) $ sequenceToList terms')
                 trailing
                 multiline
 

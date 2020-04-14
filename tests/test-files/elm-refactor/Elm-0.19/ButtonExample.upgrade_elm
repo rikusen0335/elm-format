@@ -1,6 +1,6 @@
 module Main exposing (upgrade_Button_buttonDeprecated)
 
-import ElmFix
+import ElmRefactor
 import Nri.Ui.Button.V9 as Button
 
 
@@ -14,17 +14,17 @@ upgrade_Nri_DEPRECATED_Button_buttonDeprecated ({ label, style } as config) =
                 Button.exactWidth w
 
             Nothing ->
-                ElmFix.remove
+                ElmRefactor.remove
         , Button.onClick config.onClick
         , case style of
             Nri.DEPRECATED.Button.Premium ->
                 Button.premium
 
             Nri.DEPRECATED.Button.Normal ->
-                ElmFix.remove
+                ElmRefactor.remove
         , case config.icon of
             Nothing ->
-                ElmFix.remove
+                ElmRefactor.remove
 
             Just i ->
                 Button.icon i
@@ -32,5 +32,5 @@ upgrade_Nri_DEPRECATED_Button_buttonDeprecated ({ label, style } as config) =
             Button.disabled
 
           else
-            ElmFix.remove
+            ElmRefactor.remove
         ]

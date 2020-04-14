@@ -1,5 +1,9 @@
 ## upgrade-tool
 
+Changes:
+
+- `ElmFix.remove` is renamed to `ElmRefactor.remove`
+
 
 ## alpha-206-gfa0fcf5
 
@@ -17,7 +21,7 @@ Transformation changes:
 
 - types can be upgraded with `type alias Upgrade_SomeModule_OldType a = SomeModule.NewType a`
 - variables and types that are referenced via `exposing (SomeType, someVar)` will now be upgraded
-- variables and types that are references via `exposing (..)` will now be upgraded
+- variables and types that are referenced via `exposing (..)` will now be upgraded
 - preferred `exposing` clauses in the imports of the upgrade definition will now be applied when possible
 
 

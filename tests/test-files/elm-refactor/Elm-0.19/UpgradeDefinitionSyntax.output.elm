@@ -42,13 +42,13 @@ cases s =
     , 0
     , 99
     , "style1"
-    , ElmFix.todo UnknownStyle
+    , ElmRefactor.todo UnknownStyle
     , case s of
         A.Style1 ->
             "style1"
 
         _ ->
-            ElmFix.todo s
+            ElmRefactor.todo s
     ]
 
 
