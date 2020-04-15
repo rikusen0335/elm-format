@@ -4,7 +4,7 @@ import AST.V0_16
 import AST.Listing (Listing(..))
 import Elm.Utils ((|>))
 
-import AST.Module (Module)
+import AST.Module (Module, ImportMethod(..))
 import qualified AST.Module
 import Data.Coapplicative
 import qualified Data.Bimap as Bimap
@@ -33,21 +33,37 @@ fromModule knownModuleContents modu =
 
 fromImports ::
     ([UppercaseIdentifier] -> [LocalName])
-    -> Dict.Map [UppercaseIdentifier] AST.Module.ImportMethod
+    -> Dict.Map [UppercaseIdentifier] ImportMethod
     -> ImportInfo [UppercaseIdentifier]
-fromImports knownModuleContents imports =
+fromImports knownModuleContents rawImports =
     let
+        defaultImports :: Dict.Map [UppercaseIdentifier] ImportMethod
+        defaultImports =
+            Dict.fromList $
+                fmap (\(m, i) -> (fmap UppercaseIdentifier m, ImportMethod Nothing (C ([], []) i)))
+                [ ( [ "Basics" ], OpenListing (C ([], []) ()) )
+                , ( [ "List" ], ClosedListing )
+                ]
+
+        imports = Dict.union rawImports defaultImports -- NOTE: this MUST prefer rawImports when there is a duplicate key
+
         -- these are things we know will get exposed for certain modules when we see "exposing (..)"
         -- only things that are currently useful for Elm 0.19 upgrade are included
         moduleContents :: [UppercaseIdentifier] -> [LocalName]
         moduleContents moduleName =
             case (\(UppercaseIdentifier x) -> x) <$> moduleName of
-                ["Html", "Attributes"] ->
+                [ "Basics" ] ->
+                    [ VarName $ LowercaseIdentifier "identity"
+                    ]
+                [ "Html", "Attributes" ] ->
                     [ VarName $ LowercaseIdentifier "style"
+                    ]
+                [ "List" ] ->
+                    [ VarName $ LowercaseIdentifier "filterMap"
                     ]
                 _ -> knownModuleContents moduleName
 
-        getExposed moduleName (AST.Module.ImportMethod _ (C _ listing)) =
+        getExposed moduleName (ImportMethod _ (C _ listing)) =
             Dict.fromList $ fmap (flip (,) moduleName) $
             case listing of
                 ClosedListing -> []
@@ -93,13 +109,13 @@ fromImports knownModuleContents imports =
 
         ambiguous = Dict.empty
 
-        exposesAll (AST.Module.ImportMethod _ (C _ listing)) =
+        exposesAll (ImportMethod _ (C _ listing)) =
             case listing of
                 ExplicitListing _ _ -> False
                 OpenListing _ -> True
                 ClosedListing -> False
 
         unresolvedExposingAll =
-            any exposesAll imports
+            any exposesAll rawImports
     in
     ImportInfo exposed aliases directs ambiguous unresolvedExposingAll

@@ -9,6 +9,7 @@ New features:
 - certain binary operator expressions will now be simplified if possible:
   - `==` if both arguments are literals
   - `++` if both arguments are literal lists
+- `List.filterMap` will not be simplified if possible
 
 
 ## alpha-206-gfa0fcf5

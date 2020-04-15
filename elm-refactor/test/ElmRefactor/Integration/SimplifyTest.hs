@@ -30,6 +30,12 @@ test_tests =
             [ "A.f [1, 2] [3, 4]" ]
             [ "upgrade_A_f a b = a ++ b" ]
             [ "[ 1, 2, 3, 4 ]" ]
+        , testGroup "List.filterMap identity"
+            [ refactorExpressionTest "removes Nothing values"
+                [ "A.f [ Nothing, Nothing ]"]
+                [ "upgrade_A_f list = List.filterMap identity list"]
+                [ "[]" ]
+            ]
         ]
 
 

@@ -88,6 +88,9 @@ instance Foldable Sequence where
 instance Semigroup (Sequence a) where
     (Sequence left) <> (Sequence right) = Sequence (left <> right)
 
+instance Monoid (Sequence a) where
+    mempty = Sequence []
+
 sequenceToList :: Sequence a -> List (C2Eol BeforeSeparator AfterSeparator a)
 sequenceToList (Sequence items) = items
 
