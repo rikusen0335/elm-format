@@ -35,6 +35,10 @@ test_tests =
                 [ "A.f [ Nothing, Nothing ]"]
                 [ "upgrade_A_f list = List.filterMap identity list"]
                 [ "[]" ]
+            , refactorExpressionTest "simplifies with all (Just x) values"
+                [ "A.f [ Just () ]"]
+                [ "upgrade_A_f list = List.filterMap identity list"]
+                [ "[ () ]" ]
             ]
         ]
 

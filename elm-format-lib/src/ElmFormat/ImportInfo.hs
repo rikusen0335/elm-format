@@ -1,10 +1,10 @@
 module ElmFormat.ImportInfo (ImportInfo(..), fromModule, fromImports) where
 
 import AST.V0_16
-import AST.Listing (Listing(..))
+import AST.Listing (Listing(..), CommentedMap)
 import Elm.Utils ((|>))
 
-import AST.Module (Module, ImportMethod(..))
+import AST.Module (Module, ImportMethod(..), DetailedListing(..))
 import qualified AST.Module
 import Data.Coapplicative
 import qualified Data.Bimap as Bimap
@@ -43,6 +43,19 @@ fromImports knownModuleContents rawImports =
                 fmap (\(m, i) -> (fmap UppercaseIdentifier m, ImportMethod Nothing (C ([], []) i)))
                 [ ( [ "Basics" ], OpenListing (C ([], []) ()) )
                 , ( [ "List" ], ClosedListing )
+                , ( [ "Maybe" ]
+                  , ExplicitListing
+                      (DetailedListing mempty mempty $
+                          Dict.fromList
+                              [ ( UppercaseIdentifier "Maybe"
+                                , C ([], []) $ C [] $
+                                  ExplicitListing (Dict.fromList
+                                                   [ (UppercaseIdentifier "Nothing", C ([], []) ())
+                                                   , (UppercaseIdentifier "Just", C ([], []) ())
+                                                   ]) False)]
+                      )
+                      False
+                  )
                 ]
 
         imports = Dict.union rawImports defaultImports -- NOTE: this MUST prefer rawImports when there is a duplicate key
@@ -61,6 +74,10 @@ fromImports knownModuleContents rawImports =
                 [ "List" ] ->
                     [ VarName $ LowercaseIdentifier "filterMap"
                     ]
+                [ "Maybe" ] ->
+                    [ CtorName $ UppercaseIdentifier "Nothing"
+                    , CtorName $ UppercaseIdentifier "Just"
+                    ]
                 _ -> knownModuleContents moduleName
 
         getExposed moduleName (ImportMethod _ (C _ listing)) =
@@ -70,9 +87,17 @@ fromImports knownModuleContents rawImports =
                 OpenListing _ ->
                     moduleContents moduleName
                 ExplicitListing details _ ->
-                    -- TODO: exposing (Type(..)) should pull in variant names from knownModuleContents, though this should also be a warning because we can't know for sure which of those are for this type
                     (fmap VarName $ Dict.keys $ AST.Module.values details)
                     <> (fmap TypeName $ Dict.keys $ AST.Module.types details)
+                    <> (fmap CtorName $ foldMap (getCtorListings . extract . extract) $ Dict.elems $ AST.Module.types details)
+
+        getCtorListings :: Listing (CommentedMap name ()) -> [name]
+        getCtorListings = \case
+            ClosedListing -> []
+            OpenListing _ ->
+                -- TODO: exposing (Type(..)) should pull in variant names from knownModuleContents, though this should also be a warning because we can't know for sure which of those are for this type
+                []
+            ExplicitListing ctors _ -> Dict.keys ctors
 
         exposed =
             -- TODO: mark ambiguous names if multiple modules expose them

@@ -255,6 +255,15 @@ instance ToJSON (ASTNS Located [UppercaseIdentifier] 'ExpressionNK) where
           VarExpr (TagRef [] (UppercaseIdentifier tag)) ->
             variableReference region tag
 
+          VarExpr (TagRef namespace (UppercaseIdentifier var)) ->
+              makeObj
+                  [ type_ "ExternalReference"
+                  , ("module"
+                    , showJSON namespace)
+                  , ("identifier", JSString $ toJSString var)
+                  , sourceLocation region
+                  ]
+
           VarExpr (OpRef (SymbolIdentifier sym)) ->
             variableReference region sym
 
