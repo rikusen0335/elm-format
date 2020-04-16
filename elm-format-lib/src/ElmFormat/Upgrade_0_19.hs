@@ -865,22 +865,27 @@ simplifyFunctionApplication appSource fn args appMultiline =
             : restArgs
           ) ->
             let
-                filterTerm :: Commented c (UAST 'ExpressionNK) -> Maybe (Commented c (UAST 'ExpressionNK))
+                -- returns Nothing if the term can't be prcoessed and the simplification must abort
+                -- returns (Just Nothing) if the term should be removed
+                -- returns (Just (Just t)) if the term should be replaced with t
+                filterTerm :: Commented c (UAST 'ExpressionNK) -> Maybe (Maybe (Commented c (UAST 'ExpressionNK)))
                 filterTerm = \case
                     C c (I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Nothing")))))) ->
                         -- TODO: retain comments
-                        Nothing
+                        Just $ Nothing
 
                     C c (I.Fix (Compose (Identity (_, App (I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Just")))))) [C preVal e] _)))) ->
-                        Just $ C c e -- TODO: use preVal
+                        Just $ Just $ C c e -- TODO: use preVal
 
-                    _ -> Nothing -- TODO: abort
-
-                newTerms :: Sequence (UAST 'ExpressionNK)
-                newTerms =
-                    Sequence $ mapMaybe filterTerm $ sequenceToList terms
+                    _ -> Nothing
             in
-            -- TODO: use restArgs
-            I.Fix $ Compose $ pure $ (,) listSource $ ExplicitList newTerms [] (ForceMultiline False)
+            case mapM filterTerm $ sequenceToList terms of
+                Nothing ->
+                    -- it can't be simplified
+                    I.Fix $ Compose $ pure $ (,) appSource $ App fn args appMultiline
+
+                Just newTerms ->
+                    -- TODO: use restArgs
+                    I.Fix $ Compose $ pure $ (,) listSource $ ExplicitList (Sequence $ mapMaybe id newTerms) [] (ForceMultiline False)
 
         _ -> I.Fix $ Compose $ pure $ (,) appSource $ App fn args appMultiline

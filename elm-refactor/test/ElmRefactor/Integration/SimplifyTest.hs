@@ -39,6 +39,10 @@ test_tests =
                 [ "A.f [ Just () ]"]
                 [ "upgrade_A_f list = List.filterMap identity list"]
                 [ "[ () ]" ]
+            , refactorExpressionTest "does not break code when it can't simplify"
+                [ "\\x -> A.f [ x ]"]
+                [ "upgrade_A_f list = List.filterMap identity list"]
+                [ "\\x -> List.filterMap identity [ x ]" ]
             ]
         ]
 
