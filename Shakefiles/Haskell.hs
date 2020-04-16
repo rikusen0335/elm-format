@@ -19,7 +19,7 @@ cabalProject name sourceFiles sourcePatterns deps testPatterns testDeps =
                     ]
             need allFiles
             hash <- liftIO $ getHashedShakeVersion allFiles
-            cmd_ "stack" "build" name
+            cmd_ "stack" "build" "--force-dirty" name
             writeFile' out hash
 
         "_build/stack/" </> name </> "test.ok" %> \out -> do
@@ -37,7 +37,7 @@ cabalProject name sourceFiles sourcePatterns deps testPatterns testDeps =
         "_build/bin" </> name ++ "-prof" %> \out -> do
             StdoutTrim profileInstallRoot <- liftIO $ cmd "stack path --profile --local-install-root" -- TODO: move this to an Oracle
             sourceFiles <- getDirectoryFiles "" sourcePatterns
-            cmd_ "stack" "build" "--profile" "--executable-profiling" "--library-profiling"
+            cmd_ "stack" "build" "--force-dirty" "--profile" "--executable-profiling" "--library-profiling"
             copyFileChanged (profileInstallRoot </> "bin" </> name <.> Development.Shake.FilePath.exe) out
 
 
