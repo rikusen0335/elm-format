@@ -52,6 +52,12 @@ test_tests =
                 [ "upgrade_A_f list = List.filterMap identity list"]
                 [ "[ always () ]" ]
             ]
+        , testGroup "Maybe.map"
+            [ refactorExpressionTest "simplifies Nothing"
+                [ "A.f Nothing"]
+                [ "upgrade_A_f m = Maybe.map f m"]
+                [ "Nothing" ]
+            ]
         ]
 
 
