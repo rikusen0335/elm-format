@@ -877,6 +877,12 @@ simplifyFunctionApplication appSource fn args appMultiline =
                     C c (I.Fix (Compose (Identity (_, App (I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Just")))))) [C preVal e] _)))) ->
                         Just $ Just $ C c e -- TODO: use preVal
 
+                    C c (I.Fix (Compose (Identity (_, Binops (I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Just")))))) [BinopsClause preOp (OpRef (SymbolIdentifier "<|")) postOp e] _)))) ->
+                        Just $ Just $ C c e -- TODO: use preOp, postOp
+
+                    C c (I.Fix (Compose (Identity (_, Binops e [BinopsClause preOp (OpRef (SymbolIdentifier "|>")) postOp (I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Just"))))))] _)))) ->
+                        Just $ Just $ C c e -- TODO: use preOp, postOp
+
                     _ -> Nothing
             in
             case mapM filterTerm $ sequenceToList terms of
