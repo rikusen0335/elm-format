@@ -861,7 +861,7 @@ simplifyFunctionApplication appSource fn args appMultiline =
 
         ( (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "List"]) (LowercaseIdentifier "filterMap")))
           , (C preIdentity (I.Fix (Compose (Identity (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "Basics"]) (LowercaseIdentifier "identity")))))))
-            : (C preArg (I.Fix (Compose (Identity (listSource, ExplicitList terms _ _)))))
+            : (C preArg (I.Fix (Compose (Identity (listSource, ExplicitList terms _ ml)))))
             : restArgs
           ) ->
             let
@@ -892,8 +892,7 @@ simplifyFunctionApplication appSource fn args appMultiline =
 
                 Just newTerms ->
                     -- TODO: use restArgs
-                    -- TODO: set multiline
-                    I.Fix $ Compose $ pure $ (,) listSource $ ExplicitList (Sequence $ mapMaybe id newTerms) [] (ForceMultiline False)
+                    I.Fix $ Compose $ pure $ (,) listSource $ ExplicitList (Sequence $ mapMaybe id newTerms) [] ml
 
         ( (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (LowercaseIdentifier "map")))
           , (C preF _)
