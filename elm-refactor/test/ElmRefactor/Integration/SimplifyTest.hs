@@ -57,6 +57,10 @@ test_tests =
                 [ "A.f Nothing"]
                 [ "upgrade_A_f m = Maybe.map f m"]
                 [ "Nothing" ]
+            , refactorExpressionTest "simplifies Just"
+                [ "A.f (Just x)"]
+                [ "upgrade_A_f m = Maybe.map f m"]
+                [ "Just (f x)" ]
             ]
         ]
 

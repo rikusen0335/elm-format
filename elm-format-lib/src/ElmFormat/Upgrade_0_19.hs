@@ -892,6 +892,7 @@ simplifyFunctionApplication appSource fn args appMultiline =
 
                 Just newTerms ->
                     -- TODO: use restArgs
+                    -- TODO: set multiline
                     I.Fix $ Compose $ pure $ (,) listSource $ ExplicitList (Sequence $ mapMaybe id newTerms) [] (ForceMultiline False)
 
         ( (FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (LowercaseIdentifier "map")))
@@ -899,8 +900,20 @@ simplifyFunctionApplication appSource fn args appMultiline =
             : (C preArg m@(I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Nothing")))))))
             : restArgs
           ) ->
-            -- TODO: use restArts
+            -- TODO: use restArgs
             -- TODO: use preArg, preF
             m
+
+        ( (mapSource@FromUpgradeDefinition, VarExpr (VarRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (LowercaseIdentifier "map")))
+          , (C preF f)
+            : (C preJust (I.Fix (Compose (Identity (appSource, App just@(I.Fix (Compose (Identity (_, VarExpr (TagRef (MatchedImport _ [UppercaseIdentifier "Maybe"]) (UppercaseIdentifier "Just")))))) [C preArg e] ml)))))
+            : restArgs
+          ) ->
+            -- TODO: use restArgs
+            -- TODO: use preJust, preF
+            I.Fix $ Compose $ pure $ (,) appSource $ App
+                just
+                [ C [] $ I.Fix $ Compose $ pure $ (,) mapSource $ App f [C preArg e] (FAJoinFirst JoinAll) ]
+                ml
 
         _ -> I.Fix $ Compose $ pure $ (,) appSource $ App fn args appMultiline
