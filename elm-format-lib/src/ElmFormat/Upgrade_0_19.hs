@@ -4,7 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 
-module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, mergeUpgradeImports, MatchedNamespace(..)) where
+module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, MatchedNamespace(..)) where
 
 import Elm.Utils ((|>))
 
@@ -237,47 +237,9 @@ transformModule upgradeDefinition modu =
             -- the imports merged in from the upgrade definition
             ImportInfo.fromModule (knownContents upgradeDefinition) modu
 
-        transformBody ::
-            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
-            -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
-        transformBody =
-            -- TODO: combine transform' and transformType into a single pass
-            I.convert (pure . extract)
-            . transform' upgradeDefinition importInfo
-            . I.cata (transformType upgradeDefinition . I.Fix)
-
-        expressionFromTopLevelStructure ::
-            TopLevelStructure (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'DeclarationNK)
-            -> Maybe (ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
-        expressionFromTopLevelStructure structure =
-            case fmap (extract . I.unFix) structure of
-                Entry (Definition _ _ _ expr) -> Just expr
-                _ -> Nothing
-
-        namespacesWithReplacements =
-              Set.fromList $ fmap fst $ Dict.keys $ _replacements upgradeDefinition
-
-        usages ::
-            Coapplicative annf =>
-            ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
-            -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
-        usages =
-            fmap (Dict.foldr (+) 0) . _usageCount . countUsages
-
         typeReplacementsByModule :: Dict.Map [UppercaseIdentifier] (Set UppercaseIdentifier)
         typeReplacementsByModule =
             Dict.fromListWith Set.union $ fmap (fmap Set.singleton) $ Dict.keys $ _typeReplacements upgradeDefinition
-
-        removeTypes rem listing =
-            case listing of
-                OpenListing c -> OpenListing c
-                ClosedListing -> ClosedListing
-                ExplicitListing (DetailedListing vars ops typs) ml ->
-                    let
-                        typs' = Dict.withoutKeys typs rem
-                    in
-                    -- Note: The formatter will handle converting to a closed listing if nothing is left
-                    ExplicitListing (DetailedListing vars ops typs') ml
 
         removeUpgradedExposings ns (C pre (ImportMethod alias exposing)) =
             C pre $
@@ -285,14 +247,24 @@ transformModule upgradeDefinition modu =
 
         finalBody :: ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
         finalBody =
-            transformBody $ matchReferences importInfo originalBody
+            originalBody
+                |> matchReferences importInfo
+                -- TODO: combine transform' and transformType into a single pass
+                |> I.cata (transformType upgradeDefinition . I.Fix)
+                |> transform' upgradeDefinition importInfo
+                |> I.convert (pure . extract)
+
+
+        importsNotTouchedByUpgrade =
+            Set.difference
+                (Dict.keysSet $ originalImports)
+                (Set.fromList $ fmap fst $ Dict.keys $ _replacements upgradeDefinition)
 
         finalImports =
-            mergeUpgradeImports
+            Dict.union
                 (Dict.mapWithKey removeUpgradedExposings originalImports)
                 (_imports upgradeDefinition)
-                namespacesWithReplacements
-                (usages finalBody)
+                |> removeUnusedImports (flip Set.member importsNotTouchedByUpgrade) (usages finalBody)
 
         finalImportInfo =
             ImportInfo.fromImports (const mempty) $ fmap extract finalImports
@@ -302,22 +274,37 @@ transformModule upgradeDefinition modu =
         |> Module a b c (C preImports finalImports)
 
 
-mergeUpgradeImports ::
-    Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
-    -> Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
-    -> Set.Set [UppercaseIdentifier]
+removeTypes rem listing =
+    case listing of
+        OpenListing c -> OpenListing c
+        ClosedListing -> ClosedListing
+        ExplicitListing (DetailedListing vars ops typs) ml ->
+            let
+                typs' = Dict.withoutKeys typs rem
+            in
+            -- Note: The formatter will handle converting to a closed listing if nothing is left
+            ExplicitListing (DetailedListing vars ops typs') ml
+
+usages ::
+    Coapplicative annf =>
+    ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
+    -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
+usages =
+    fmap (Dict.foldr (+) 0) . _usageCount . countUsages
+
+
+removeUnusedImports ::
+    ([UppercaseIdentifier] -> Bool)
     -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
     -> Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
-mergeUpgradeImports originalImports upgradeImports upgradesAttempted usagesAfter =
+    -> Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
+removeUnusedImports keepAnyway usages originalImports =
     let
-        -- uBefore ns = Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport _ ns) usagesBefore
         uAfter ns =
-            (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport False ns) usagesAfter)
-            + (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport True ns) usagesAfter)
+            (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport False ns) usages)
+            + (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport True ns) usages)
     in
-    Dict.union
-        (Dict.filterWithKey (\k _ -> uAfter k > 0 || not (Set.member k upgradesAttempted)) originalImports)
-        (Dict.filterWithKey (\k _ -> uAfter k > 0) upgradeImports)
+    Dict.filterWithKey (\k _ -> uAfter k > 0 || keepAnyway k) originalImports
 
 
 data Source

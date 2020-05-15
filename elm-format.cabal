@@ -82,7 +82,6 @@ test-Suite elm-format-tests
         Data.List.ExtraTest
         ElmFormat.ImportInfoTest
         ElmFormat.Render.ElmStructureTest
-        ElmFormat.Upgrade_0_19Test
         Expect
         Integration.CliTest
         Integration.LiteralTest
