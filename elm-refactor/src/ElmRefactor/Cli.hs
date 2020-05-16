@@ -9,7 +9,7 @@ import qualified CommandLine.World as World
 import Data.Coapplicative
 import Data.Either.Extra (collectErrors)
 import Data.Text (Text)
-import ElmFormat.Upgrade_0_19 (UpgradeDefinition, parseUpgradeDefinition, transformModule)
+import ElmFormat.Upgrade_0_19 (Transformation(..), UpgradeDefinition, parseUpgradeDefinition, applyTransformation)
 import ElmRefactor.CliFlags as Flags
 import ElmRefactor.Messages
 import ElmVersion
@@ -24,8 +24,8 @@ import qualified ElmRefactor.Version
 import qualified Reporting.Result as Result
 
 
-upgrade :: [UpgradeDefinition] -> (FilePath, Text) -> Either InfoMessage Text
-upgrade upgradeDefinitions (inputFile, inputText) =
+upgrade :: [Transformation] -> (FilePath, Text) -> Either InfoMessage Text
+upgrade transformations (inputFile, inputText) =
     let
         elmVersion = Elm_0_19
     in
@@ -33,7 +33,7 @@ upgrade upgradeDefinitions (inputFile, inputText) =
         Result.Result _ (Result.Ok ast) ->
             let
                 transform input =
-                    foldl' (flip transformModule) input upgradeDefinitions
+                    foldl' (flip applyTransformation) input transformations
             in
             ast
                 |> fmap (I.convert (Identity . extract))
@@ -64,7 +64,13 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- Program.mapError BadUpgradeDefinitions $ Program.liftME $ collectErrors <$> mapM readDefinitionFile definitionFiles
 
-        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes FilesWillBeOverwritten (upgrade definitions) mode
+        let transformations = mconcat
+                -- TODO: keep the relative order of these
+                [ fmap Upgrade definitions
+                , fmap ApplyImport $ Flags._imports flags
+                ]
+
+        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes FilesWillBeOverwritten (upgrade transformations) mode
         if result
             then return ()
             else Program.failed

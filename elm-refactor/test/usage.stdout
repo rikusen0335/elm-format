@@ -1,17 +1,27 @@
 elm-refactor dev
 
-Usage: elm-format [--upgrade UPGRADE_DEFINITION] INPUT [--yes]
+Usage: elm-format [--yes] [--upgrade UPGRADE_DEFINITION]
+                  [--import IMPORT_METHOD] INPUT
   Refactor Elm source files.
 
 Available options:
   -h,--help                Show this help text
-  --upgrade UPGRADE_DEFINITION
-                           A file specifying an upgrade transformation to apply.
-                           You may specify this more than once.
-  INPUT                    The .elm file to transform. You may specify more than
-                           one.
   --yes                    Reply 'yes' to all automated prompts.
+  --upgrade UPGRADE_DEFINITION
+                           Transform files using the upgrade transformation in
+                           the given file.
+  --import IMPORT_METHOD   Transform files to import the module as given.
+                           Examples:
+                             --import 'Html.Attributes as Attributes'
+                             --import 'Html.Attributes exposing (href)'
+  INPUT                    The .elm file to transform. You may specify a
+                           directory, which will be searched recursively. You
+                           may specify more than one.
+
+You may specify multiple transformations, and they will be applied in order.
 
 Examples:
-  elm-refactor Upgrade.elm Main.elm      # refactors Main.elm
-  elm-refactor Upgrade.elm src/          # refactors all *.elm files in the src directory
+  elm-refactor --upgrade Upgrade.elm Main.elm  # refactors Main.elm
+  elm-refactor --upgrade Upgrade.elm src/      # refactors all *.elm files in the src directory
+  elm-refactor --import 'Html.Attributes as Attr' --import 'Dict exposing (Dict)' ./
+                                               # applies the given imports to all *.elm files in the current directory

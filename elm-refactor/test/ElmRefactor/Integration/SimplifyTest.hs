@@ -1,4 +1,3 @@
-
 module ElmRefactor.Integration.SimplifyTest where
 
 import Elm.Utils ((|>))

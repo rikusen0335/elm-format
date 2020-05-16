@@ -70,6 +70,7 @@ test-suite elm-refactor-tests
 
     other-modules:
         ElmRefactor.CliTest
+        ElmRefactor.Integration.ApplyImportsTest
         ElmRefactor.Integration.NormalizingReferencesTest
         ElmRefactor.Integration.SimplifyTest
         ElmRefactor.Integration.UpgradeTest

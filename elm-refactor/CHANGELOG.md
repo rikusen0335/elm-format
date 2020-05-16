@@ -6,6 +6,7 @@ Changes:
 
 New features:
 
+- imports can be normalized with `--import`
 - certain binary operator expressions will now be simplified if possible:
   - `==` if both arguments are literals
   - `++` if both arguments are literal lists

@@ -4,14 +4,14 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 
-module ElmFormat.Upgrade_0_19 (UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, MatchedNamespace(..)) where
+module ElmFormat.Upgrade_0_19 (Transformation(..), applyTransformation, UpgradeDefinition, transform, parseUpgradeDefinition, transformModule, MatchedNamespace(..)) where
 
 import Elm.Utils ((|>))
 
 import AST.V0_16
 import AST.Listing
 import AST.MatchReferences
-import AST.Module (Module(Module), ImportMethod(..), DetailedListing(..))
+import AST.Module (Module(Module), UserImport, ImportMethod(..), DetailedListing(..))
 import AST.Structure
 import Control.Applicative (liftA2)
 import Control.Monad (zipWithM)
@@ -220,6 +220,55 @@ transform importInfo =
             error "Couldn't parse upgrade definition"
 
 
+data Transformation
+    = Upgrade UpgradeDefinition
+    | ApplyImport UserImport
+
+
+applyTransformation ::
+    forall annf.
+    (Applicative annf, Coapplicative annf) =>
+    Transformation
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
+applyTransformation = \case
+    Upgrade upgradeDefinition ->
+        transformModule upgradeDefinition
+
+    ApplyImport (C c name, method) ->
+        -- TODO: are there cases where we need to combine all new imports into a single pass? (like swapping aliases)
+        applyImports $ Dict.singleton name (C c method)
+
+
+applyImports ::
+    (Applicative annf, Coapplicative annf) =>
+    Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] nk)
+    -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] nk)
+applyImports importsToApply modu =
+    let
+        (Module a b c (C preImports originalImports) originalBody) =
+            modu
+
+        importInfo =
+            ImportInfo.fromModule (const mempty) modu
+
+        finalBody =
+            originalBody
+                |> matchReferences importInfo
+
+        finalImports =
+            Dict.union importsToApply originalImports
+                |> removeUnusedImports (const False) (usages finalBody)
+
+        finalImportInfo =
+            ImportInfo.fromImports (const mempty) $ fmap extract finalImports
+    in
+    finalBody
+        |> applyReferences finalImportInfo
+        |> Module a b c (C preImports finalImports)
+
+
 transformModule ::
     forall annf.
     (Applicative annf, Coapplicative annf) =>
@@ -286,9 +335,9 @@ removeTypes rem listing =
             ExplicitListing (DetailedListing vars ops typs') ml
 
 usages ::
-    Coapplicative annf =>
-    ASTNS annf (MatchedNamespace [UppercaseIdentifier]) 'TopLevelNK
-    -> Dict.Map (MatchedNamespace [UppercaseIdentifier]) Int
+    (Coapplicative annf, Ord ns) =>
+    ASTNS annf ns nk
+    -> Dict.Map ns Int
 usages =
     fmap (Dict.foldr (+) 0) . _usageCount . countUsages
 
