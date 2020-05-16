@@ -66,6 +66,8 @@ library
         Parse.IParser
         Parse.Literal
         Parse.Markdown
+        Parse.Module
+        Parse.Parse
         Parse.Pattern
         Parse.Type
         Reporting.Annotation
@@ -79,8 +81,6 @@ library
         Parse.Common
         Parse.Comments
         Parse.Declaration
-        Parse.Module
-        Parse.Parse
         Parse.State
         Parse.Whitespace
 

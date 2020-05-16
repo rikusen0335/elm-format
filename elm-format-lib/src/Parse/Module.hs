@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-module Parse.Module (moduleDecl, elmModule, topLevel) where
+module Parse.Module (moduleDecl, elmModule, topLevel, import') where
 
 import qualified Control.Applicative
 import Data.Map.Strict hiding (foldl, map)

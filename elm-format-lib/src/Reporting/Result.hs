@@ -2,7 +2,7 @@ module Reporting.Result where
 
 import qualified Control.Monad as M
 import Control.Monad.Except (Except, runExcept)
-
+import Data.Coapplicative
 import qualified Reporting.Annotation as A
 import qualified Reporting.Region as R
 
@@ -80,9 +80,14 @@ destruct errFunc okFunc rawResult =
         errFunc errors
 
 
-toMaybe :: Result w a r -> Maybe r
+toMaybe :: Result w x a -> Maybe a
 toMaybe (Result _ (Ok a)) = Just a
 toMaybe (Result _ (Err _)) = Nothing
+
+
+toEither :: Result w x a -> Either [x] a
+toEither (Result _ (Ok a)) = Right a
+toEither (Result _ (Err x)) = Left $ fmap extract x
 
 
 -- EXTRA FANCY HELPERS

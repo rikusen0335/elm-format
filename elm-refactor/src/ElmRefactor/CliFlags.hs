@@ -3,10 +3,13 @@ module ElmRefactor.CliFlags (Flags(..), parser) where
 import Prelude ()
 import Relude hiding (stdin)
 
-import AST.V0_16
-import qualified AST.Listing
 import qualified AST.Module
+import qualified Data.Bifunctor as Bifunctor
+import ElmVersion
 import qualified Options.Applicative as Opt
+import qualified Parse.Parse as Parse
+import qualified Parse.Module
+import qualified Reporting.Result as Result
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 
@@ -83,9 +86,11 @@ upgradeDefinition =
 
 importDefinition :: Opt.Parser AST.Module.UserImport
 importDefinition =
-    -- TODO: parse the string: https://stackoverflow.com/questions/46182591/parsing-enum-options-with-optparse-applicative
-    fmap (\_ -> (C [] $ fmap UppercaseIdentifier ["Html", "Attributes"], AST.Module.ImportMethod (Just $ C ([], []) $ UppercaseIdentifier "Attr") (C ([], []) AST.Listing.ClosedListing)))
-    $ Opt.strOption $ mconcat
+    let
+        parseImport s =
+            Bifunctor.first show $ Result.toEither $ Parse.parse ("import " ++ s) (Parse.Module.import' Elm_0_19)
+    in
+    Opt.option (Opt.eitherReader parseImport) $ mconcat
         [ Opt.long "import"
         , Opt.metavar "IMPORT_METHOD"
         , Opt.helpDoc $ Just $ mconcat
