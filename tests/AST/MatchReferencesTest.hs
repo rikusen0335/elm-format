@@ -20,7 +20,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Dict
 import Data.List.Split (splitOn)
-import Data.Maybe (fromMaybe)
 
 tests :: TestTree
 tests =
@@ -32,8 +31,9 @@ tests =
                 let
                     knownContents = knownContentsRaw |> fmap makeKnownContent |> Dict.fromList
                 in
-                ImportInfo.fromImports (fromMaybe mempty . flip Dict.lookup knownContents)
-                (imports |> fmap makeImportMethod |> Dict.fromList)
+                ImportInfo.fromImports
+                    (flip Dict.lookup knownContents)
+                    (imports |> fmap makeImportMethod |> Dict.fromList)
 
             makeKnownContent (moduleName, known) =
                 ( fmap UppercaseIdentifier $ splitOn "." moduleName
@@ -107,6 +107,12 @@ tests =
         , test "determines unqualified references that are unmatched"
             [] [] []
             (VarRef [] (LowercaseIdentifier "a"))
-            (VarRef UnmatchedUnqualified (LowercaseIdentifier "a"))
+            (VarRef (UnmatchedUnqualified []) (LowercaseIdentifier "a"))
+        , test "determines when an unqualified reference might match"
+            []
+            [ "import Test exposing (..)" ]
+            []
+            (VarRef [] (LowercaseIdentifier "describe"))
+            (VarRef (UnmatchedUnqualified [["Test"]]) (LowercaseIdentifier "describe"))
         ]
     ]

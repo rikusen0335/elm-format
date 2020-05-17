@@ -37,6 +37,24 @@ test_tests =
                 , "x ="
                 , "    Attr.style \"color\" \"blue\""
                 ]
+        , testCase "don't remove imports referenced via 'exposing (..)'" $ world
+            |> uploadFile "Tests.elm"
+                [ "module Tests exposing (all)"
+                , "import Test exposing (..)"
+                , "all : Test"
+                , "all = describe \"example tests\" []"
+                ]
+            |> run "elm-refactor" [ "--import", "Html.Attributes as Attr", "--yes", "Tests.elm" ]
+            |> assertFile "Tests.elm"
+                [ "module Tests exposing (all)"
+                , ""
+                , "import Test exposing (..)"
+                , ""
+                , ""
+                , "all : Test"
+                , "all ="
+                , "    describe \"example tests\" []"
+                ]
         ]
 
 

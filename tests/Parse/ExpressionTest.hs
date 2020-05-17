@@ -30,9 +30,9 @@ example name input expected =
         assertParse (expr Elm_0_19) input expected
 
 
-importInfo :: ImportInfo ns
+importInfo :: Ord ns => ImportInfo ns
 importInfo =
-    ImportInfo Map.empty Bimap.empty Set.empty Map.empty False
+    ImportInfo mempty Bimap.empty mempty mempty mempty
 
 
 example' :: String -> String -> String -> TestTree

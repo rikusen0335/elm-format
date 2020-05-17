@@ -17,7 +17,7 @@ data MatchedNamespace t
     = Local
     | MatchedImport Bool t -- Bool is True if it was originally qualified
     | Unmatched t -- The given namespace is clearly specified, but it is not a known import
-    | UnmatchedUnqualified -- An unqualified reference that doesn't match anything known
+    | UnmatchedUnqualified [t] -- An unqualified reference that doesn't match anything known. List is namespaces that we don't know the contents of that are possibilities for a match
     deriving (Eq, Ord, Show, Functor)
 
 
@@ -25,7 +25,7 @@ fromMatched :: t -> MatchedNamespace t -> t
 fromMatched empty Local = empty
 fromMatched _ (MatchedImport _ t) = t
 fromMatched _ (Unmatched t) = t
-fromMatched empty UnmatchedUnqualified = empty
+fromMatched empty (UnmatchedUnqualified _) = empty
 
 
 matchReferences ::
@@ -38,6 +38,8 @@ matchReferences importInfo =
         aliases = Bimap.toMap $ ImportInfo._aliases importInfo
         imports = ImportInfo._directImports importInfo
         exposed = ImportInfo._exposed importInfo
+        unresolvedExposingAll = ImportInfo._unresolvedExposingAll importInfo
+        unmatchedUnqualified = UnmatchedUnqualified $ Set.toList unresolvedExposingAll
 
         f locals ns identifier =
             case ns of
@@ -46,7 +48,7 @@ matchReferences importInfo =
                         Just () -> Local
                         Nothing ->
                             case Dict.lookup identifier exposed of
-                                Nothing -> UnmatchedUnqualified
+                                Nothing -> unmatchedUnqualified
                                 Just exposedFrom -> MatchedImport False exposedFrom
 
                 _ ->
@@ -102,14 +104,14 @@ applyReferences importInfo =
                                 True ->
                                     (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
                                     || Dict.member identifier locals -- something is locally defined with the same name
-                                    || unresolvedExposingAll -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
+                                    || not (Set.null unresolvedExposingAll) -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
                                 False -> False -- never add qualification to something that was not qualified
                     in
                     if qualify
                       then Maybe.fromMaybe ns $ Dict.lookup ns aliases
                       else [] -- This is exposed unambiguously and doesn't need to be qualified
                 Unmatched name -> name
-                UnmatchedUnqualified -> []
+                UnmatchedUnqualified _ -> []
 
         defineLocal name = Dict.insert name ()
 

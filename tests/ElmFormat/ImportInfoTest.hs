@@ -25,7 +25,7 @@ tests =
             i
                 |> fmap makeEntry
                 |> Dict.fromList
-                |> ImportInfo.fromImports (const mempty)
+                |> ImportInfo.fromImports (const Nothing)
     in
     [ testGroup "_directImports" $
         let
@@ -56,7 +56,7 @@ tests =
 
         -- TODO: what if the alias is the same as the import name?
         ]
-    , testGroup "_exposed" $
+    , testGroup "_exposed"
         [ testCase "includes exposed values" $
             buildImportInfo [(["B"], Nothing, ExplicitListing (DetailedListing (Dict.singleton (LowercaseIdentifier "oldValue") (C ([], []) ())) mempty mempty) False )]
                 |> ImportInfo._exposed
@@ -68,11 +68,26 @@ tests =
                 |> Dict.lookup (VarName $ LowercaseIdentifier "style")
                 |> assertEqual "contains style" (Just [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"])
         ]
-    , testGroup "_exposedTypes" $
+    , testGroup "_exposedTypes"
         [ testCase "includes exposed types" $
             buildImportInfo [(["B"], Nothing, ExplicitListing (DetailedListing mempty mempty (Dict.singleton (UppercaseIdentifier "OldType") (C ([], []) (C [] ClosedListing)))) False )]
                 |> ImportInfo._exposed
                 |> Dict.lookup (TypeName $ UppercaseIdentifier "OldType")
                 |> assertEqual "contains OldType" (Just [UppercaseIdentifier "B"])
+        ]
+    , testGroup "_unresolvedExposingAll"
+        [ testCase "includes modules without known content" $
+            buildImportInfo [(["B"], Nothing, OpenListing (C ([], []) ()))]
+                |> ImportInfo._unresolvedExposingAll
+                |> Set.member [UppercaseIdentifier "B"]
+                |> assertEqual "contains B" True
+        , testCase "does not include moduels with known content" $
+            [(["B"], Nothing, OpenListing (C ([], []) ()))]
+                |> fmap makeEntry
+                |> Dict.fromList
+                |> ImportInfo.fromImports (const $ Just [VarName $ LowercaseIdentifier "b"])
+                |> ImportInfo._unresolvedExposingAll
+                |> Set.member [UppercaseIdentifier "B"]
+                |> assertEqual "does not contain B" False
         ]
     ]

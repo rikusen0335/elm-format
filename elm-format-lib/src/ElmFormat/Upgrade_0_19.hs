@@ -66,7 +66,7 @@ data UpgradeDefinition =
         , _imports :: Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
         }
 
-knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> [LocalName]
+knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> Maybe [LocalName]
 knownContents upgradeDefinition ns =
     let
         expressionNameToLocalName name =
@@ -75,6 +75,7 @@ knownContents upgradeDefinition ns =
                 Just c | isLower c -> Just $ VarName $ LowercaseIdentifier name
                 _ -> Nothing
     in
+    Just $ -- TODO: always returning Just here is probably incorret
     (mapMaybe (expressionNameToLocalName . snd)
         $ filter ((==) ns . fst)
         $ Dict.keys
@@ -336,8 +337,8 @@ removeTypes rem listing =
 
 usages ::
     (Coapplicative annf, Ord ns) =>
-    ASTNS annf ns nk
-    -> Dict.Map ns Int
+    ASTNS annf (MatchedNamespace ns) nk
+    -> Dict.Map (MatchedNamespace ns) Int
 usages =
     fmap (Dict.foldr (+) 0) . _usageCount . countUsages
 
@@ -349,9 +350,20 @@ removeUnusedImports ::
     -> Dict.Map [UppercaseIdentifier] (C1 before ImportMethod)
 removeUnusedImports keepAnyway usages originalImports =
     let
+        potentialUsages :: Dict.Map [UppercaseIdentifier] Int
+        potentialUsages =
+            Dict.foldMapWithKey (\ns count ->
+                                   case ns of
+                                       UnmatchedUnqualified nss ->
+                                           List.map (\n -> (n, count)) nss
+                                               |> Dict.fromList
+                                       _ -> mempty
+                                   )
+                                  usages
         uAfter ns =
             (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport False ns) usages)
             + (Maybe.fromMaybe 0 $ Dict.lookup (MatchedImport True ns) usages)
+            + (Maybe.fromMaybe 0 $ Dict.lookup ns potentialUsages)
     in
     Dict.filterWithKey (\k _ -> uAfter k > 0 || keepAnyway k) originalImports
 
@@ -413,7 +425,7 @@ applyUpgrades upgradeDefinition importInfo expr =
         replace :: Ref (MatchedNamespace [UppercaseIdentifier]) -> Maybe (ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
         replace var =
             case var of
-                VarRef UnmatchedUnqualified (LowercaseIdentifier name) ->
+                VarRef (UnmatchedUnqualified _) (LowercaseIdentifier name) ->
                     -- TODO: include default imports in the matchReferences, so this isn't needed here
                     Dict.lookup ([UppercaseIdentifier "Basics"], name) replacements
 

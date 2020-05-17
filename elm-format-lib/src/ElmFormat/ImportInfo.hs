@@ -18,13 +18,13 @@ data ImportInfo ns =
         , _aliases :: Bimap.Bimap ns ns
         , _directImports :: Set.Set ns
         , _ambiguous :: Dict.Map LocalName [ns]
-        , _unresolvedExposingAll :: Bool -- True if there is an exposing(..) and we didn't know the module contents
+        , _unresolvedExposingAll :: Set.Set ns -- any modules with exposing(..) and we didn't know the module contents
         }
     deriving Show
 
 
 fromModule ::
-    ([UppercaseIdentifier] -> [LocalName])
+    ([UppercaseIdentifier] -> Maybe [LocalName])
     -> Module [UppercaseIdentifier] decl
     -> ImportInfo [UppercaseIdentifier]
 fromModule knownModuleContents modu =
@@ -32,7 +32,7 @@ fromModule knownModuleContents modu =
 
 
 fromImports ::
-    ([UppercaseIdentifier] -> [LocalName])
+    ([UppercaseIdentifier] -> Maybe [LocalName]) -- return Nothing if the contents are unknown
     -> Dict.Map [UppercaseIdentifier] ImportMethod
     -> ImportInfo [UppercaseIdentifier]
 fromImports knownModuleContents rawImports =
@@ -78,7 +78,7 @@ fromImports knownModuleContents rawImports =
                     [ CtorName $ UppercaseIdentifier "Nothing"
                     , CtorName $ UppercaseIdentifier "Just"
                     ]
-                _ -> knownModuleContents moduleName
+                _ -> knownModuleContents moduleName |> Maybe.fromMaybe []
 
         getExposed moduleName (ImportMethod _ (C _ listing)) =
             Dict.fromList $ fmap (flip (,) moduleName) $
@@ -141,6 +141,8 @@ fromImports knownModuleContents rawImports =
                 ClosedListing -> False
 
         unresolvedExposingAll =
-            any exposesAll rawImports
+            Dict.filter exposesAll rawImports
+                |> Dict.keysSet
+                |> Set.filter (\a -> knownModuleContents a == Nothing)
     in
     ImportInfo exposed aliases directs ambiguous unresolvedExposingAll
