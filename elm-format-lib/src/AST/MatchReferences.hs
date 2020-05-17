@@ -14,16 +14,18 @@ import qualified ElmFormat.ImportInfo as ImportInfo
 
 
 data MatchedNamespace t
-    = NoNamespace
+    = Local
     | MatchedImport Bool t -- Bool is True if it was originally qualified
-    | Unmatched t
+    | Unmatched t -- The given namespace is clearly specified, but it is not a known import
+    | UnmatchedUnqualified -- An unqualified reference that doesn't match anything known
     deriving (Eq, Ord, Show, Functor)
 
 
 fromMatched :: t -> MatchedNamespace t -> t
-fromMatched empty NoNamespace = empty
+fromMatched empty Local = empty
 fromMatched _ (MatchedImport _ t) = t
 fromMatched _ (Unmatched t) = t
+fromMatched empty UnmatchedUnqualified = empty
 
 
 matchReferences ::
@@ -41,10 +43,10 @@ matchReferences importInfo =
             case ns of
                 [] ->
                     case Dict.lookup identifier locals of
-                        Just () -> NoNamespace
+                        Just () -> Local
                         Nothing ->
                             case Dict.lookup identifier exposed of
-                                Nothing -> NoNamespace
+                                Nothing -> UnmatchedUnqualified
                                 Just exposedFrom -> MatchedImport False exposedFrom
 
                 _ ->
@@ -92,7 +94,7 @@ applyReferences importInfo =
 
         f locals ns' identifier =
             case ns' of
-                NoNamespace -> []
+                Local -> []
                 MatchedImport wasQualified ns ->
                     let
                         qualify =
@@ -107,6 +109,7 @@ applyReferences importInfo =
                       then Maybe.fromMaybe ns $ Dict.lookup ns aliases
                       else [] -- This is exposed unambiguously and doesn't need to be qualified
                 Unmatched name -> name
+                UnmatchedUnqualified -> []
 
         defineLocal name = Dict.insert name ()
 

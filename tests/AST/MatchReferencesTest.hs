@@ -47,35 +47,66 @@ tests =
                     Just (C _ moduleName, importMethod) ->
                         (moduleName, importMethod)
 
+            makeLetDeclaration name =
+                I.Fix $ Identity $
+                LetDefinition
+                    (I.Fix $ Identity $ VarPattern $ LowercaseIdentifier name)
+                    [] []
+                    (I.Fix $ Identity $ Unit [])
+
             test ::
                 String
                 -> [(String, List String)] -- knownContents
-                -> [String] -- imports
+                -> List String -- imports
+                -> List String -- locals
                 -> Ref [String]
                 -> Ref (MatchedNamespace [String])
                 -> TestTree
-            test name knownContents imports sourceAst' matchedAst' =
+            test name knownContents imports locals sourceAst' matchedAst' =
                 let
                     sourceAst = fmap (fmap UppercaseIdentifier) sourceAst'
                     matchedAst = fmap (fmap $ fmap UppercaseIdentifier) matchedAst'
+                    wrapExpr r =
+                        case locals of
+                            [] ->
+                                -- no locals to define, so just make a var expression
+                                I.Fix $ Identity $ VarExpr r
+                            _ ->
+                                -- define the provided locals in a let block
+                                I.Fix $ Identity $
+                                Let
+                                    (fmap makeLetDeclaration locals)
+                                    []
+                                    (I.Fix $ Identity $ VarExpr r)
                 in
                 testCase name $
-                    matchReferences (makeImportInfo knownContents imports) (I.Fix $ Identity $ VarExpr sourceAst)
-                        |> Expect.equals (I.Fix $ Identity $ VarExpr matchedAst)
+                    matchReferences (makeImportInfo knownContents imports) (wrapExpr sourceAst)
+                        |> Expect.equals (wrapExpr matchedAst)
         in
         [ test "identifies unknown references"
-            [] []
+            [] [] []
             (VarRef ["A"] (LowercaseIdentifier "a"))
             (VarRef (Unmatched ["A"]) (LowercaseIdentifier "a"))
         , test "matches references from an import"
             []
             [ "import A" ]
+            []
             (VarRef ["A"] (LowercaseIdentifier "a"))
             (VarRef (MatchedImport True ["A"]) (LowercaseIdentifier "a"))
         , test "matches reference to a known value via exposing(..)"
             [ ("Html", ["div"]) ]
             [ "import Html exposing (..)" ]
+            []
             (VarRef [] (LowercaseIdentifier "div"))
             (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
+        , test "determines references to local variables"
+            [] []
+            [ "a" ]
+            (VarRef [] (LowercaseIdentifier "a"))
+            (VarRef Local (LowercaseIdentifier "a"))
+        , test "determines unqualified references that are unmatched"
+            [] [] []
+            (VarRef [] (LowercaseIdentifier "a"))
+            (VarRef UnmatchedUnqualified (LowercaseIdentifier "a"))
         ]
     ]

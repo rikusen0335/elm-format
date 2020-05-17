@@ -413,7 +413,8 @@ applyUpgrades upgradeDefinition importInfo expr =
         replace :: Ref (MatchedNamespace [UppercaseIdentifier]) -> Maybe (ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
         replace var =
             case var of
-                VarRef NoNamespace (LowercaseIdentifier name) ->
+                VarRef UnmatchedUnqualified (LowercaseIdentifier name) ->
+                    -- TODO: include default imports in the matchReferences, so this isn't needed here
                     Dict.lookup ([UppercaseIdentifier "Basics"], name) replacements
 
                 VarRef (MatchedImport _ ns) (LowercaseIdentifier name) ->
@@ -565,7 +566,7 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
         isHtmlAttributesStyle var =
             case var of
                 VarRef (MatchedImport _ [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"]) (LowercaseIdentifier "style") -> True
-                VarRef NoNamespace (LowercaseIdentifier "style") -> styleExposed
+                VarRef UnmatchedUnqualified (LowercaseIdentifier "style") -> styleExposed -- TODO: remove this
                 _ -> False
     in
     case extract $ I.unFix $ I.convert (runIdentity . getCompose) term of
@@ -609,14 +610,14 @@ makeArg' varName =
 
 makeVarRef :: Applicative annf => String -> ASTNS annf (MatchedNamespace any) 'ExpressionNK
 makeVarRef varName =
-    I.Fix $ pure $ VarExpr $ VarRef NoNamespace $ LowercaseIdentifier varName
+    I.Fix $ pure $ VarExpr $ VarRef Local $ LowercaseIdentifier varName
 
 
 applyMappings :: Bool -> Dict.Map LowercaseIdentifier UExpr -> UExpr -> UExpr
 applyMappings insertMultiline mappings =
     I.cata (simplify . I.Fix)
         . I.convert (Compose . Identity . fmap snd . getCompose)
-        . I.cata (inlineVars ((==) NoNamespace) insertMultiline mappings . I.Fix)
+        . I.cata (inlineVars ((==) Local) insertMultiline mappings . I.Fix)
         . I.convert (Compose . fmap ((,) False) . runIdentity . getCompose)
 
 
