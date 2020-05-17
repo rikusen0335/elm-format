@@ -6,6 +6,7 @@ import Elm.Utils ((|>))
 import AST.V0_16
 import AST.MatchReferences
 import AST.Module (ImportMethod(..))
+import AST.Structure
 import Data.Functor.Identity
 import qualified Data.Indexed as I
 import Expect
@@ -26,34 +27,6 @@ tests =
     testGroup "AST.MatchReferences"
     [ testGroup "matchReferences" $
         let
-            makeImportInfo :: [(String, List String)] -> [String] -> ImportInfo [UppercaseIdentifier]
-            makeImportInfo knownContentsRaw imports =
-                let
-                    knownContents = knownContentsRaw |> fmap makeKnownContent |> Dict.fromList
-                in
-                ImportInfo.fromImports
-                    (flip Dict.lookup knownContents)
-                    (imports |> fmap makeImportMethod |> Dict.fromList)
-
-            makeKnownContent (moduleName, known) =
-                ( fmap UppercaseIdentifier $ splitOn "." moduleName
-                , fmap (VarName . LowercaseIdentifier) known
-                )
-
-            makeImportMethod :: String -> ([UppercaseIdentifier], ImportMethod)
-            makeImportMethod importString =
-                case Result.toMaybe $ Parse.parse importString (Parse.Module.import' Elm_0_19) of
-                    Nothing -> undefined -- Not handled: fix the test input to parse correctly
-                    Just (C _ moduleName, importMethod) ->
-                        (moduleName, importMethod)
-
-            makeLetDeclaration name =
-                I.Fix $ Identity $
-                LetDefinition
-                    (I.Fix $ Identity $ VarPattern $ LowercaseIdentifier name)
-                    [] []
-                    (I.Fix $ Identity $ Unit [])
-
             test ::
                 String
                 -> [(String, List String)] -- knownContents
@@ -115,4 +88,122 @@ tests =
             (VarRef [] (LowercaseIdentifier "describe"))
             (VarRef (UnmatchedUnqualified [["Test"]]) (LowercaseIdentifier "describe"))
         ]
+    , testGroup "applyReferences" $
+        let
+            test ::
+                String
+                -> [(String, List String)] -- knownContents
+                -> List String -- imports
+                -> List String -- locals
+                -> Ref (MatchedNamespace [String])
+                -> Ref [String]
+                -> TestTree
+            test name knownContents imports locals sourceAst' matchedAst' =
+                let
+                    sourceAst = fmap (fmap $ fmap UppercaseIdentifier) sourceAst'
+                    matchedAst = fmap (fmap UppercaseIdentifier) matchedAst'
+                    wrapExpr r =
+                        case locals of
+                            [] ->
+                                -- no locals to define, so just make a var expression
+                                I.Fix $ Identity $ VarExpr r
+                            _ ->
+                                -- define the provided locals in a let block
+                                I.Fix $ Identity $
+                                Let
+                                    (fmap makeLetDeclaration locals)
+                                    []
+                                    (I.Fix $ Identity $ VarExpr r)
+                in
+                testCase name $
+                    applyReferences (makeImportInfo knownContents imports) (wrapExpr sourceAst)
+                        |> Expect.equals (wrapExpr matchedAst)
+        in
+        [ test "local reference is unqualified"
+            [] [] []
+            (VarRef Local (LowercaseIdentifier "a"))
+            (VarRef [] (LowercaseIdentifier "a"))
+        , test "unmatched, unqualified reference is unqualified"
+            [] [] []
+            (VarRef (UnmatchedUnqualified []) (LowercaseIdentifier "a"))
+            (VarRef [] (LowercaseIdentifier "a"))
+        , test "unmatched, qualified reference is unchanged"
+            [] [] []
+            (VarRef (Unmatched ["XYZ", "ABC"]) (LowercaseIdentifier "a"))
+            (VarRef ["XYZ", "ABC"] (LowercaseIdentifier "a"))
+        , test "qualified, matched import becomes unqualified if explicitly exposed"
+            []
+            [ "import Html exposing (div)" ]
+            []
+            (VarRef (MatchedImport True ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef [] (LowercaseIdentifier "div"))
+        , test "qualified, matched import remains qualified if not exposed"
+            []
+            [ "import Html" ]
+            []
+            (VarRef (MatchedImport True ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef ["Html"] (LowercaseIdentifier "div"))
+        , test "qualified, matched import remains qualified if explicitly exposed but hidden by a local"
+            []
+            [ "import Html exposing (div)" ]
+            [ "div" ]
+            (VarRef (MatchedImport True ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef ["Html"] (LowercaseIdentifier "div"))
+        , test "qualified, matched import remains qualified if explicitly exposed but there are exposing(..) with unknown content"
+            []
+            [ "import Html exposing (div)"
+            , "import Html.Extra exposing (..)"
+            ]
+            []
+            (VarRef (MatchedImport True ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef ["Html"] (LowercaseIdentifier "div"))
+        , test "qualified, matched import becomes unqualified if explicitly exposed and there are exposing(..) with known content"
+            [ ("Html.Extra", ["notDiv"]) ]
+            [ "import Html exposing (div)"
+            , "import Html.Extra exposing (..)"
+            ]
+            []
+            (VarRef (MatchedImport True ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef [] (LowercaseIdentifier "div"))
+        , test "unqualified, matched import remains unqualified if possible"
+            []
+            [ "import Html exposing (div)" ]
+            []
+            (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef [] (LowercaseIdentifier "div"))
+        ]
     ]
+
+
+makeImportInfo :: [(String, List String)] -> [String] -> ImportInfo [UppercaseIdentifier]
+makeImportInfo knownContentsRaw imports =
+    let
+        knownContents = knownContentsRaw |> fmap makeKnownContent |> Dict.fromList
+    in
+    ImportInfo.fromImports
+        (flip Dict.lookup knownContents)
+        (imports |> fmap makeImportMethod |> Dict.fromList)
+
+
+makeKnownContent :: (String, List String) -> (List UppercaseIdentifier, List LocalName)
+makeKnownContent (moduleName, known) =
+    ( fmap UppercaseIdentifier $ splitOn "." moduleName
+    , fmap (VarName . LowercaseIdentifier) known
+    )
+
+
+makeImportMethod :: String -> ([UppercaseIdentifier], ImportMethod)
+makeImportMethod importString =
+    case Result.toMaybe $ Parse.parse importString (Parse.Module.import' Elm_0_19) of
+        Nothing -> undefined -- Not handled: fix the test input to parse correctly
+        Just (C _ moduleName, importMethod) ->
+            (moduleName, importMethod)
+
+
+makeLetDeclaration :: String -> ASTNS Identity ns 'LetDeclarationNK
+makeLetDeclaration name =
+    I.Fix $ Identity $
+    LetDefinition
+        (I.Fix $ Identity $ VarPattern $ LowercaseIdentifier name)
+        [] []
+        (I.Fix $ Identity $ Unit [])
