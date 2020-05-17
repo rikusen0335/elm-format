@@ -51,27 +51,31 @@ tests =
                 String
                 -> [(String, List String)] -- knownContents
                 -> [String] -- imports
-                -> Ref [UppercaseIdentifier]
-                -> Ref (MatchedNamespace [UppercaseIdentifier])
+                -> Ref [String]
+                -> Ref (MatchedNamespace [String])
                 -> TestTree
-            test name knownContents imports sourceAst matchedAst =
+            test name knownContents imports sourceAst' matchedAst' =
+                let
+                    sourceAst = fmap (fmap UppercaseIdentifier) sourceAst'
+                    matchedAst = fmap (fmap $ fmap UppercaseIdentifier) matchedAst'
+                in
                 testCase name $
                     matchReferences (makeImportInfo knownContents imports) (I.Fix $ Identity $ VarExpr sourceAst)
                         |> Expect.equals (I.Fix $ Identity $ VarExpr matchedAst)
         in
         [ test "identifies unknown references"
             [] []
-            (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a"))
-            (VarRef (Unmatched [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
+            (VarRef ["A"] (LowercaseIdentifier "a"))
+            (VarRef (Unmatched ["A"]) (LowercaseIdentifier "a"))
         , test "matches references from an import"
             []
             [ "import A" ]
-            (VarRef [UppercaseIdentifier "A"] (LowercaseIdentifier "a"))
-            (VarRef (MatchedImport True [UppercaseIdentifier "A"]) (LowercaseIdentifier "a"))
+            (VarRef ["A"] (LowercaseIdentifier "a"))
+            (VarRef (MatchedImport True ["A"]) (LowercaseIdentifier "a"))
         , test "matches reference to a known value via exposing(..)"
             [ ("Html", ["div"]) ]
             [ "import Html exposing (..)" ]
             (VarRef [] (LowercaseIdentifier "div"))
-            (VarRef (MatchedImport False [UppercaseIdentifier "Html"]) (LowercaseIdentifier "div"))
+            (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
         ]
     ]

@@ -17,7 +17,7 @@ data MatchedNamespace t
     = NoNamespace
     | MatchedImport Bool t -- Bool is True if it was originally qualified
     | Unmatched t
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Functor)
 
 
 fromMatched :: t -> MatchedNamespace t -> t
