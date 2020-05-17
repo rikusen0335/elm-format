@@ -55,6 +55,24 @@ test_tests =
                 , "all ="
                 , "    describe \"example tests\" []"
                 ]
+        , testCase "qualifies references for removed exposings" $ world
+            |> uploadFile "Main.elm"
+                [ "module Main exposing (attr)"
+                , "import Html.Styled exposing (Attribute, styled)"
+                , "attr : Attribute msg"
+                , "attr = Html.Styled.styled"
+                ]
+            |> run "elm-refactor" [ "--import", "Html.Styled", "--yes", "Main.elm" ]
+            |> assertFile "Main.elm"
+                [ "module Main exposing (attr)"
+                , ""
+                , "import Html.Styled"
+                , ""
+                , ""
+                , "attr : Html.Styled.Attribute msg"
+                , "attr ="
+                , "    Html.Styled.styled"
+                ]
         ]
 
 

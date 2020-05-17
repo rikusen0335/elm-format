@@ -105,7 +105,9 @@ applyReferences importInfo =
                                     (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
                                     || Dict.member identifier locals -- something is locally defined with the same name
                                     || not (Set.null unresolvedExposingAll) -- there's an import with exposing(..) and we can't be sure if something exposed by that would conflict
-                                False -> False -- never add qualification to something that was not qualified
+                                False ->
+                                    (Dict.lookup identifier exposed /= Just ns) -- it's not exposed
+                                    || Dict.member identifier locals -- something is locally defined with the same name
                     in
                     if qualify
                       then Maybe.fromMaybe ns $ Dict.lookup ns aliases

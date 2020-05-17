@@ -171,6 +171,18 @@ tests =
             []
             (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
             (VarRef [] (LowercaseIdentifier "div"))
+        , test "unqualified, matched import becomes qualified if obscured by a local"
+            []
+            [ "import Html exposing (div)" ]
+            [ "div" ]
+            (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef ["Html"] (LowercaseIdentifier "div"))
+        , test "unqualified, matched import becomes qualified if no longer exposed"
+            []
+            [ "import Html" ]
+            []
+            (VarRef (MatchedImport False ["Html"]) (LowercaseIdentifier "div"))
+            (VarRef ["Html"] (LowercaseIdentifier "div"))
         ]
     ]
 
