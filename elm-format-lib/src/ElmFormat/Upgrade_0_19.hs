@@ -471,11 +471,7 @@ applyUpgrades upgradeDefinition importInfo expr =
             I.convert (Compose . pure . (,) FromUpgradeDefinition . runIdentity) $ makeTuple n
 
         (ann, ExplicitList terms' trailing multiline) ->
-            let
-                ha = (fmap UppercaseIdentifier ["Html", "Attributes"])
-                styleExposed = Dict.lookup (VarName $ LowercaseIdentifier "style") exposed == Just ha
-            in
-            I.Fix $ Compose $ pure $ (,) ann $ ExplicitList (Sequence $ concat $ fmap (expandHtmlStyle styleExposed) $ sequenceToList terms') trailing multiline
+            I.Fix $ Compose $ pure $ (,) ann $ ExplicitList (Sequence $ concat $ fmap expandHtmlStyle $ sequenceToList terms') trailing multiline
 
         _ ->
             expr
@@ -546,8 +542,8 @@ simplify expr =
             expr
 
 
-expandHtmlStyle :: Bool -> C2Eol preComma pre UExpr -> [C2Eol preComma pre UExpr]
-expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
+expandHtmlStyle :: C2Eol preComma pre UExpr -> [C2Eol preComma pre UExpr]
+expandHtmlStyle (C (preComma, pre, eol) term) =
     let
         lambda fRef =
             I.convert (Compose . Identity . (,) FromUpgradeDefinition . runIdentity) $
@@ -562,16 +558,9 @@ expandHtmlStyle styleExposed (C (preComma, pre, eol) term) =
                     (FAJoinFirst JoinAll)
                 )
                 False
-
-        isHtmlAttributesStyle var =
-            case var of
-                VarRef (MatchedImport _ [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"]) (LowercaseIdentifier "style") -> True
-                VarRef UnmatchedUnqualified (LowercaseIdentifier "style") -> styleExposed -- TODO: remove this
-                _ -> False
     in
     case extract $ I.unFix $ I.convert (runIdentity . getCompose) term of
-        App (I.Fix (_, VarExpr var)) [C preStyle (I.Fix (_, ExplicitList styles trailing _))] _
-          | isHtmlAttributesStyle var
+        App (I.Fix (_, VarExpr var@(VarRef (MatchedImport _ [UppercaseIdentifier "Html", UppercaseIdentifier "Attributes"]) (LowercaseIdentifier "style")))) [C preStyle (I.Fix (_, ExplicitList styles trailing _))] _
           ->
             let
                 convert (C (preComma', pre', eol') style) =
