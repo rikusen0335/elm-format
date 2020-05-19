@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Type.Constrain.Expression
+module ElmCompiler.Type.Constrain.Expression
   ( constrain
   , constrainDef
   , constrainRecursiveDefs
@@ -8,18 +8,18 @@ module Type.Constrain.Expression
 
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Utils.Shader as Shader
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Type as E
-import Reporting.Error.Type (Expected(..), Context(..), SubContext(..), MaybeName(..), Category(..), PExpected(..), PContext(..))
-import qualified Type.Constrain.Pattern as Pattern
-import qualified Type.Instantiate as Instantiate
-import Type.Type as Type hiding (Descriptor(..))
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Type as E
+import ElmCompiler.Reporting.Error.Type (Expected(..), Context(..), SubContext(..), MaybeName(..), Category(..), PExpected(..), PContext(..))
+import qualified ElmCompiler.Type.Constrain.Pattern as Pattern
+import qualified ElmCompiler.Type.Instantiate as Instantiate
+import ElmCompiler.Type.Type as Type hiding (Descriptor(..))
 
 
 

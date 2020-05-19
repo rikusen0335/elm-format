@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Elm.Constraint
+module ElmCompiler.Elm.Constraint
   ( Constraint
   , exactly
   , anything
@@ -24,11 +24,11 @@ module Elm.Constraint
 import Control.Monad (liftM4)
 import Data.Binary (Binary, get, put, getWord8, putWord8)
 
-import qualified Elm.Version as V
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Parse.Primitives as P
-import Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Row, Col)
 
 
 

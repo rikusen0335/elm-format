@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types #-}
-module Reporting.Task
+module ElmBuilder.Reporting.Task
   ( Task
   , run
   , throw

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Canonicalize.Expression
+module ElmCompiler.Canonicalize.Expression
   ( canonicalize
   , FreeLocals
   , Uses(..)
@@ -15,23 +15,23 @@ import qualified Data.Graph as Graph
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Map.Strict.Internal as I
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified AST.Utils.Binop as Binop
-import qualified AST.Utils.Type as Type
-import qualified Canonicalize.Environment as Env
-import qualified Canonicalize.Environment.Dups as Dups
-import qualified Canonicalize.Pattern as Pattern
-import qualified Canonicalize.Type as Type
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
-import qualified Reporting.Warning as W
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Canonicalize.Environment.Dups as Dups
+import qualified ElmCompiler.Canonicalize.Pattern as Pattern
+import qualified ElmCompiler.Canonicalize.Type as Type
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
+import qualified ElmCompiler.Reporting.Warning as W
 
 
 

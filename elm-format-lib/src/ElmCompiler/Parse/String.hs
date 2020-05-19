@@ -1,21 +1,21 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE BangPatterns, MagicHash, OverloadedStrings, UnboxedTuples #-}
-module Parse.String
+module ElmCompiler.Parse.String
   ( string
   , character
   )
   where
 
 
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Data.Word (Word8, Word16)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 
-import qualified Elm.String as ES
-import Parse.Primitives (Parser, Row, Col)
-import qualified Parse.Number as Number
-import qualified Parse.Primitives as P
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.Elm.String as ES
+import ElmCompiler.Parse.Primitives (Parser, Row, Col)
+import qualified ElmCompiler.Parse.Number as Number
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

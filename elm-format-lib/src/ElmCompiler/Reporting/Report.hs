@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Report
+module ElmCompiler.Reporting.Report
     ( Report(..)
     )
     where
 
 
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
 
 
 

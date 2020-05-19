@@ -1,20 +1,20 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Parse.Type
+module ElmCompiler.Parse.Type
   ( expression
   , variant
   )
   where
 
 
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import Parse.Primitives (Parser, addLocation, addEnd, getPosition, inContext, specialize, oneOf, oneOfWithFallback, word1, word2)
-import qualified Parse.Space as Space
-import qualified Parse.Variable as Var
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import ElmCompiler.Parse.Primitives (Parser, addLocation, addEnd, getPosition, inContext, specialize, oneOf, oneOfWithFallback, word1, word2)
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

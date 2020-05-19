@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Elm.Licenses
+module ElmCompiler.Elm.Licenses
   ( License
   , bsd3
   , encode
@@ -10,12 +10,12 @@ module Elm.Licenses
 
 
 import qualified Data.Map as Map
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Json.String as Json
-import qualified Reporting.Suggest as Suggest
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Json.String as Json
+import qualified ElmCompiler.Reporting.Suggest as Suggest
 
 
 

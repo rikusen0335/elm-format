@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Optimize.DecisionTree
+module ElmCompiler.Optimize.DecisionTree
   ( DecisionTree(..)
   , compile
   , Path(..)
@@ -25,14 +25,14 @@ import Control.Monad (liftM, liftM2, liftM5)
 import Data.Binary
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 
-import qualified AST.Canonical as Can
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.String as ES
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.String as ES
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

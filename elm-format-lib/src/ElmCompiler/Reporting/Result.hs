@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE Rank2Types #-}
-module Reporting.Result
+module ElmCompiler.Reporting.Result
   ( Result(..)
   , run
   , ok
@@ -11,8 +11,8 @@ module Reporting.Result
   where
 
 
-import qualified Data.OneOrMore as OneOrMore
-import qualified Reporting.Warning as Warning
+import qualified ElmCompiler.Data.OneOrMore as OneOrMore
+import qualified ElmCompiler.Reporting.Warning as Warning
 
 
 

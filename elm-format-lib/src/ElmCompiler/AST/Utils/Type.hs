@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module AST.Utils.Type
+module ElmCompiler.AST.Utils.Type
   ( delambda
   , dealias
   , deepDealias
@@ -10,9 +10,9 @@ module AST.Utils.Type
 
 
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import AST.Canonical (Type(..), AliasType(..), FieldType(..))
+import ElmCompiler.AST.Canonical (Type(..), AliasType(..), FieldType(..))
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, MagicHash, OverloadedStrings, UnboxedTuples #-}
-module Parse.Variable
+module ElmCompiler.Parse.Variable
   ( lower
   , upper
   , moduleName
@@ -17,16 +17,16 @@ module Parse.Variable
 
 
 import qualified Data.Char as Char
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr)
 import GHC.Exts (Char(C#), Int#, (+#), (-#), chr#, uncheckedIShiftL#, word2Int#)
 import GHC.Word (Word8(W8#))
 
-import qualified AST.Source as Src
-import Parse.Primitives (Parser, Row, Col, unsafeIndex)
-import qualified Parse.Primitives as P
+import qualified ElmCompiler.AST.Source as Src
+import ElmCompiler.Parse.Primitives (Parser, Row, Col, unsafeIndex)
+import qualified ElmCompiler.Parse.Primitives as P
 
 
 

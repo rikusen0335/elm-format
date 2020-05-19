@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Render.Code
+module ElmCompiler.Reporting.Render.Code
   ( Source
   , toSource
   , toSnippet
@@ -18,16 +18,16 @@ import qualified Data.ByteString.UTF8 as UTF8_BS
 import qualified Data.Char as Char
 import qualified Data.IntSet as IntSet
 import qualified Data.List as List
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 import Data.Word (Word16)
 
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import Reporting.Doc (Doc)
-import Parse.Primitives (Row, Col)
-import Parse.Symbol (binopCharSet)
-import Parse.Variable (reservedWords)
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import ElmCompiler.Reporting.Doc (Doc)
+import ElmCompiler.Parse.Primitives (Row, Col)
+import ElmCompiler.Parse.Symbol (binopCharSet)
+import ElmCompiler.Parse.Variable (reservedWords)
 
 
 

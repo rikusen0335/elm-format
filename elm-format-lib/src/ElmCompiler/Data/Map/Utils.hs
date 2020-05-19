@@ -1,4 +1,4 @@
-module Data.Map.Utils
+module ElmCompiler.Data.Map.Utils
   ( fromKeys
   , fromKeysA
   , fromValues

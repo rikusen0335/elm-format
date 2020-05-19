@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Solve
+module ElmCompiler.Type.Solve
   ( run
   )
   where
@@ -9,21 +9,21 @@ module Type.Solve
 import Control.Monad
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!))
-import qualified Data.Name as Name
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.NonEmptyList as NE
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Mutable as MVector
 
-import qualified AST.Canonical as Can
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Type as Error
-import qualified Reporting.Render.Type as RT
-import qualified Reporting.Render.Type.Localizer as L
-import qualified Type.Occurs as Occurs
-import Type.Type as Type
-import qualified Type.Error as ET
-import qualified Type.Unify as Unify
-import qualified Type.UnionFind as UF
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Type as Error
+import qualified ElmCompiler.Reporting.Render.Type as RT
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.Type.Occurs as Occurs
+import ElmCompiler.Type.Type as Type
+import qualified ElmCompiler.Type.Error as ET
+import qualified ElmCompiler.Type.Unify as Unify
+import qualified ElmCompiler.Type.UnionFind as UF
 
 
 

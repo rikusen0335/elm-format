@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, EmptyDataDecls, FlexibleInstances, UnboxedTuples #-}
-module Elm.Package
+module ElmCompiler.Elm.Package
   ( Name(..)
   , Author
   , Project
@@ -33,20 +33,20 @@ import Data.Binary (Binary, get, put)
 import qualified Data.Coerce as Coerce
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import Data.Monoid ((<>))
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import System.FilePath ((</>))
 
-import qualified Elm.Version as V
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Json.String as Json
-import qualified Parse.Primitives as P
-import Parse.Primitives (Row, Col)
-import qualified Reporting.Suggest as Suggest
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Json.String as Json
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Reporting.Suggest as Suggest
 
 
 

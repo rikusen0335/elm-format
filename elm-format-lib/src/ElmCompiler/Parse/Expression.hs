@@ -1,27 +1,27 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Parse.Expression
+module ElmCompiler.Parse.Expression
   ( expression
   )
   where
 
 
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified Parse.Keyword as Keyword
-import qualified Parse.Number as Number
-import qualified Parse.Pattern as Pattern
-import qualified Parse.Shader as Shader
-import qualified Parse.Space as Space
-import qualified Parse.Symbol as Symbol
-import qualified Parse.Type as Type
-import qualified Parse.String as String
-import qualified Parse.Variable as Var
-import Parse.Primitives hiding (State)
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Parse.Keyword as Keyword
+import qualified ElmCompiler.Parse.Number as Number
+import qualified ElmCompiler.Parse.Pattern as Pattern
+import qualified ElmCompiler.Parse.Shader as Shader
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Symbol as Symbol
+import qualified ElmCompiler.Parse.Type as Type
+import qualified ElmCompiler.Parse.String as String
+import qualified ElmCompiler.Parse.Variable as Var
+import ElmCompiler.Parse.Primitives hiding (State)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

@@ -1,4 +1,4 @@
-module Data.Index
+module ElmCompiler.Data.Index
   ( ZeroBased
   , first
   , second

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 {-# LANGUAGE BangPatterns #-}
-module Type.UnionFind
+module ElmCompiler.Type.UnionFind
   ( Point
   , fresh
   , union

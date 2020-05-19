@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Elm.Compiler.Type
+module ElmCompiler.Elm.Compiler.Type
   ( Type(..)
   , RT.Context(..)
   , toDoc
@@ -14,19 +14,19 @@ module Elm.Compiler.Type
   where
 
 
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import Json.Encode ((==>))
-import qualified Json.String as Json
-import qualified Parse.Primitives as P
-import qualified Parse.Type as Type
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Render.Type as RT
-import qualified Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import ElmCompiler.Json.Encode ((==>))
+import qualified ElmCompiler.Json.String as Json
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Parse.Type as Type
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Render.Type as RT
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Parse.Symbol
+module ElmCompiler.Parse.Symbol
   ( operator
   , BadOperator(..)
   , binopCharSet
@@ -10,13 +10,13 @@ module Parse.Symbol
 
 import qualified Data.Char as Char
 import qualified Data.IntSet as IntSet
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Vector as Vector
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import GHC.Word (Word8)
 
-import Parse.Primitives (Parser, Row, Col)
-import qualified Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Parser, Row, Col)
+import qualified ElmCompiler.Parse.Primitives as P
 
 
 

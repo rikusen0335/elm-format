@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Parse.Module
+module ElmCompiler.Parse.Module
   ( fromByteString
   , ProjectType(..)
   , isKernel
@@ -11,20 +11,20 @@ module Parse.Module
 
 
 import qualified Data.ByteString as BS
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified Elm.Compiler.Imports as Imports
-import qualified Elm.Package as Pkg
-import qualified Parse.Declaration as Decl
-import qualified Parse.Keyword as Keyword
-import qualified Parse.Space as Space
-import qualified Parse.Symbol as Symbol
-import qualified Parse.Variable as Var
-import qualified Parse.Primitives as P
-import Parse.Primitives hiding (State, fromByteString)
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Elm.Compiler.Imports as Imports
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Parse.Declaration as Decl
+import qualified ElmCompiler.Parse.Keyword as Keyword
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Symbol as Symbol
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives hiding (State, fromByteString)
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

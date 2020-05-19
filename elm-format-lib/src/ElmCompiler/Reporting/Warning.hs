@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Warning
+module ElmCompiler.Reporting.Warning
   ( Warning(..)
   , Context(..)
   , toReport
@@ -9,16 +9,16 @@ module Reporting.Warning
 
 
 import Data.Monoid ((<>))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Utils.Type as Type
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Report as Report
-import qualified Reporting.Render.Code as Code
-import qualified Reporting.Render.Type as RT
-import qualified Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Report as Report
+import qualified ElmCompiler.Reporting.Render.Code as Code
+import qualified ElmCompiler.Reporting.Render.Type as RT
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module Type.Unify
+module ElmCompiler.Type.Unify
   ( Answer(..)
   , unify
   )
@@ -8,13 +8,13 @@ module Type.Unify
 
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified Elm.ModuleName as ModuleName
-import qualified Type.Error as Error
-import qualified Type.Occurs as Occurs
-import Type.Type as Type
-import qualified Type.UnionFind as UF
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Type.Error as Error
+import qualified ElmCompiler.Type.Occurs as Occurs
+import ElmCompiler.Type.Type as Type
+import qualified ElmCompiler.Type.UnionFind as UF
 
 
 

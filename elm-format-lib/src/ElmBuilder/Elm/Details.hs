@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Elm.Details
+module ElmBuilder.Elm.Details
   ( Details(..)
   , BuildID
   , ValidOutline(..)
@@ -20,44 +20,44 @@ import Control.Monad (liftM, liftM2, liftM3)
 import Data.Binary (Binary, get, put, getWord8, putWord8)
 import qualified Data.Either as Either
 import qualified Data.Map as Map
-import qualified Data.Map.Utils as Map
+import qualified ElmCompiler.Data.Map.Utils as Map
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Name as Name
-import qualified Data.NonEmptyList as NE
-import qualified Data.OneOrMore as OneOrMore
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.OneOrMore as OneOrMore
 import qualified Data.Set as Set
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Data.Word (Word64)
 import qualified System.Directory as Dir
 import System.FilePath ((</>), (<.>))
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified AST.Optimized as Opt
-import qualified BackgroundWriter as BW
-import qualified Compile
-import qualified Deps.Registry as Registry
-import qualified Deps.Solver as Solver
-import qualified Deps.Website as Website
-import qualified Elm.Constraint as Con
-import qualified Elm.Docs as Docs
-import qualified Elm.Interface as I
-import qualified Elm.Kernel as Kernel
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Outline as Outline
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified File
-import qualified Http
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Parse.Module as Parse
-import qualified Reporting
-import qualified Reporting.Annotation as A
-import qualified Reporting.Exit as Exit
-import qualified Reporting.Task as Task
-import qualified Stuff
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmBuilder.BackgroundWriter as BW
+import qualified ElmCompiler.Compile as Compile
+import qualified ElmBuilder.Deps.Registry as Registry
+import qualified ElmBuilder.Deps.Solver as Solver
+import qualified ElmBuilder.Deps.Website as Website
+import qualified ElmCompiler.Elm.Constraint as Con
+import qualified ElmCompiler.Elm.Docs as Docs
+import qualified ElmCompiler.Elm.Interface as I
+import qualified ElmCompiler.Elm.Kernel as Kernel
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmBuilder.Elm.Outline as Outline
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.File as File
+import qualified ElmBuilder.Http as Http
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Parse.Module as Parse
+import qualified ElmBuilder.Reporting as Reporting
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmBuilder.Reporting.Exit as Exit
+import qualified ElmBuilder.Reporting.Task as Task
+import qualified ElmBuilder.Stuff as Stuff
 
 
 

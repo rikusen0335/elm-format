@@ -1,21 +1,21 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Constrain.Module
+module ElmCompiler.Type.Constrain.Module
   ( constrain
   )
   where
 
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Type as E
-import qualified Type.Constrain.Expression as Expr
-import qualified Type.Instantiate as Instantiate
-import Type.Type (Type(..), Constraint(..), (==>), mkFlexVar, nameToRigid, never)
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Type as E
+import qualified ElmCompiler.Type.Constrain.Expression as Expr
+import qualified ElmCompiler.Type.Instantiate as Instantiate
+import ElmCompiler.Type.Type (Type(..), Constraint(..), (==>), mkFlexVar, nameToRigid, never)
 
 
 

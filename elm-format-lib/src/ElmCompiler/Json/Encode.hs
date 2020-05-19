@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Json.Encode
+module ElmCompiler.Json.Encode
   ( write
   , encode
   , writeUgly
@@ -29,11 +29,11 @@ import qualified Data.ByteString.Builder as B
 import qualified Data.Map as Map
 import qualified Data.Scientific as Sci
 import Data.Monoid ((<>))
-import qualified Data.Name as Name
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.Utf8 as Utf8
 
-import qualified File
-import qualified Json.String as Json
+import qualified ElmBuilder.File as File
+import qualified ElmCompiler.Json.String as Json
 
 
 

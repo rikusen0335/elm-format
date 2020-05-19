@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, EmptyDataDecls, OverloadedStrings, UnboxedTuples #-}
-module Elm.Kernel
+module ElmCompiler.Elm.Kernel
   ( Content(..)
   , Chunk(..)
   , fromByteString
@@ -14,21 +14,21 @@ import Data.Binary (Binary, get, put, getWord8, putWord8)
 import qualified Data.ByteString.Internal as B
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Foreign.ForeignPtr (ForeignPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 
-import qualified AST.Source as Src
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Parse.Module as Module
-import qualified Parse.Space as Space
-import qualified Parse.Variable as Var
-import Parse.Primitives hiding (fromByteString)
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Parse.Module as Module
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Variable as Var
+import ElmCompiler.Parse.Primitives hiding (fromByteString)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

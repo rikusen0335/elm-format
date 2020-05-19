@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, EmptyDataDecls #-}
-module Json.String
+module ElmCompiler.Json.String
   ( String
   , isEmpty
   --
@@ -19,9 +19,9 @@ module Json.String
 import Prelude hiding (String)
 import qualified Data.ByteString.Builder as B
 import qualified Data.Coerce as Coerce
-import qualified Data.Name as Name
-import qualified Data.Utf8 as Utf8
-import Data.Utf8 (MBA, newByteArray, copyFromPtr, freeze, writeWord8)
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.Utf8 as Utf8
+import ElmCompiler.Data.Utf8 (MBA, newByteArray, copyFromPtr, freeze, writeWord8)
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Foreign.ForeignPtr (withForeignPtr)
@@ -29,7 +29,7 @@ import GHC.Exts (RealWorld)
 import GHC.IO (stToIO, unsafeDupablePerformIO, unsafePerformIO)
 import GHC.ST (ST)
 
-import qualified Parse.Primitives as P
+import qualified ElmCompiler.Parse.Primitives as P
 
 
 

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Elm.Interface
+module ElmCompiler.Elm.Interface
   ( Interface(..)
   , Union(..)
   , Alias(..)
@@ -22,12 +22,12 @@ import Data.Binary
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as Map
 import qualified Data.Map.Merge.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Utils.Binop as Binop
-import qualified Elm.Package as Pkg
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Canonicalize.Environment
+module ElmCompiler.Canonicalize.Environment
   ( Env(..)
   , Exposed
   , Qualified
@@ -21,15 +21,15 @@ module Canonicalize.Environment
 import qualified Data.Map.Merge.Strict as Map
 import qualified Data.Map.Strict as Map
 import qualified Data.Map.Strict.Internal as I
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Utils.Binop as Binop
-import qualified AST.Canonical as Can
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

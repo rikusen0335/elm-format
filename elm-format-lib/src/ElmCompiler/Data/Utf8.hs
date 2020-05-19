@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, FlexibleInstances, MagicHash, UnboxedTuples #-}
-module Data.Utf8
+module ElmCompiler.Data.Utf8
   ( Utf8(..)
   , isEmpty
   , empty
@@ -65,7 +65,7 @@ import GHC.ST (ST(ST), runST)
 import GHC.Prim
 import GHC.Word (Word8(W8#))
 
-import qualified Parse.Primitives as P
+import qualified ElmCompiler.Parse.Primitives as P
 
 
 

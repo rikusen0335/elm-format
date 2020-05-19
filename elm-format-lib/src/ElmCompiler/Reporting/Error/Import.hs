@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Import
+module ElmCompiler.Reporting.Error.Import
   ( Error(..)
   , Problem(..)
   , toReport
@@ -10,13 +10,13 @@ module Reporting.Error.Import
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Reporting.Doc as D
-import qualified Reporting.Render.Code as Code
-import qualified Reporting.Report as Report
-import qualified Reporting.Suggest as Suggest
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Render.Code as Code
+import qualified ElmCompiler.Reporting.Report as Report
+import qualified ElmCompiler.Reporting.Suggest as Suggest
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

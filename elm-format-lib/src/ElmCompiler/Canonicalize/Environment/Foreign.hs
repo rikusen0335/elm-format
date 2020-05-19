@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Canonicalize.Environment.Foreign
+module ElmCompiler.Canonicalize.Environment.Foreign
   ( createInitialEnv
   )
   where
@@ -11,17 +11,17 @@ import Control.Monad (foldM)
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified Canonicalize.Environment as Env
-import qualified Elm.Interface as I
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Elm.Interface as I
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

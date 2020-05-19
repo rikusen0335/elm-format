@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, UnboxedTuples #-}
-module Elm.Version
+module ElmCompiler.Elm.Version
   ( Version(..)
   , one
   , max
@@ -21,15 +21,13 @@ module Elm.Version
 import Prelude hiding (max)
 import Control.Monad (liftM3)
 import Data.Binary (Binary, get, put, getWord8, putWord8)
-import qualified Data.Version as Version
 import Data.Word (Word8, Word16)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
-import qualified Paths_elm
 
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Parse.Primitives as P
-import Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Row, Col)
 
 
 
@@ -57,18 +55,7 @@ max =
 
 compiler :: Version
 compiler =
-  case map fromIntegral (Version.versionBranch Paths_elm.version) of
-    major : minor : patch : _ ->
-      Version major minor patch
-
-    [major, minor] ->
-      Version major minor 0
-
-    [major] ->
-      Version major 0 0
-
-    [] ->
-      error "could not detect version of elm-compiler you are using"
+  Version 19 1 0
 
 
 

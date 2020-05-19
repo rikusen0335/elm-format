@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE BangPatterns, UnboxedTuples, OverloadedStrings #-}
-module Parse.Pattern
+module ElmCompiler.Parse.Pattern
   ( term
   , expression
   )
@@ -8,20 +8,20 @@ module Parse.Pattern
 
 
 import qualified Data.List as List
-import qualified Data.Name as Name
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Foreign.Ptr (plusPtr)
 
-import qualified AST.Source as Src
-import qualified Parse.Keyword as Keyword
-import qualified Parse.Number as Number
-import qualified Parse.Space as Space
-import qualified Parse.String as String
-import qualified Parse.Variable as Var
-import qualified Parse.Primitives as P
-import Parse.Primitives (Parser, addLocation, addEnd, getPosition, inContext, oneOf, oneOfWithFallback, word1, word2)
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Parse.Keyword as Keyword
+import qualified ElmCompiler.Parse.Number as Number
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.String as String
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Parser, addLocation, addEnd, getPosition, inContext, oneOf, oneOfWithFallback, word1, word2)
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

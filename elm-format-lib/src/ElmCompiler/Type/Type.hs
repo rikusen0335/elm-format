@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Type
+module ElmCompiler.Type.Type
   ( Constraint(..)
   , exists
   , Variable
@@ -33,16 +33,16 @@ import Control.Monad.State.Strict (StateT, liftIO)
 import qualified Control.Monad.State.Strict as State
 import Data.Foldable (foldrM)
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import Data.Word (Word32)
 
-import qualified AST.Canonical as Can
-import qualified AST.Utils.Type as Type
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Type as E
-import qualified Type.Error as ET
-import qualified Type.UnionFind as UF
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Type as E
+import qualified ElmCompiler.Type.Error as ET
+import qualified ElmCompiler.Type.UnionFind as UF
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, EmptyDataDecls, FlexibleInstances #-}
-module Elm.String
+module ElmCompiler.Elm.String
   ( String
   , toChars
   , toBuilder
@@ -14,8 +14,8 @@ import Prelude hiding (String)
 import Data.Binary (Binary, get, put)
 import Data.Bits ((.&.), shiftR)
 import qualified Data.ByteString.Builder as B
-import qualified Data.Utf8 as Utf8
-import Data.Utf8 (MBA, newByteArray, copyFromPtr, freeze, writeWord8)
+import qualified ElmCompiler.Data.Utf8 as Utf8
+import ElmCompiler.Data.Utf8 (MBA, newByteArray, copyFromPtr, freeze, writeWord8)
 import GHC.Exts (RealWorld, Ptr)
 import GHC.IO (stToIO, unsafeDupablePerformIO)
 import GHC.ST (ST)

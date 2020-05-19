@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types #-}
-module Deps.Solver
+module ElmBuilder.Deps.Solver
   ( Solver
   , Result(..)
   , Connection(..)
@@ -23,17 +23,17 @@ import Data.Map ((!))
 import qualified System.Directory as Dir
 import System.FilePath ((</>))
 
-import qualified Deps.Registry as Registry
-import qualified Deps.Website as Website
-import qualified Elm.Constraint as C
-import qualified Elm.Package as Pkg
-import qualified Elm.Outline as Outline
-import qualified Elm.Version as V
-import qualified File
-import qualified Http
-import qualified Json.Decode as D
-import qualified Reporting.Exit as Exit
-import qualified Stuff
+import qualified ElmBuilder.Deps.Registry as Registry
+import qualified ElmBuilder.Deps.Website as Website
+import qualified ElmCompiler.Elm.Constraint as C
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmBuilder.Elm.Outline as Outline
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.File as File
+import qualified ElmBuilder.Http as Http
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmBuilder.Reporting.Exit as Exit
+import qualified ElmBuilder.Stuff as Stuff
 
 
 

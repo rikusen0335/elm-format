@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Error
+module ElmCompiler.Type.Error
   ( Type(..)
   , Super(..)
   , Extension(..)
@@ -21,13 +21,13 @@ module Type.Error
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import Data.Monoid ((<>))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified Data.Bag as Bag
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Doc as D
-import qualified Reporting.Render.Type as RT
-import qualified Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.Data.Bag as Bag
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Render.Type as RT
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
 
 
 

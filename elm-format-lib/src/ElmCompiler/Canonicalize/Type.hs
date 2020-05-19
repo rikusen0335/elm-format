@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Canonicalize.Type
+module ElmCompiler.Canonicalize.Type
   ( toAnnotation
   , canonicalize
   )
@@ -9,15 +9,15 @@ module Canonicalize.Type
 
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified Canonicalize.Environment as Env
-import qualified Canonicalize.Environment.Dups as Dups
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Canonicalize.Environment.Dups as Dups
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

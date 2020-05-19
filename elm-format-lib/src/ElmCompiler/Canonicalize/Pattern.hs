@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Canonicalize.Pattern
+module ElmCompiler.Canonicalize.Pattern
   ( verify
   , Bindings
   , DupsDict
@@ -9,17 +9,17 @@ module Canonicalize.Pattern
 
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified Canonicalize.Environment as Env
-import qualified Canonicalize.Environment.Dups as Dups
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Canonicalize.Environment.Dups as Dups
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

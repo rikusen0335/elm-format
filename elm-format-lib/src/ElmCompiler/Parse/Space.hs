@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE BangPatterns, UnboxedTuples, OverloadedStrings #-}
-module Parse.Space
+module ElmCompiler.Parse.Space
   ( Parser
   --
   , chomp
@@ -19,11 +19,11 @@ import Data.Word (Word8, Word16)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 
-import qualified AST.Source as Src
-import Parse.Primitives (Row, Col)
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import ElmCompiler.Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

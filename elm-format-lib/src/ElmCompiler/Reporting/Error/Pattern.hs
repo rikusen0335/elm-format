@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Pattern
+module ElmCompiler.Reporting.Error.Pattern
   ( P.Error(..)
   , toReport
   )
@@ -8,12 +8,12 @@ module Reporting.Error.Pattern
 
 import qualified Data.List as List
 
-import qualified Elm.String as ES
-import qualified Nitpick.PatternMatches as P
-import Reporting.Doc ((<>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Report as Report
-import qualified Reporting.Render.Code as Code
+import qualified ElmCompiler.Elm.String as ES
+import qualified ElmCompiler.Nitpick.PatternMatches as P
+import ElmCompiler.Reporting.Doc ((<>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Report as Report
+import qualified ElmCompiler.Reporting.Render.Code as Code
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Instantiate
+module ElmCompiler.Type.Instantiate
   ( FreeVars
   , fromSrcType
   )
@@ -9,10 +9,10 @@ module Type.Instantiate
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import Type.Type
+import qualified ElmCompiler.AST.Canonical as Can
+import ElmCompiler.Type.Type
 
 
 

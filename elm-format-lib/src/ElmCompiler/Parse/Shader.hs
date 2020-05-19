@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, UnboxedTuples #-}
-module Parse.Shader
+module ElmCompiler.Parse.Shader
   ( shader
   )
   where
@@ -9,7 +9,7 @@ module Parse.Shader
 import qualified Data.ByteString.Internal as B
 import qualified Data.ByteString.UTF8 as BS_UTF8
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
@@ -18,12 +18,12 @@ import qualified Language.GLSL.Syntax as GLS
 import qualified Text.Parsec as Parsec
 import qualified Text.Parsec.Error as Parsec
 
-import qualified AST.Source as Src
-import qualified AST.Utils.Shader as Shader
-import Parse.Primitives (Parser, Row, Col)
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import ElmCompiler.Parse.Primitives (Parser, Row, Col)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

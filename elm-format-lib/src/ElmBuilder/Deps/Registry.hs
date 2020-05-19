@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Deps.Registry
+module ElmBuilder.Deps.Registry
   ( Registry(..)
   , KnownVersions(..)
   , read
@@ -19,15 +19,15 @@ import Data.Binary (Binary, get, put)
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
-import qualified Deps.Website as Website
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified File
-import qualified Http
-import qualified Json.Decode as D
-import qualified Parse.Primitives as P
-import qualified Reporting.Exit as Exit
-import qualified Stuff
+import qualified ElmBuilder.Deps.Website as Website
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.File as File
+import qualified ElmBuilder.Http as Http
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmBuilder.Reporting.Exit as Exit
+import qualified ElmBuilder.Stuff as Stuff
 
 
 

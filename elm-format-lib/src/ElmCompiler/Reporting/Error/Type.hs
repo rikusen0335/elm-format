@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Type
+module ElmCompiler.Reporting.Error.Type
   ( Error(..)
   -- expectations
   , Expected(..)
@@ -22,18 +22,18 @@ module Reporting.Error.Type
 import Prelude hiding (round)
 import qualified Data.Map as Map
 import Data.Monoid ((<>))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified Data.Index as Index
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Render.Code as Code
-import qualified Reporting.Render.Type as RT
-import qualified Reporting.Render.Type.Localizer as L
-import qualified Reporting.Report as Report
-import qualified Reporting.Suggest as Suggest
-import qualified Type.Error as T
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Render.Code as Code
+import qualified ElmCompiler.Reporting.Render.Type as RT
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.Reporting.Report as Report
+import qualified ElmCompiler.Reporting.Suggest as Suggest
+import qualified ElmCompiler.Type.Error as T
 
 
 

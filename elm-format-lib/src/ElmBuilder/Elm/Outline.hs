@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE MultiWayIf, OverloadedStrings #-}
-module Elm.Outline
+module ElmBuilder.Elm.Outline
   ( Outline(..)
   , AppOutline(..)
   , PkgOutline(..)
@@ -20,25 +20,25 @@ import Prelude hiding (read)
 import Control.Monad (filterM, liftM)
 import Data.Binary (Binary, get, put, getWord8, putWord8)
 import qualified Data.Map as Map
-import qualified Data.NonEmptyList as NE
-import qualified Data.OneOrMore as OneOrMore
+import qualified ElmCompiler.Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.OneOrMore as OneOrMore
 import Foreign.Ptr (minusPtr)
 import qualified System.Directory as Dir
 import qualified System.FilePath as FP
 import System.FilePath ((</>))
 
-import qualified Elm.Constraint as Con
-import qualified Elm.Licenses as Licenses
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified File
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import Json.Encode ((==>))
-import qualified Json.String as Json
-import qualified Parse.Primitives as P
-import qualified Reporting.Exit as Exit
+import qualified ElmCompiler.Elm.Constraint as Con
+import qualified ElmCompiler.Elm.Licenses as Licenses
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.File as File
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import ElmCompiler.Json.Encode ((==>))
+import qualified ElmCompiler.Json.String as Json
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmBuilder.Reporting.Exit as Exit
 
 
 

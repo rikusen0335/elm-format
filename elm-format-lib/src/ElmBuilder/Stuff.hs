@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Stuff
+module ElmBuilder.Stuff
   ( details
   , interfaces
   , objects
@@ -26,9 +26,9 @@ import qualified System.FileLock as Lock
 import qualified System.FilePath as FP
 import System.FilePath ((</>), (<.>))
 
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
 
 
 

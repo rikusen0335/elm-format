@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Optimize.Port
+module ElmCompiler.Optimize.Port
   ( toEncoder
   , toFlagsDecoder
   , toDecoder
@@ -11,14 +11,14 @@ module Optimize.Port
 import Prelude hiding (maybe, null)
 import Control.Monad (foldM)
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified AST.Utils.Type as Type
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Optimize.Names as Names
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Optimize.Names as Names
 
 
 

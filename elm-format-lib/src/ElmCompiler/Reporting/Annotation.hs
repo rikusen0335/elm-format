@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Reporting.Annotation
+module ElmCompiler.Reporting.Annotation
   ( Located(..)
   , Position(..)
   , Region(..)

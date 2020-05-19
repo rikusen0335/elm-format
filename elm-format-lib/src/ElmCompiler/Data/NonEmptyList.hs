@@ -1,4 +1,4 @@
-module Data.NonEmptyList
+module ElmCompiler.Data.NonEmptyList
   ( List(..)
   , singleton
   , toList

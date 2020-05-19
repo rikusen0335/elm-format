@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Syntax
+module ElmCompiler.Reporting.Error.Syntax
   ( Error(..)
   , toReport
   --
@@ -47,17 +47,17 @@ module Reporting.Error.Syntax
 
 import Prelude hiding (Char, String)
 import qualified Data.Char as Char
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import Data.Word (Word16)
 import Numeric (showHex)
 
-import qualified Elm.ModuleName as ModuleName
-import Parse.Primitives (Row, Col)
-import Parse.Symbol (BadOperator(..))
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Report as Report
-import qualified Reporting.Render.Code as Code
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import ElmCompiler.Parse.Primitives (Row, Col)
+import ElmCompiler.Parse.Symbol (BadOperator(..))
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Report as Report
+import qualified ElmCompiler.Reporting.Render.Code as Code
 
 
 

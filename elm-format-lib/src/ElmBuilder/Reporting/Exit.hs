@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Exit
+module ElmBuilder.Reporting.Exit
   ( Init(..), initToReport
   , Diff(..), diffToReport
   , Make(..), makeToReport
@@ -33,33 +33,33 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BS_UTF8
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Data.Name as N
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.Name as N
+import qualified ElmCompiler.Data.NonEmptyList as NE
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Types.Header as HTTP
 import qualified Network.HTTP.Types.Status as HTTP
 import qualified System.FilePath as FP
 import System.FilePath ((</>), (<.>))
 
-import qualified Elm.Constraint as C
-import qualified Elm.Magnitude as M
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified File
-import qualified Http
-import qualified Json.Decode as Decode
-import qualified Json.Encode as Encode
-import qualified Json.String as Json
-import Parse.Primitives (Row, Col)
-import qualified Reporting.Annotation as A
-import Reporting.Doc ((<>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Error.Import as Import
-import qualified Reporting.Error.Json as Json
-import qualified Reporting.Exit.Help as Help
-import qualified Reporting.Error as Error
-import qualified Reporting.Render.Code as Code
+import qualified ElmCompiler.Elm.Constraint as C
+import qualified ElmCompiler.Elm.Magnitude as M
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.File as File
+import qualified ElmBuilder.Http as Http
+import qualified ElmCompiler.Json.Decode as Decode
+import qualified ElmCompiler.Json.Encode as Encode
+import qualified ElmCompiler.Json.String as Json
+import ElmCompiler.Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Reporting.Annotation as A
+import ElmCompiler.Reporting.Doc ((<>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Error.Import as Import
+import qualified ElmCompiler.Reporting.Error.Json as Json
+import qualified ElmBuilder.Reporting.Exit.Help as Help
+import qualified ElmCompiler.Reporting.Error as Error
+import qualified ElmCompiler.Reporting.Render.Code as Code
 
 
 

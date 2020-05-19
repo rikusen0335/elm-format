@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
-module Compile
+module ElmCompiler.Compile
   ( Artifacts(..)
   , compile
   )
@@ -7,22 +7,22 @@ module Compile
 
 
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified Canonicalize.Module as Canonicalize
-import qualified Elm.Interface as I
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Nitpick.PatternMatches as PatternMatches
-import qualified Optimize.Module as Optimize
-import qualified Reporting.Error as E
-import qualified Reporting.Result as R
-import qualified Reporting.Render.Type.Localizer as Localizer
-import qualified Type.Constrain.Module as Type
-import qualified Type.Solve as Type
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.Canonicalize.Module as Canonicalize
+import qualified ElmCompiler.Elm.Interface as I
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Nitpick.PatternMatches as PatternMatches
+import qualified ElmCompiler.Optimize.Module as Optimize
+import qualified ElmCompiler.Reporting.Error as E
+import qualified ElmCompiler.Reporting.Result as R
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as Localizer
+import qualified ElmCompiler.Type.Constrain.Module as Type
+import qualified ElmCompiler.Type.Solve as Type
 
 import System.IO.Unsafe (unsafePerformIO)
 

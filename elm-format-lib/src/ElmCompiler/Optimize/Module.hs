@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Optimize.Module
+module ElmCompiler.Optimize.Module
   ( optimize
   )
   where
@@ -10,22 +10,22 @@ import Prelude hiding (cycle)
 import Control.Monad (foldM)
 import qualified Data.List as List
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 import Data.Map ((!))
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified AST.Utils.Type as Type
-import qualified Canonicalize.Effects as Effects
-import qualified Elm.ModuleName as ModuleName
-import qualified Optimize.Expression as Expr
-import qualified Optimize.Names as Names
-import qualified Optimize.Port as Port
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Main as E
-import qualified Reporting.Result as Result
-import qualified Reporting.Warning as W
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Canonicalize.Effects as Effects
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Optimize.Expression as Expr
+import qualified ElmCompiler.Optimize.Names as Names
+import qualified ElmCompiler.Optimize.Port as Port
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Main as E
+import qualified ElmCompiler.Reporting.Result as Result
+import qualified ElmCompiler.Reporting.Warning as W
 
 
 

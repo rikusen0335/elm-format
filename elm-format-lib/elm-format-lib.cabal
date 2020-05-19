@@ -77,26 +77,144 @@ library
 
     other-modules:
         CommandLine.Filesystem
+        ElmBuilder.BackgroundWriter
+        ElmBuilder.Deps.Registry
+        ElmBuilder.Deps.Solver
+        ElmBuilder.Deps.Website
+        ElmBuilder.Elm.Details
+        ElmBuilder.Elm.Outline
+        ElmBuilder.File
+        ElmBuilder.Http
+        ElmBuilder.Reporting
+        ElmBuilder.Reporting.Exit
+        ElmBuilder.Reporting.Exit.Help
+        ElmBuilder.Reporting.Task
+        ElmBuilder.Stuff
+        ElmCompiler.AST.Canonical
+        ElmCompiler.AST.Optimized
+        ElmCompiler.AST.Source
+        ElmCompiler.AST.Utils.Binop
+        ElmCompiler.AST.Utils.Shader
+        ElmCompiler.AST.Utils.Type
+        ElmCompiler.Canonicalize.Effects
+        ElmCompiler.Canonicalize.Environment
+        ElmCompiler.Canonicalize.Environment.Dups
+        ElmCompiler.Canonicalize.Environment.Foreign
+        ElmCompiler.Canonicalize.Environment.Local
+        ElmCompiler.Canonicalize.Expression
+        ElmCompiler.Canonicalize.Module
+        ElmCompiler.Canonicalize.Pattern
+        ElmCompiler.Canonicalize.Type
+        ElmCompiler.Compile
+        ElmCompiler.Data.Bag
+        ElmCompiler.Data.Index
+        ElmCompiler.Data.Map.Utils
+        ElmCompiler.Data.Name
+        ElmCompiler.Data.NonEmptyList
+        ElmCompiler.Data.OneOrMore
+        ElmCompiler.Data.Utf8
+        ElmCompiler.Elm.Compiler.Imports
+        ElmCompiler.Elm.Compiler.Type
+        ElmCompiler.Elm.Compiler.Type.Extract
+        ElmCompiler.Elm.Constraint
+        ElmCompiler.Elm.Docs
+        ElmCompiler.Elm.Float
+        ElmCompiler.Elm.Interface
+        ElmCompiler.Elm.Kernel
+        ElmCompiler.Elm.Licenses
+        ElmCompiler.Elm.Magnitude
+        ElmCompiler.Elm.ModuleName
+        ElmCompiler.Elm.Package
+        ElmCompiler.Elm.String
+        ElmCompiler.Elm.Version
+        ElmCompiler.Json.Decode
+        ElmCompiler.Json.Encode
+        ElmCompiler.Json.String
+        ElmCompiler.Nitpick.PatternMatches
+        ElmCompiler.Optimize.Case
+        ElmCompiler.Optimize.DecisionTree
+        ElmCompiler.Optimize.Expression
+        ElmCompiler.Optimize.Module
+        ElmCompiler.Optimize.Names
+        ElmCompiler.Optimize.Port
+        ElmCompiler.Parse.Declaration
+        ElmCompiler.Parse.Expression
+        ElmCompiler.Parse.Keyword
+        ElmCompiler.Parse.Module
+        ElmCompiler.Parse.Number
+        ElmCompiler.Parse.Pattern
+        ElmCompiler.Parse.Primitives
+        ElmCompiler.Parse.Shader
+        ElmCompiler.Parse.Space
+        ElmCompiler.Parse.String
+        ElmCompiler.Parse.Symbol
+        ElmCompiler.Parse.Type
+        ElmCompiler.Parse.Variable
+        ElmCompiler.Reporting.Annotation
+        ElmCompiler.Reporting.Doc
+        ElmCompiler.Reporting.Error
+        ElmCompiler.Reporting.Error.Canonicalize
+        ElmCompiler.Reporting.Error.Docs
+        ElmCompiler.Reporting.Error.Import
+        ElmCompiler.Reporting.Error.Json
+        ElmCompiler.Reporting.Error.Main
+        ElmCompiler.Reporting.Error.Pattern
+        ElmCompiler.Reporting.Error.Syntax
+        ElmCompiler.Reporting.Error.Type
+        ElmCompiler.Reporting.Render.Code
+        ElmCompiler.Reporting.Render.Type
+        ElmCompiler.Reporting.Render.Type.Localizer
+        ElmCompiler.Reporting.Report
+        ElmCompiler.Reporting.Result
+        ElmCompiler.Reporting.Suggest
+        ElmCompiler.Reporting.Warning
+        ElmCompiler.Type.Constrain.Expression
+        ElmCompiler.Type.Constrain.Module
+        ElmCompiler.Type.Constrain.Pattern
+        ElmCompiler.Type.Error
+        ElmCompiler.Type.Instantiate
+        ElmCompiler.Type.Occurs
+        ElmCompiler.Type.Solve
+        ElmCompiler.Type.Type
+        ElmCompiler.Type.Unify
+        ElmCompiler.Type.UnionFind
         Parse.Binop
-        Parse.Common
         Parse.Comments
+        Parse.Common
         Parse.Declaration
         Parse.State
         Parse.Whitespace
 
     build-depends:
+        ansi-terminal >= 0.8.2 && < 0.9,
+        ansi-wl-pprint >= 0.6.8.2 && < 0.7,
         base >= 4.12.0.0 && < 5,
         bimap >= 0.3.3 && < 0.4,
+        binary >= 0.8.6.0 && < 0.9,
         bytestring >= 0.10.8.2 && < 0.11,
         containers >= 0.6.0.1 && < 0.7,
         directory >= 1.3.3.0 && < 2,
+        edit-distance >= 0.2.2.1 && < 0.3,
+        filelock >= 0.1.1.3 && < 0.2,
         filepath >= 1.4.2.1 && < 2,
+        ghc-prim >= 0.5.3 && < 0.6,
+        HTTP >= 4000.3.13 && < 4000.4,
+        http-client >= 0.6 && < 0.7,
+        http-client-tls >= 0.3.5.3 && < 0.4,
+        http-types >= 0.12.3 && < 0.13,
         indents >= 0.3.3 && < 0.4,
         json >= 0.9.3 && < 0.10,
+        language-glsl >= 0.3 && < 0.4,
         mtl >= 2.2.2 && < 3,
         optparse-applicative >= 0.14.3.0 && < 0.15,
         parsec >= 3.1.13.0 && < 4,
         process >= 1.6.5.0 && < 2,
         relude >= 0.4.0 && < 0.5,
+        scientific >= 0.3.6.2 && < 0.4,
+        SHA >= 1.6.4.4 && < 1.7,
         text >= 1.2.3.1 && < 2,
+        time >= 1.9.1 && < 1.10,
+        utf8-string >= 1.0.1.1 && < 1.1,
+        vector >= 0.12.0.3 && < 0.13,
+        zip-archive >= 0.4.1 && < 0.5,
         elm-format-markdown

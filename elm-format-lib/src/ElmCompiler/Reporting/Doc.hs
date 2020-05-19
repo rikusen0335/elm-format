@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Doc
+module ElmCompiler.Reporting.Doc
   ( P.Doc
   , (P.<+>), (<>)
   , P.align, P.cat, P.empty, P.fill, P.fillSep, P.hang
@@ -47,18 +47,18 @@ module Reporting.Doc
 import Prelude hiding (cycle)
 import qualified Data.List as List
 import Data.Monoid ((<>))
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified System.Console.ANSI.Types as Ansi
 import qualified System.Info as Info
 import System.IO (Handle)
 import qualified Text.PrettyPrint.ANSI.Leijen as P
 
-import qualified Data.Index as Index
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import Json.Encode ((==>))
-import qualified Json.Encode as E
-import qualified Json.String as Json
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import ElmCompiler.Json.Encode ((==>))
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Json.String as Json
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Json
+module ElmCompiler.Reporting.Error.Json
   ( toReport
   , FailureToReport(..)
   , Context(..)
@@ -11,13 +11,13 @@ module Reporting.Error.Json
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.UTF8 as BS_UTF8
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.NonEmptyList as NE
 
-import Json.Decode (Error(..), Problem(..), DecodeExpectation(..), ParseError(..), StringProblem(..))
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Exit.Help as Help
-import qualified Reporting.Render.Code as Code
+import ElmCompiler.Json.Decode (Error(..), Problem(..), DecodeExpectation(..), ParseError(..), StringProblem(..))
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmBuilder.Reporting.Exit.Help as Help
+import qualified ElmCompiler.Reporting.Render.Code as Code
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Canonicalize.Effects
+module ElmCompiler.Canonicalize.Effects
   ( canonicalize
   , checkPayload
   )
@@ -8,17 +8,17 @@ module Canonicalize.Effects
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified AST.Utils.Type as Type
-import qualified Canonicalize.Environment as Env
-import qualified Canonicalize.Type as Type
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Canonicalize.Type as Type
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

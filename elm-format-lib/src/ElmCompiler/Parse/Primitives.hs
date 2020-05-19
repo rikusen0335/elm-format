@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, Rank2Types, UnboxedTuples #-}
-module Parse.Primitives
+module ElmCompiler.Parse.Primitives
   ( fromByteString
   , Parser(..)
   , State(..)
@@ -27,7 +27,7 @@ import Foreign.Storable (peek)
 import Foreign.ForeignPtr (ForeignPtr, touchForeignPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

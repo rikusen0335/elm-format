@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error
+module ElmCompiler.Reporting.Error
   ( Module(..)
   , Error(..)
   , toDoc
@@ -10,26 +10,26 @@ module Reporting.Error
 
 
 import qualified Data.ByteString as B
-import qualified Data.NonEmptyList as NE
-import qualified Data.OneOrMore as OneOrMore
+import qualified ElmCompiler.Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.OneOrMore as OneOrMore
 import qualified System.FilePath as FP
 
-import qualified Elm.ModuleName as ModuleName
-import qualified File
-import qualified Json.Encode as E
-import Json.Encode ((==>))
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import qualified Reporting.Error.Canonicalize as Canonicalize
-import qualified Reporting.Error.Docs as Docs
-import qualified Reporting.Error.Import as Import
-import qualified Reporting.Error.Main as Main
-import qualified Reporting.Error.Pattern as Pattern
-import qualified Reporting.Error.Syntax as Syntax
-import qualified Reporting.Error.Type as Type
-import qualified Reporting.Render.Code as Code
-import qualified Reporting.Render.Type.Localizer as L
-import qualified Reporting.Report as Report
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmBuilder.File as File
+import qualified ElmCompiler.Json.Encode as E
+import ElmCompiler.Json.Encode ((==>))
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Canonicalize
+import qualified ElmCompiler.Reporting.Error.Docs as Docs
+import qualified ElmCompiler.Reporting.Error.Import as Import
+import qualified ElmCompiler.Reporting.Error.Main as Main
+import qualified ElmCompiler.Reporting.Error.Pattern as Pattern
+import qualified ElmCompiler.Reporting.Error.Syntax as Syntax
+import qualified ElmCompiler.Reporting.Error.Type as Type
+import qualified ElmCompiler.Reporting.Render.Code as Code
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.Reporting.Report as Report
 
 
 

@@ -1,4 +1,4 @@
-module File
+module ElmBuilder.File
   ( Time
   , getTime
   , zeroTime

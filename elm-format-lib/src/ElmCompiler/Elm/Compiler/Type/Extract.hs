@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, OverloadedStrings, Rank2Types #-}
-module Elm.Compiler.Type.Extract
+module ElmCompiler.Elm.Compiler.Type.Extract
   ( fromAnnotation
   , fromType
   , Types(..)
@@ -16,15 +16,15 @@ module Elm.Compiler.Type.Extract
 import Data.Map ((!))
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified AST.Utils.Type as Type
-import qualified Elm.Compiler.Type as T
-import qualified Elm.Interface as I
-import qualified Elm.ModuleName as ModuleName
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.AST.Utils.Type as Type
+import qualified ElmCompiler.Elm.Compiler.Type as T
+import qualified ElmCompiler.Elm.Interface as I
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
 
 
 

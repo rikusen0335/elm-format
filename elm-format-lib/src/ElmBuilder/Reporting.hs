@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings #-}
-module Reporting
+module ElmBuilder.Reporting
   ( Style
   , silent
   , json
@@ -30,19 +30,19 @@ import Control.Concurrent
 import Control.Exception (SomeException, AsyncException(UserInterrupt), catch, fromException, throw)
 import Control.Monad (when)
 import qualified Data.ByteString.Builder as B
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.NonEmptyList as NE
 import qualified System.Exit as Exit
 import qualified System.Info as Info
 import System.IO (hFlush, hPutStr, hPutStrLn, stderr, stdout)
 
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified Json.Encode as Encode
-import Reporting.Doc ((<+>), (<>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Exit as Exit
-import qualified Reporting.Exit.Help as Help
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmCompiler.Json.Encode as Encode
+import ElmCompiler.Reporting.Doc ((<+>), (<>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmBuilder.Reporting.Exit as Exit
+import qualified ElmBuilder.Reporting.Exit.Help as Help
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, EmptyDataDecls, FlexibleInstances, MagicHash, UnboxedTuples #-}
-module Data.Name
+module ElmCompiler.Data.Name
   ( Name
   --
   , toChars
@@ -43,7 +43,7 @@ import qualified Data.ByteString.Builder.Internal as B
 import qualified Data.Coerce as Coerce
 import qualified Data.List as List
 import qualified Data.String as Chars
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import GHC.Exts
   ( Int(I#), Ptr
   , MutableByteArray#
@@ -56,7 +56,7 @@ import GHC.ST (ST(ST), runST)
 import GHC.Prim
 import GHC.Word (Word8(W8#))
 
-import qualified Elm.String as ES
+import qualified ElmCompiler.Elm.String as ES
 
 
 

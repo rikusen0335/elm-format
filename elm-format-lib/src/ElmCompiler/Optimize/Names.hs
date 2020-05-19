@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types #-}
-module Optimize.Names
+module ElmCompiler.Optimize.Names
   ( Tracker
   , run
   , generate
@@ -17,14 +17,14 @@ module Optimize.Names
 
 
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

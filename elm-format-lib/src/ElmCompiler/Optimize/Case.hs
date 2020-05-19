@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Optimize.Case
+module ElmCompiler.Optimize.Case
   ( optimize
   )
   where
@@ -9,11 +9,11 @@ import Control.Arrow (second)
 import qualified Data.Map as Map
 import Data.Map ((!))
 import qualified Data.Maybe as Maybe
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified Optimize.DecisionTree as DT
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.Optimize.DecisionTree as DT
 
 
 

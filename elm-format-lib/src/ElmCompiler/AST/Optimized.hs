@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module AST.Optimized
+module ElmCompiler.AST.Optimized
   ( Def(..)
   , Expr(..)
   , Global(..)
@@ -24,20 +24,20 @@ module AST.Optimized
 import Control.Monad (liftM, liftM2, liftM3, liftM4)
 import Data.Binary (Binary, get, put, getWord8, putWord8)
 import qualified Data.Map as Map
-import qualified Data.Name as Name
-import Data.Name (Name)
+import qualified ElmCompiler.Data.Name as Name
+import ElmCompiler.Data.Name (Name)
 import qualified Data.Set as Set
 
-import qualified AST.Canonical as Can
-import qualified AST.Utils.Shader as Shader
-import qualified Data.Index as Index
-import qualified Elm.Float as EF
-import qualified Elm.Kernel as K
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Elm.String as ES
-import qualified Optimize.DecisionTree as DT
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.Float as EF
+import qualified ElmCompiler.Elm.Kernel as K
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.String as ES
+import qualified ElmCompiler.Optimize.DecisionTree as DT
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

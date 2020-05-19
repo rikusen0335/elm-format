@@ -1,4 +1,4 @@
-module Deps.Website
+module ElmBuilder.Deps.Website
   ( domain
   , route
   , metadata
@@ -6,9 +6,9 @@ module Deps.Website
   where
 
 
-import qualified Elm.Package as Pkg
-import qualified Elm.Version as V
-import qualified Http
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Elm.Version as V
+import qualified ElmBuilder.Http as Http
 
 
 domain :: String

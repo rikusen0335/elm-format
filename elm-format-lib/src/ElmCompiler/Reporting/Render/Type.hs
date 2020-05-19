@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Render.Type
+module ElmCompiler.Reporting.Render.Type
   ( Context(..)
   , lambda
   , apply
@@ -15,14 +15,14 @@ module Reporting.Render.Type
 
 
 import qualified Data.Maybe as Maybe
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified AST.Canonical as Can
-import qualified Reporting.Annotation as A
-import qualified Reporting.Doc as D
-import Reporting.Doc ( Doc, (<+>), (<>) )
-import qualified Reporting.Render.Type.Localizer as L
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Doc as D
+import ElmCompiler.Reporting.Doc ( Doc, (<+>), (<>) )
+import qualified ElmCompiler.Reporting.Render.Type.Localizer as L
 
 
 

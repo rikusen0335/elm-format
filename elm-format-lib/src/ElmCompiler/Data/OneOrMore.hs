@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Data.OneOrMore
+module ElmCompiler.Data.OneOrMore
   ( OneOrMore(..)
   , one
   , more

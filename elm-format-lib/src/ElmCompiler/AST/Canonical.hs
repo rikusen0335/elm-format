@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module AST.Canonical
+module ElmCompiler.AST.Canonical
   ( Expr, Expr_(..)
   , CaseBranch(..)
   , FieldUpdate(..)
@@ -55,16 +55,16 @@ import Control.Monad (liftM, liftM2, liftM3, liftM4, replicateM)
 import Data.Binary
 import qualified Data.List as List
 import qualified Data.Map as Map
-import Data.Name (Name)
+import ElmCompiler.Data.Name (Name)
 
-import qualified AST.Source as Src
-import qualified AST.Utils.Binop as Binop
-import qualified AST.Utils.Shader as Shader
-import qualified Data.Index as Index
-import qualified Elm.Float as EF
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.String as ES
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.Float as EF
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.String as ES
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

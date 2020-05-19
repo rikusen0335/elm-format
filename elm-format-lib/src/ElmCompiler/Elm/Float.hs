@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE EmptyDataDecls, FlexibleInstances #-}
-module Elm.Float
+module ElmCompiler.Elm.Float
   ( Float
   , fromPtr
   , toBuilder
@@ -11,7 +11,7 @@ module Elm.Float
 import Prelude hiding (Float)
 import Data.Binary (Binary, get, put)
 import qualified Data.ByteString.Builder as B
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr)
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Optimize.Expression
+module ElmCompiler.Optimize.Expression
   ( optimize
   , destructArgs
   , optimizePotentialTailCall
@@ -11,17 +11,17 @@ module Optimize.Expression
 import Prelude hiding (cycle)
 import Control.Monad (foldM)
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 
-import qualified AST.Canonical as Can
-import qualified AST.Optimized as Opt
-import qualified AST.Utils.Shader as Shader
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Optimize.Case as Case
-import qualified Optimize.Names as Names
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Optimized as Opt
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Optimize.Case as Case
+import qualified ElmCompiler.Optimize.Names as Names
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

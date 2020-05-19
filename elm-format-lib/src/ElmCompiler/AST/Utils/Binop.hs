@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module AST.Utils.Binop
+module ElmCompiler.AST.Utils.Binop
   ( Precedence(..)
   , Associativity(..)
   )

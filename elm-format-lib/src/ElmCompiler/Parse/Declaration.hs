@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Parse.Declaration
+module ElmCompiler.Parse.Declaration
   ( Decl(..)
   , declaration
   , infix_
@@ -8,22 +8,22 @@ module Parse.Declaration
   where
 
 
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Source as Src
-import qualified AST.Utils.Binop as Binop
-import qualified Parse.Expression as Expr
-import qualified Parse.Pattern as Pattern
-import qualified Parse.Keyword as Keyword
-import qualified Parse.Number as Number
-import qualified Parse.Space as Space
-import qualified Parse.Symbol as Symbol
-import qualified Parse.Type as Type
-import qualified Parse.Variable as Var
-import Parse.Primitives hiding (State)
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.Parse.Expression as Expr
+import qualified ElmCompiler.Parse.Pattern as Pattern
+import qualified ElmCompiler.Parse.Keyword as Keyword
+import qualified ElmCompiler.Parse.Number as Number
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Symbol as Symbol
+import qualified ElmCompiler.Parse.Type as Type
+import qualified ElmCompiler.Parse.Variable as Var
+import ElmCompiler.Parse.Primitives hiding (State)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

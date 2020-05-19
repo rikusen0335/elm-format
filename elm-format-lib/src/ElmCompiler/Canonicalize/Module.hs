@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Canonicalize.Module
+module ElmCompiler.Canonicalize.Module
   ( canonicalize
   )
   where
@@ -7,26 +7,26 @@ module Canonicalize.Module
 
 import qualified Data.Graph as Graph
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified Canonicalize.Effects as Effects
-import qualified Canonicalize.Environment as Env
-import qualified Canonicalize.Environment.Dups as Dups
-import qualified Canonicalize.Environment.Foreign as Foreign
-import qualified Canonicalize.Environment.Local as Local
-import qualified Canonicalize.Expression as Expr
-import qualified Canonicalize.Pattern as Pattern
-import qualified Canonicalize.Type as Type
-import qualified Data.Index as Index
-import qualified Elm.Interface as I
-import qualified Elm.ModuleName as ModuleName
-import qualified Elm.Package as Pkg
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Canonicalize as Error
-import qualified Reporting.Result as Result
-import qualified Reporting.Warning as W
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Canonicalize.Effects as Effects
+import qualified ElmCompiler.Canonicalize.Environment as Env
+import qualified ElmCompiler.Canonicalize.Environment.Dups as Dups
+import qualified ElmCompiler.Canonicalize.Environment.Foreign as Foreign
+import qualified ElmCompiler.Canonicalize.Environment.Local as Local
+import qualified ElmCompiler.Canonicalize.Expression as Expr
+import qualified ElmCompiler.Canonicalize.Pattern as Pattern
+import qualified ElmCompiler.Canonicalize.Type as Type
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.Interface as I
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Canonicalize as Error
+import qualified ElmCompiler.Reporting.Result as Result
+import qualified ElmCompiler.Reporting.Warning as W
 
 
 

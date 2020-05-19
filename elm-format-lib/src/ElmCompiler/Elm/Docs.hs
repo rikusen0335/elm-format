@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, MultiWayIf, OverloadedStrings, UnboxedTuples #-}
-module Elm.Docs
+module ElmCompiler.Elm.Docs
   ( Documentation
   , Module(..)
   , fromModule
@@ -22,30 +22,30 @@ import qualified Data.List as List
 import Data.Map ((!))
 import qualified Data.Map as Map
 import qualified Data.Map.Merge.Strict as Map
-import qualified Data.Name as Name
-import qualified Data.NonEmptyList as NE
-import qualified Data.OneOrMore as OneOrMore
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.OneOrMore as OneOrMore
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr)
 
-import qualified AST.Canonical as Can
-import qualified AST.Source as Src
-import qualified AST.Utils.Binop as Binop
-import qualified Elm.Compiler.Type as Type
-import qualified Elm.Compiler.Type.Extract as Extract
-import qualified Elm.ModuleName as ModuleName
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import Json.Encode ((==>))
-import qualified Json.String as Json
-import Parse.Primitives (Row, Col, word1)
-import qualified Parse.Primitives as P
-import qualified Parse.Space as Space
-import qualified Parse.Symbol as Symbol
-import qualified Parse.Variable as Var
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Docs as E
-import qualified Reporting.Result as Result
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.Elm.Compiler.Type as Type
+import qualified ElmCompiler.Elm.Compiler.Type.Extract as Extract
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import ElmCompiler.Json.Encode ((==>))
+import qualified ElmCompiler.Json.String as Json
+import ElmCompiler.Parse.Primitives (Row, Col, word1)
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Parse.Space as Space
+import qualified ElmCompiler.Parse.Symbol as Symbol
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Docs as E
+import qualified ElmCompiler.Reporting.Result as Result
 
 
 

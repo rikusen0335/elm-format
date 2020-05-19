@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module AST.Source
+module ElmCompiler.AST.Source
   ( Expr, Expr_(..), VarType(..)
   , Def(..)
   , Pattern, Pattern_(..)
@@ -24,15 +24,15 @@ module AST.Source
   where
 
 
-import Data.Name (Name)
-import qualified Data.Name as Name
+import ElmCompiler.Data.Name (Name)
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Utils.Binop as Binop
-import qualified AST.Utils.Shader as Shader
-import qualified Elm.Float as EF
-import qualified Elm.String as ES
-import qualified Parse.Primitives as P
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.AST.Utils.Shader as Shader
+import qualified ElmCompiler.Elm.Float as EF
+import qualified ElmCompiler.Elm.String as ES
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

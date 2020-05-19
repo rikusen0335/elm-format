@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings, UnboxedTuples #-}
-module Elm.ModuleName
+module ElmCompiler.Elm.ModuleName
   ( Raw
   , toChars
   , toFilePath
@@ -22,19 +22,19 @@ module Elm.ModuleName
 
 import Control.Monad (liftM2)
 import Data.Binary (Binary(..))
-import qualified Data.Name as Name
-import qualified Data.Utf8 as Utf8
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.Utf8 as Utf8
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Prelude hiding (maybe)
 import qualified System.FilePath as FP
 
-import qualified Elm.Package as Pkg
-import qualified Json.Decode as D
-import qualified Json.Encode as E
-import qualified Parse.Variable as Var
-import qualified Parse.Primitives as P
-import Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Elm.Package as Pkg
+import qualified ElmCompiler.Json.Decode as D
+import qualified ElmCompiler.Json.Encode as E
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Row, Col)
 
 
 

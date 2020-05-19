@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Render.Type.Localizer
+module ElmCompiler.Reporting.Render.Type.Localizer
   ( Localizer
   , toDoc
   , toChars
@@ -12,14 +12,14 @@ module Reporting.Render.Type.Localizer
 
 
 import qualified Data.Map as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 import qualified Data.Set as Set
 
-import qualified AST.Source as Src
-import qualified Elm.ModuleName as ModuleName
-import Reporting.Doc ((<>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.AST.Source as Src
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import ElmCompiler.Reporting.Doc ((<>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

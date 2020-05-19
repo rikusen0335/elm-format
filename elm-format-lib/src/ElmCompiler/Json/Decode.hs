@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing #-}
 {-# LANGUAGE BangPatterns, Rank2Types, OverloadedStrings, UnboxedTuples #-}
-module Json.Decode
+module ElmCompiler.Json.Decode
   ( fromByteString
   , Decoder
   , string
@@ -31,16 +31,16 @@ module Json.Decode
 
 import qualified Data.ByteString.Internal as B
 import qualified Data.Map as Map
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.NonEmptyList as NE
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 import Foreign.ForeignPtr.Unsafe (unsafeForeignPtrToPtr)
 
-import qualified Json.String as Json
-import qualified Parse.Keyword as K
-import qualified Parse.Primitives as P
-import Parse.Primitives (Row, Col)
-import qualified Reporting.Annotation as A
+import qualified ElmCompiler.Json.String as Json
+import qualified ElmCompiler.Parse.Keyword as K
+import qualified ElmCompiler.Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Row, Col)
+import qualified ElmCompiler.Reporting.Annotation as A
 
 
 

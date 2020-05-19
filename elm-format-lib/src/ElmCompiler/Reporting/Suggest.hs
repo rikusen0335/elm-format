@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Suggest
+module ElmCompiler.Reporting.Suggest
   ( distance
   , sort
   , rank

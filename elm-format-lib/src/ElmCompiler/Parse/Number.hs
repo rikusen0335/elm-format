@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns, UnboxedTuples #-}
-module Parse.Number
+module ElmCompiler.Parse.Number
   ( Number(..)
   , number
   , Outcome(..)
@@ -14,12 +14,12 @@ module Parse.Number
 import Data.Word (Word8)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
 
-import qualified AST.Utils.Binop as Binop
-import qualified Elm.Float as EF
-import Parse.Primitives (Parser, Row, Col)
-import qualified Parse.Variable as Var
-import qualified Parse.Primitives as P
-import qualified Reporting.Error.Syntax as E
+import qualified ElmCompiler.AST.Utils.Binop as Binop
+import qualified ElmCompiler.Elm.Float as EF
+import ElmCompiler.Parse.Primitives (Parser, Row, Col)
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Parse.Primitives as P
+import qualified ElmCompiler.Reporting.Error.Syntax as E
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Type.Occurs
+module ElmCompiler.Type.Occurs
   ( occurs
   )
   where
@@ -9,8 +9,8 @@ module Type.Occurs
 import Data.Foldable (foldrM)
 import qualified Data.Map.Strict as Map
 
-import Type.Type as Type
-import qualified Type.UnionFind as UF
+import ElmCompiler.Type.Type as Type
+import qualified ElmCompiler.Type.UnionFind as UF
 
 
 

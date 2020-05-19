@@ -1,4 +1,4 @@
-module Elm.Magnitude
+module ElmCompiler.Elm.Magnitude
   ( Magnitude(..)
   , toChars
   )

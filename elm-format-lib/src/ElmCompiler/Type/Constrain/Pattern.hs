@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Type.Constrain.Pattern
+module ElmCompiler.Type.Constrain.Pattern
   ( State(..)
   , emptyState
   , add
@@ -10,15 +10,15 @@ module Type.Constrain.Pattern
 import Control.Arrow (second)
 import Control.Monad (foldM)
 import qualified Data.Map.Strict as Map
-import qualified Data.Name as Name
+import qualified ElmCompiler.Data.Name as Name
 
-import qualified AST.Canonical as Can
-import qualified Data.Index as Index
-import qualified Elm.ModuleName as ModuleName
-import qualified Reporting.Annotation as A
-import qualified Reporting.Error.Type as E
-import qualified Type.Instantiate as Instantiate
-import Type.Type as T
+import qualified ElmCompiler.AST.Canonical as Can
+import qualified ElmCompiler.Data.Index as Index
+import qualified ElmCompiler.Elm.ModuleName as ModuleName
+import qualified ElmCompiler.Reporting.Annotation as A
+import qualified ElmCompiler.Reporting.Error.Type as E
+import qualified ElmCompiler.Type.Instantiate as Instantiate
+import ElmCompiler.Type.Type as T
 
 
 

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Error.Docs
+module ElmCompiler.Reporting.Error.Docs
   ( Error(..)
   , SyntaxProblem(..)
   , NameProblem(..)
@@ -10,17 +10,17 @@ module Reporting.Error.Docs
   where
 
 
-import qualified Data.Name as Name
-import qualified Data.NonEmptyList as NE
+import qualified ElmCompiler.Data.Name as Name
+import qualified ElmCompiler.Data.NonEmptyList as NE
 
-import Parse.Primitives (Row, Col)
-import Parse.Symbol (BadOperator(..))
-import qualified Reporting.Annotation as A
-import Reporting.Doc ((<>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Render.Code as Code
-import qualified Reporting.Error.Syntax as E
-import qualified Reporting.Report as Report
+import ElmCompiler.Parse.Primitives (Row, Col)
+import ElmCompiler.Parse.Symbol (BadOperator(..))
+import qualified ElmCompiler.Reporting.Annotation as A
+import ElmCompiler.Reporting.Doc ((<>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Render.Code as Code
+import qualified ElmCompiler.Reporting.Error.Syntax as E
+import qualified ElmCompiler.Reporting.Report as Report
 
 
 

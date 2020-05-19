@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Reporting.Exit.Help
+module ElmBuilder.Reporting.Exit.Help
   ( Report
   , report
   , docReport
@@ -17,11 +17,11 @@ module Reporting.Exit.Help
 import GHC.IO.Handle (hIsTerminalDevice)
 import System.IO (Handle, hPutStr, stderr, stdout)
 
-import qualified Json.Encode as E
-import Json.Encode ((==>))
-import Reporting.Doc ((<+>))
-import qualified Reporting.Doc as D
-import qualified Reporting.Error as Error
+import qualified ElmCompiler.Json.Encode as E
+import ElmCompiler.Json.Encode ((==>))
+import ElmCompiler.Reporting.Doc ((<+>))
+import qualified ElmCompiler.Reporting.Doc as D
+import qualified ElmCompiler.Reporting.Error as Error
 
 
 

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Data.Bag
+module ElmCompiler.Data.Bag
   ( Bag(..)
   , empty
   , one

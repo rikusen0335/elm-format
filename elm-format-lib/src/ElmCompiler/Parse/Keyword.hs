@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE BangPatterns #-}
-module Parse.Keyword
+module ElmCompiler.Parse.Keyword
   ( type_, alias_, port_
   , if_, then_, else_
   , case_, of_
@@ -16,9 +16,9 @@ module Parse.Keyword
 import Foreign.Ptr (plusPtr)
 import Data.Word (Word8)
 
-import Parse.Primitives (Parser, Row, Col)
-import qualified Parse.Variable as Var
-import qualified Parse.Primitives as P
+import ElmCompiler.Parse.Primitives (Parser, Row, Col)
+import qualified ElmCompiler.Parse.Variable as Var
+import qualified ElmCompiler.Parse.Primitives as P
 
 
 

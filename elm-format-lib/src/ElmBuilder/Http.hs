@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Http
+module ElmBuilder.Http
   ( Manager
   , getManager
   , toUrl
@@ -39,8 +39,8 @@ import Network.HTTP.Types.Method (Method, methodGet, methodPost)
 import qualified Network.HTTP.Client as Multi (RequestBody(RequestBodyLBS))
 import qualified Network.HTTP.Client.MultipartFormData as Multi
 
-import qualified Json.Encode as Encode
-import qualified Elm.Version as V
+import qualified ElmCompiler.Json.Encode as Encode
+import qualified ElmCompiler.Elm.Version as V
 
 
 
