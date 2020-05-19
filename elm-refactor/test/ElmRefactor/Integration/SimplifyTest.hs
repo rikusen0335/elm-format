@@ -1,6 +1,8 @@
 module ElmRefactor.Integration.SimplifyTest where
 
-import Elm.Utils ((|>))
+import Prelude ()
+import ElmRefactor.Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

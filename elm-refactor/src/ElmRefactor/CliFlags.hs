@@ -1,7 +1,7 @@
 module ElmRefactor.CliFlags (Flags(..), parser) where
 
 import Prelude ()
-import Relude hiding (stdin)
+import ElmRefactor.Prelude
 
 import qualified AST.Module
 import qualified Data.Bifunctor as Bifunctor

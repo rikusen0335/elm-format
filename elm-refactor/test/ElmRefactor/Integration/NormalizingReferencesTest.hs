@@ -1,6 +1,8 @@
 module ElmRefactor.Integration.NormalizingReferencesTest where
 
-import Elm.Utils ((|>))
+import Prelude ()
+import ElmRefactor.Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit
 

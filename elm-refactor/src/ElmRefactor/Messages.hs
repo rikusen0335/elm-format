@@ -1,5 +1,8 @@
 module ElmRefactor.Messages (PromptMessage(..), InfoMessage(..), ErrorMessage(..)) where
 
+import Prelude  ()
+import ElmRefactor.Prelude
+
 import CommandLine.InfoFormatter (ToConsole(..), Loggable(..))
 import qualified CommandLine.ResolveFiles as ResolveFiles
 import qualified Data.Text as Text

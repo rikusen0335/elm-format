@@ -1,6 +1,7 @@
 module ElmRefactor.Cli (main) where
 
-import Elm.Utils ((|>))
+import Prelude ()
+import ElmRefactor.Prelude
 
 import CommandLine.Program (ProgramIO)
 import CommandLine.TransformFiles (TransformMode(..))

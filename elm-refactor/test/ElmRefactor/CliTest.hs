@@ -1,5 +1,8 @@
 module ElmRefactor.CliTest where
 
+import Prelude ()
+import ElmRefactor.Prelude
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
