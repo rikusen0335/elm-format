@@ -23,6 +23,7 @@ import Data.Functor.Identity
 import Data.Maybe (fromMaybe, mapMaybe, listToMaybe)
 import Data.Set (Set)
 import ElmFormat.ImportInfo (ImportInfo)
+import ElmFormat.KnownContents (KnownContents)
 import ElmVersion
 import Reporting.Annotation (Located(A))
 
@@ -33,6 +34,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified ElmFormat.ImportInfo as ImportInfo
+import qualified ElmFormat.KnownContents as KnownContents
 import qualified ElmFormat.Parse
 import qualified Reporting.Result as Result
 
@@ -66,8 +68,8 @@ data UpgradeDefinition =
         , _imports :: Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
         }
 
-knownContents :: UpgradeDefinition -> [UppercaseIdentifier] -> Maybe [LocalName]
-knownContents upgradeDefinition ns =
+knownContents :: UpgradeDefinition -> KnownContents
+knownContents upgradeDefinition =
     let
         expressionNameToLocalName name =
             case listToMaybe name of
@@ -75,17 +77,19 @@ knownContents upgradeDefinition ns =
                 Just c | isLower c -> Just $ VarName $ LowercaseIdentifier name
                 _ -> Nothing
     in
-    Just $ -- TODO: always returning Just here is probably incorret
-    (mapMaybe (expressionNameToLocalName . snd)
-        $ filter ((==) ns . fst)
-        $ Dict.keys
-        $ _replacements upgradeDefinition
-    )
-    <> (fmap (TypeName . snd)
-            $ filter ((==) ns . fst)
-            $ Dict.keys
-            $ _typeReplacements upgradeDefinition
-       )
+    KnownContents.fromFunction $
+        \ns ->
+            Just $ -- TODO: always returning Just here is probably incorret
+            (mapMaybe (expressionNameToLocalName . snd)
+                $ filter ((==) ns . fst)
+                $ Dict.keys
+                $ _replacements upgradeDefinition
+            )
+            <> (fmap (TypeName . snd)
+                    $ filter ((==) ns . fst)
+                    $ Dict.keys
+                    $ _typeReplacements upgradeDefinition
+            )
 
 
 parseUpgradeDefinition :: Text.Text -> Either () UpgradeDefinition
@@ -93,7 +97,7 @@ parseUpgradeDefinition definitionText =
     case ElmFormat.Parse.parse Elm_0_19 definitionText of
         Result.Result _ (Result.Ok modu@(Module _ _ _ (C _ imports) body)) ->
             let
-                importInfo = ImportInfo.fromModule (const mempty) modu
+                importInfo = ImportInfo.fromModule mempty modu -- TODO: knownContents
 
                 (TopLevel topLevels) = extract $ I.unFix body
 
@@ -251,8 +255,10 @@ applyImports importsToApply modu =
         (Module a b c (C preImports originalImports) originalBody) =
             modu
 
+        knownModuleContents =
+            mempty
         importInfo =
-            ImportInfo.fromModule (const mempty) modu
+            ImportInfo.fromModule knownModuleContents modu
 
         finalBody =
             originalBody
@@ -263,7 +269,7 @@ applyImports importsToApply modu =
                 |> removeUnusedImports (const False) (usages finalBody)
 
         finalImportInfo =
-            ImportInfo.fromImports (const mempty) $ fmap extract finalImports
+            ImportInfo.fromImports knownModuleContents $ fmap extract finalImports
     in
     finalBody
         |> applyReferences finalImportInfo
@@ -317,7 +323,7 @@ transformModule upgradeDefinition modu =
                 |> removeUnusedImports (flip Set.member importsNotTouchedByUpgrade) (usages finalBody)
 
         finalImportInfo =
-            ImportInfo.fromImports (const mempty) $ fmap extract finalImports
+            ImportInfo.fromImports mempty $ fmap extract finalImports -- TODO: knownContents
     in
     finalBody
         |> applyReferences finalImportInfo

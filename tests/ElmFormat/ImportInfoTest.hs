@@ -11,6 +11,7 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Dict
 import qualified Data.Set as Set
 import qualified ElmFormat.ImportInfo as ImportInfo
+import qualified ElmFormat.KnownContents as KnownContents
 
 tests :: TestTree
 tests =
@@ -25,7 +26,7 @@ tests =
             i
                 |> fmap makeEntry
                 |> Dict.fromList
-                |> ImportInfo.fromImports (const Nothing)
+                |> ImportInfo.fromImports mempty
     in
     [ testGroup "_directImports" $
         let
@@ -85,7 +86,7 @@ tests =
             [(["B"], Nothing, OpenListing (C ([], []) ()))]
                 |> fmap makeEntry
                 |> Dict.fromList
-                |> ImportInfo.fromImports (const $ Just [VarName $ LowercaseIdentifier "b"])
+                |> ImportInfo.fromImports (KnownContents.fromFunction $ const $ Just [VarName $ LowercaseIdentifier "b"])
                 |> ImportInfo._unresolvedExposingAll
                 |> Set.member [UppercaseIdentifier "B"]
                 |> assertEqual "does not contain B" False

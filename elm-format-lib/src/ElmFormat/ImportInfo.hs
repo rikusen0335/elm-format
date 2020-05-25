@@ -11,6 +11,8 @@ import qualified Data.Bimap as Bimap
 import qualified Data.Map.Strict as Dict
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified ElmFormat.KnownContents as KnownContents
+import ElmFormat.KnownContents (KnownContents)
 
 data ImportInfo ns =
     ImportInfo
@@ -24,18 +26,18 @@ data ImportInfo ns =
 
 
 fromModule ::
-    ([UppercaseIdentifier] -> Maybe [LocalName])
+    KnownContents
     -> Module [UppercaseIdentifier] decl
     -> ImportInfo [UppercaseIdentifier]
-fromModule knownModuleContents modu =
-    fromImports knownModuleContents (fmap extract $ extract $ AST.Module.imports $ modu)
+fromModule knownContents modu =
+    fromImports knownContents (fmap extract $ extract $ AST.Module.imports $ modu)
 
 
 fromImports ::
-    ([UppercaseIdentifier] -> Maybe [LocalName]) -- return Nothing if the contents are unknown
+    KnownContents
     -> Dict.Map [UppercaseIdentifier] ImportMethod
     -> ImportInfo [UppercaseIdentifier]
-fromImports knownModuleContents rawImports =
+fromImports knownContents rawImports =
     let
         defaultImports :: Dict.Map [UppercaseIdentifier] ImportMethod
         defaultImports =
@@ -78,7 +80,7 @@ fromImports knownModuleContents rawImports =
                     [ CtorName $ UppercaseIdentifier "Nothing"
                     , CtorName $ UppercaseIdentifier "Just"
                     ]
-                _ -> knownModuleContents moduleName |> Maybe.fromMaybe []
+                _ -> KnownContents.get knownContents moduleName |> Maybe.fromMaybe []
 
         getExposed moduleName (ImportMethod _ (C _ listing)) =
             Dict.fromList $ fmap (flip (,) moduleName) $
@@ -95,7 +97,7 @@ fromImports knownModuleContents rawImports =
         getCtorListings = \case
             ClosedListing -> []
             OpenListing _ ->
-                -- TODO: exposing (Type(..)) should pull in variant names from knownModuleContents, though this should also be a warning because we can't know for sure which of those are for this type
+                -- TODO: exposing (Type(..)) should pull in variant names from knownContents, though this should also be a warning because we can't know for sure which of those are for this type
                 []
             ExplicitListing ctors _ -> Dict.keys ctors
 
@@ -143,6 +145,6 @@ fromImports knownModuleContents rawImports =
         unresolvedExposingAll =
             Dict.filter exposesAll rawImports
                 |> Dict.keysSet
-                |> Set.filter (\a -> knownModuleContents a == Nothing)
+                |> Set.filter (not . KnownContents.isKnown knownContents)
     in
     ImportInfo exposed aliases directs ambiguous unresolvedExposingAll

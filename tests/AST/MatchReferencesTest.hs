@@ -11,6 +11,7 @@ import Data.Functor.Identity
 import qualified Data.Indexed as I
 import Expect
 import ElmFormat.ImportInfo (ImportInfo)
+import qualified ElmFormat.KnownContents as KnownContents
 import ElmVersion
 import qualified ElmFormat.ImportInfo as ImportInfo
 import qualified Parse.Module
@@ -193,7 +194,7 @@ makeImportInfo knownContentsRaw imports =
         knownContents = knownContentsRaw |> fmap makeKnownContent |> Dict.fromList
     in
     ImportInfo.fromImports
-        (flip Dict.lookup knownContents)
+        (KnownContents.fromFunction $ flip Dict.lookup knownContents)
         (imports |> fmap makeImportMethod |> Dict.fromList)
 
 

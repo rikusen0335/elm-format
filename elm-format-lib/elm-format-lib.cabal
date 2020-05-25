@@ -57,6 +57,7 @@ library
         Data.ReversedList
         Elm.Utils
         ElmFormat.ImportInfo
+        ElmFormat.KnownContents
         ElmFormat.Parse
         ElmFormat.Render.Box
         ElmFormat.Render.ElmStructure
