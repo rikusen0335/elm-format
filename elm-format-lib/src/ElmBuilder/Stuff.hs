@@ -21,8 +21,6 @@ module ElmBuilder.Stuff
 
 
 import qualified System.Directory as Dir
-import qualified System.Environment as Env
-import qualified System.FileLock as Lock
 import qualified System.FilePath as FP
 import System.FilePath ((</>), (<.>))
 
@@ -30,6 +28,8 @@ import qualified ElmCompiler.Elm.ModuleName as ModuleName
 import qualified ElmCompiler.Elm.Package as Pkg
 import qualified ElmCompiler.Elm.Version as V
 
+import qualified CommandLine.World as World
+import CommandLine.World (World)
 
 
 -- PATHS
@@ -120,16 +120,16 @@ findRootHelp dirs =
 -- LOCKS
 
 
-withRootLock :: FilePath -> IO a -> IO a
+withRootLock :: World m => FilePath -> m a -> m a
 withRootLock root work =
   do  let dir = stuff root
-      Dir.createDirectoryIfMissing True dir
-      Lock.withFileLock (dir </> "lock") Lock.Exclusive (\_ -> work)
+      World.createDirectoryIfMissing dir
+      World.withExclusiveFileLock (dir </> "lock") (\_ -> work)
 
 
-withRegistryLock :: PackageCache -> IO a -> IO a
+withRegistryLock :: World m => PackageCache -> m a -> m a
 withRegistryLock (PackageCache dir) work =
-  Lock.withFileLock (dir </> "lock") Lock.Exclusive (\_ -> work)
+  World.withExclusiveFileLock (dir </> "lock") (\_ -> work)
 
 
 
@@ -139,7 +139,7 @@ withRegistryLock (PackageCache dir) work =
 newtype PackageCache = PackageCache FilePath
 
 
-getPackageCache :: IO PackageCache
+getPackageCache :: World m => m PackageCache
 getPackageCache =
   PackageCache <$> getCacheDir "packages"
 
@@ -158,22 +158,22 @@ package (PackageCache dir) name version =
 -- CACHE
 
 
-getReplCache :: IO FilePath
+getReplCache :: World m => m FilePath
 getReplCache =
   getCacheDir "repl"
 
 
-getCacheDir :: FilePath -> IO FilePath
+getCacheDir :: World m => FilePath -> m FilePath
 getCacheDir projectName =
   do  home <- getElmHome
       let root = home </> compilerVersion </> projectName
-      Dir.createDirectoryIfMissing True root
+      World.createDirectoryIfMissing root
       return root
 
 
-getElmHome :: IO FilePath
+getElmHome :: World m => m FilePath
 getElmHome =
-  do  maybeCustomHome <- Env.lookupEnv "ELM_HOME"
+  do  maybeCustomHome <- World.lookupEnv "ELM_HOME"
       case maybeCustomHome of
         Just customHome -> return customHome
-        Nothing -> Dir.getAppUserDataDirectory "elm"
+        Nothing -> World.getAppUserDataDirectory "elm"

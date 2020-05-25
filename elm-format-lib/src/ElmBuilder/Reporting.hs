@@ -131,15 +131,15 @@ isWindows =
 -- KEY
 
 
-newtype Key msg = Key (msg -> IO ())
+newtype Key m msg = Key (msg -> m ())
 
 
-report :: Key msg -> msg -> IO ()
+report :: Key m msg -> msg -> m ()
 report (Key send) msg =
   send msg
 
 
-ignorer :: Key msg
+ignorer :: Monad m => Key m msg
 ignorer =
   Key (\_ -> return ())
 
@@ -171,10 +171,10 @@ askHelp =
 -- DETAILS
 
 
-type DKey = Key DMsg
+type DKey m = Key m DMsg
 
 
-trackDetails :: Style -> (DKey -> IO a) -> IO a
+trackDetails :: Monad m => Style -> (DKey m -> m a) -> m a
 trackDetails style callback =
   case style of
     Silent ->
@@ -184,16 +184,17 @@ trackDetails style callback =
       callback (Key (\_ -> return ()))
 
     Terminal mvar ->
-      do  chan <- newChan
+      -- do  chan <- newChan
 
-          _ <- forkIO $
-            do  takeMVar mvar
-                detailsLoop chan (DState 0 0 0 0 0 0 0)
-                putMVar mvar ()
+      --     _ <- forkIO $
+      --       do  takeMVar mvar
+      --           detailsLoop chan (DState 0 0 0 0 0 0 0)
+      --           putMVar mvar ()
 
-          answer <- callback (Key (writeChan chan . Just))
-          writeChan chan Nothing
-          return answer
+      --     answer <- callback (Key (writeChan chan . Just))
+      --     writeChan chan Nothing
+      --     return answer
+      callback (Key (\_ -> return ()))
 
 
 detailsLoop :: Chan (Maybe DMsg) -> DState -> IO ()
@@ -301,12 +302,12 @@ clear before after =
 -- BUILD
 
 
-type BKey = Key BMsg
+type BKey m = Key m BMsg
 
 type BResult a = Either Exit.BuildProblem a
 
 
-trackBuild :: Style -> (BKey -> IO (BResult a)) -> IO (BResult a)
+trackBuild :: Monad m => Style -> (BKey m -> m (BResult a)) -> m (BResult a)
 trackBuild style callback =
   case style of
     Silent ->
@@ -316,17 +317,18 @@ trackBuild style callback =
       callback (Key (\_ -> return ()))
 
     Terminal mvar ->
-      do  chan <- newChan
+      callback (Key (\_ -> return ()))
+      -- do  chan <- newChan
 
-          _ <- forkIO $
-            do  takeMVar mvar
-                putStrFlush "Compiling ..."
-                buildLoop chan 0
-                putMVar mvar ()
+      --     _ <- forkIO $
+      --       do  takeMVar mvar
+      --           putStrFlush "Compiling ..."
+      --           buildLoop chan 0
+      --           putMVar mvar ()
 
-          result <- callback (Key (writeChan chan . Left))
-          writeChan chan (Right result)
-          return result
+      --     result <- callback (Key (writeChan chan . Left))
+      --     writeChan chan (Right result)
+      --     return result
 
 
 data BMsg

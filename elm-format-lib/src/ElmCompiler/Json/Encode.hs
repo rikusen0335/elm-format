@@ -32,8 +32,10 @@ import Data.Monoid ((<>))
 import qualified ElmCompiler.Data.Name as Name
 import qualified ElmCompiler.Data.Utf8 as Utf8
 
-import qualified ElmBuilder.File as File
 import qualified ElmCompiler.Json.String as Json
+
+import qualified CommandLine.World as World
+import CommandLine.World (World)
 
 
 
@@ -136,14 +138,14 @@ escape chrs =
 -- WRITE TO FILE
 
 
-write :: FilePath -> Value -> IO ()
+write :: World m => FilePath -> Value -> m ()
 write path value =
-  File.writeBuilder path (encode value <> "\n")
+  World.writeBuilder path (encode value <> "\n")
 
 
-writeUgly :: FilePath -> Value -> IO ()
+writeUgly :: World m => FilePath -> Value -> m ()
 writeUgly path value =
-  File.writeBuilder path (encodeUgly value)
+  World.writeBuilder path (encodeUgly value)
 
 
 

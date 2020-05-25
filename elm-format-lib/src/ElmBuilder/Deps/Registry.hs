@@ -22,13 +22,15 @@ import qualified Data.Map.Strict as Map
 import qualified ElmBuilder.Deps.Website as Website
 import qualified ElmCompiler.Elm.Package as Pkg
 import qualified ElmCompiler.Elm.Version as V
-import qualified ElmBuilder.File as File
-import qualified ElmBuilder.Http as Http
 import qualified ElmCompiler.Json.Decode as D
 import qualified ElmCompiler.Parse.Primitives as P
 import qualified ElmBuilder.Reporting.Exit as Exit
 import qualified ElmBuilder.Stuff as Stuff
 
+import qualified CommandLine.World as World
+import CommandLine.World (World)
+import CommandLine.World.IO ()
+import CommandLine.World.HttpWrapper (HttpWrapper)
 
 
 -- REGISTRY
@@ -52,23 +54,23 @@ data KnownVersions =
 -- READ
 
 
-read :: Stuff.PackageCache -> IO (Maybe Registry)
+read :: World m => Stuff.PackageCache -> m (Maybe Registry)
 read cache =
-  File.readBinary (Stuff.registry cache)
+  World.readBinary (Stuff.registry cache)
 
 
 
 -- FETCH
 
 
-fetch :: Http.Manager -> Stuff.PackageCache -> IO (Either Exit.RegistryProblem Registry)
+fetch :: World m => HttpWrapper m (World.HttpManager m) -> Stuff.PackageCache -> m (Either Exit.RegistryProblem Registry)
 fetch manager cache =
   post manager "/all-packages" allPkgsDecoder $
     \versions ->
       do  let size = Map.foldr' addEntry 0 versions
           let registry = Registry size versions
           let path = Stuff.registry cache
-          File.writeBinary path registry
+          World.writeBinary path registry
           return registry
 
 
@@ -98,9 +100,9 @@ allPkgsDecoder =
 -- UPDATE
 
 
-update :: Http.Manager -> Stuff.PackageCache -> Registry -> IO (Either Exit.RegistryProblem Registry)
-update manager cache oldRegistry@(Registry size packages) =
-  post manager ("/all-packages/since/" ++ show size) (D.list newPkgDecoder) $
+update :: World m => HttpWrapper m (World.HttpManager m) -> Stuff.PackageCache -> Registry -> m (Either Exit.RegistryProblem Registry)
+update wrapper cache oldRegistry@(Registry size packages) =
+  post wrapper ("/all-packages/since/" ++ show size) (D.list newPkgDecoder) $
     \news ->
       case news of
         [] ->
@@ -112,7 +114,7 @@ update manager cache oldRegistry@(Registry size packages) =
             newPkgs = foldr addNew packages news
             newRegistry = Registry newSize newPkgs
           in
-          do  File.writeBinary (Stuff.registry cache) newRegistry
+          do  World.writeBinary (Stuff.registry cache) newRegistry
               return newRegistry
 
 
@@ -156,15 +158,15 @@ bail _ _ =
 -- LATEST
 
 
-latest :: Http.Manager -> Stuff.PackageCache -> IO (Either Exit.RegistryProblem Registry)
-latest manager cache =
+latest :: World m => HttpWrapper m (World.HttpManager m) -> Stuff.PackageCache -> m (Either Exit.RegistryProblem Registry)
+latest wrapper cache =
   do  maybeOldRegistry <- read cache
       case maybeOldRegistry of
         Just oldRegistry ->
-          update manager cache oldRegistry
+          update wrapper cache oldRegistry
 
         Nothing ->
-          fetch manager cache
+          fetch wrapper cache
 
 
 
@@ -187,12 +189,12 @@ getVersions' name (Registry _ versions) =
 -- POST
 
 
-post :: Http.Manager -> String -> D.Decoder x a -> (a -> IO b) -> IO (Either Exit.RegistryProblem b)
-post manager path decoder callback =
+post :: World m => HttpWrapper m (World.HttpManager m) -> String -> D.Decoder x a -> (a -> m b) -> m (Either Exit.RegistryProblem b)
+post wrapper path decoder callback =
   let
     url = Website.route path []
   in
-  Http.post manager url [] Exit.RP_Http $
+  World.httpPost wrapper url [] Exit.RP_Http $
     \body ->
       case D.fromByteString decoder body of
         Right a -> Right <$> callback a

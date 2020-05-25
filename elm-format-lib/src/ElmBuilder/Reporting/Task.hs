@@ -16,24 +16,24 @@ module ElmBuilder.Reporting.Task
 -- TASKS
 
 
-newtype Task x a =
+newtype Task m x a =
   Task
   (
-    forall result. (a -> IO result) -> (x -> IO result) -> IO result
+    forall result. (a -> m result) -> (x -> m result) -> m result
   )
 
 
-run :: Task x a -> IO (Either x a)
+run :: Monad m => Task m x a -> m (Either x a)
 run (Task task) =
   task (return . Right) (return . Left)
 
 
-throw :: x -> Task x a
+throw :: x -> Task m x a
 throw x =
   Task $ \_ err -> err x
 
 
-mapError :: (x -> y) -> Task x a -> Task y a
+mapError :: (x -> y) -> Task m x a -> Task m y a
 mapError func (Task task) =
   Task $ \ok err ->
     task ok (err . func)
@@ -44,12 +44,12 @@ mapError func (Task task) =
 
 
 {-# INLINE io #-}
-io :: IO a -> Task x a
+io :: Monad m => m a -> Task m x a
 io work =
   Task $ \ok _ -> work >>= ok
 
 
-mio :: x -> IO (Maybe a) -> Task x a
+mio :: Monad m => x -> m (Maybe a) -> Task m x a
 mio x work =
   Task $ \ok err ->
     do  result <- work
@@ -58,7 +58,7 @@ mio x work =
           Nothing -> err x
 
 
-eio :: (x -> y) -> IO (Either x a) -> Task y a
+eio :: Monad m => (x -> y) -> m (Either x a) -> Task m y a
 eio func work =
   Task $ \ok err ->
     do  result <- work
@@ -71,7 +71,7 @@ eio func work =
 -- INSTANCES
 
 
-instance Functor (Task x) where
+instance Functor (Task m x) where
   {-# INLINE fmap #-}
   fmap func (Task taskA) =
     Task $ \ok err ->
@@ -81,7 +81,7 @@ instance Functor (Task x) where
       taskA okA err
 
 
-instance Applicative (Task x) where
+instance Applicative (Task m x) where
   {-# INLINE pure #-}
   pure a =
     Task $ \ok _ -> ok a
@@ -99,7 +99,7 @@ instance Applicative (Task x) where
       taskFunc okFunc err
 
 
-instance Monad (Task x) where
+instance Monad (Task m x) where
   {-# INLINE return #-}
   return = pure
 

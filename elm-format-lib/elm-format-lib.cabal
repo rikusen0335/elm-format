@@ -39,6 +39,8 @@ library
         CommandLine.ResolveFiles
         CommandLine.TransformFiles
         CommandLine.World
+        CommandLine.World.HttpWrapper
+        CommandLine.World.IO
         ElmFormat.Upgrade_0_19
         -- exposed for tests
         AST.Helpers
@@ -85,6 +87,7 @@ library
         ElmBuilder.Elm.Outline
         ElmBuilder.File
         ElmBuilder.Http
+        ElmBuilder.HttpError
         ElmBuilder.Reporting
         ElmBuilder.Reporting.Exit
         ElmBuilder.Reporting.Exit.Help

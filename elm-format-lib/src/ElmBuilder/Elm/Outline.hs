@@ -23,7 +23,6 @@ import qualified Data.Map as Map
 import qualified ElmCompiler.Data.NonEmptyList as NE
 import qualified ElmCompiler.Data.OneOrMore as OneOrMore
 import Foreign.Ptr (minusPtr)
-import qualified System.Directory as Dir
 import qualified System.FilePath as FP
 import System.FilePath ((</>))
 
@@ -32,7 +31,6 @@ import qualified ElmCompiler.Elm.Licenses as Licenses
 import qualified ElmCompiler.Elm.ModuleName as ModuleName
 import qualified ElmCompiler.Elm.Package as Pkg
 import qualified ElmCompiler.Elm.Version as V
-import qualified ElmBuilder.File as File
 import qualified ElmCompiler.Json.Decode as D
 import qualified ElmCompiler.Json.Encode as E
 import ElmCompiler.Json.Encode ((==>))
@@ -40,6 +38,8 @@ import qualified ElmCompiler.Json.String as Json
 import qualified ElmCompiler.Parse.Primitives as P
 import qualified ElmBuilder.Reporting.Exit as Exit
 
+import qualified CommandLine.World as World
+import CommandLine.World (World)
 
 
 -- OUTLINE
@@ -111,7 +111,7 @@ flattenExposed exposed =
 -- WRITE
 
 
-write :: FilePath -> Outline -> IO ()
+write :: World m => FilePath -> Outline -> m ()
 write root outline =
   E.write (root </> "elm.json") (encode outline)
 
@@ -185,9 +185,9 @@ encodeSrcDir srcDir =
 -- PARSE AND VERIFY
 
 
-read :: FilePath -> IO (Either Exit.Outline Outline)
+read :: World m => FilePath -> m (Either Exit.Outline Outline)
 read root =
-  do  bytes <- File.readUtf8 (root </> "elm.json")
+  do  bytes <- World.readFileWithUtf8 (root </> "elm.json")
       case D.fromByteString decoder bytes of
         Left err ->
           return $ Left (Exit.OutlineHasBadStructure err)
@@ -223,9 +223,9 @@ read root =
                                   return $ Left (Exit.OutlineHasDuplicateSrcDirs canonicalDir dir1 dir2)
 
 
-isSrcDirMissing :: FilePath -> SrcDir -> IO Bool
+isSrcDirMissing :: World m => FilePath -> SrcDir -> m Bool
 isSrcDirMissing root srcDir =
-  not <$> Dir.doesDirectoryExist (toAbsolute root srcDir)
+  not <$> World.doesDirectoryExist (toAbsolute root srcDir)
 
 
 toGiven :: SrcDir -> FilePath
@@ -242,16 +242,16 @@ toAbsolute root srcDir =
     RelativeSrcDir dir -> root </> dir
 
 
-detectDuplicates :: FilePath -> [SrcDir] -> IO (Maybe (FilePath, (FilePath, FilePath)))
+detectDuplicates :: World m => FilePath -> [SrcDir] -> m (Maybe (FilePath, (FilePath, FilePath)))
 detectDuplicates root srcDirs =
   do  pairs <- traverse (toPair root) srcDirs
       return $ Map.lookupMin $ Map.mapMaybe isDup $
         Map.fromListWith OneOrMore.more pairs
 
 
-toPair :: FilePath -> SrcDir -> IO (FilePath, OneOrMore.OneOrMore FilePath)
+toPair :: World m => FilePath -> SrcDir -> m (FilePath, OneOrMore.OneOrMore FilePath)
 toPair root srcDir =
-  do  key <- Dir.canonicalizePath (toAbsolute root srcDir)
+  do  key <- World.canonicalizePath (toAbsolute root srcDir)
       return (key, OneOrMore.one (toGiven srcDir))
 
 

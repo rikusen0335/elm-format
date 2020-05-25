@@ -1,16 +1,20 @@
+{-# LANGUAGE TypeFamilies #-}
 module CommandLine.World where
 
 import Prelude ()
 import Relude hiding (getLine, putStr)
 
+import qualified Codec.Archive.Zip
+import CommandLine.World.HttpWrapper (HttpWrapper)
+import Data.Binary (Binary)
+import qualified Data.ByteString
+import qualified Data.ByteString.Builder
+import qualified Data.ByteString.Char8
+import qualified Data.Digest.Pure.SHA
 import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.IO
-import qualified Data.ByteString.Lazy as Lazy
-import qualified System.Directory as Dir
-import qualified System.Environment
-import qualified System.Exit
-import qualified System.IO
+import Data.Time.Clock (UTCTime)
+import qualified ElmBuilder.HttpError
+import qualified Network.HTTP.Types.Header
 
 
 data FileType
@@ -20,6 +24,10 @@ data FileType
 
 
 class Monad m => World m where
+    type FileLock m :: *
+    type BackgroundWriterScope m :: *
+    type HttpManager m :: *
+
     readUtf8File :: FilePath -> m Text
     readUtf8FileWithPath :: FilePath -> m (FilePath, Text)
     readUtf8FileWithPath filePath =
@@ -38,6 +46,7 @@ class Monad m => World m where
     doesFileExist :: FilePath -> m Bool
     doesDirectoryExist :: FilePath -> m Bool
     listDirectory :: FilePath -> m [FilePath]
+    getModificationTime :: FilePath -> m UTCTime
     stat :: FilePath -> m FileType
     stat path =
         do
@@ -70,25 +79,46 @@ class Monad m => World m where
     exitFailure :: m ()
     exitSuccess :: m ()
 
-
-instance World IO where
-    readUtf8File path = decodeUtf8 <$> readFileBS path
-    writeUtf8File path content = writeFileBS path $ encodeUtf8 content
-
-    doesFileExist = Dir.doesFileExist
-    doesDirectoryExist = Dir.doesDirectoryExist
-    listDirectory = Dir.listDirectory
-
-    getProgName = fmap Text.pack System.Environment.getProgName
-
-    getStdin = decodeUtf8 <$> toStrict <$> Lazy.getContents
-    getLine = Data.Text.IO.getLine
-    putStr = Data.Text.IO.putStr
-    putStrLn = Data.Text.IO.putStrLn
-    writeStdout content = putBS $ encodeUtf8 content
-    flushStdout = System.IO.hFlush stdout
-    putStrStderr = Data.Text.IO.hPutStr stderr
-    putStrLnStderr = Data.Text.IO.hPutStrLn stderr
-
-    exitFailure = System.Exit.exitFailure
-    exitSuccess = System.Exit.exitSuccess
+    -- Needed to support ElmCompiler/ElmBuilder, and likely will be refactored
+    readBinary :: Binary a => FilePath -> m (Maybe a)
+    readFileWithUtf8 :: FilePath -> m Data.ByteString.ByteString
+    writeBinary :: Binary a => FilePath -> a -> m ()
+    writeBuilder :: FilePath -> Data.ByteString.Builder.Builder -> m ()
+    writeFileWithUtf8 :: FilePath -> Data.ByteString.ByteString -> m ()
+    writeArchive :: FilePath -> Codec.Archive.Zip.Archive -> m ()
+    removeFile :: FilePath -> m ()
+    withBackgroundWriter :: (BackgroundWriterScope m -> m a) -> m a
+    writeBinaryBackground :: Binary a => BackgroundWriterScope m -> FilePath -> a -> m ()
+    getHttpWrapper :: m (HttpWrapper m (HttpManager m))
+    httpGet ::
+        HttpWrapper m (HttpManager m)
+        -> String
+        -> [Network.HTTP.Types.Header.Header]
+        -> (ElmBuilder.HttpError.Error -> e)
+        -> (Data.ByteString.Char8.ByteString -> m (Either e a))
+        -> m (Either e a)
+    httpPost ::
+        HttpWrapper m (HttpManager m)
+        -> String
+        -> [Network.HTTP.Types.Header.Header]
+        -> (ElmBuilder.HttpError.Error -> e)
+        -> (Data.ByteString.Char8.ByteString -> m (Either e a))
+        -> m (Either e a)
+    httpGetArchive ::
+        HttpWrapper m (HttpManager m)
+        -> String
+        -> (ElmBuilder.HttpError.Error -> e)
+        -> e
+        -> ((Data.Digest.Pure.SHA.Digest Data.Digest.Pure.SHA.SHA1State, Codec.Archive.Zip.Archive) -> m (Either e a))
+        -> m (Either e a)
+    createDirectoryIfMissing :: FilePath -> m ()
+    canonicalizePath :: FilePath -> m FilePath
+    getAppUserDataDirectory :: FilePath -> m FilePath
+    lookupEnv :: String -> m (Maybe String)
+    withExclusiveFileLock :: FilePath -> (FileLock m -> m a) -> m a
+    newEmptyMVar :: m (MVar a)
+    newMVar :: a -> m (MVar a)
+    putMVar :: MVar a -> a -> m ()
+    readMVar :: MVar a -> m a
+    takeMVar :: MVar a -> m a
+    fork :: m a -> m (MVar a)

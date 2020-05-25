@@ -1,5 +1,6 @@
 module Main where
 
+import CommandLine.World.IO ()
 import qualified ElmRefactor.Cli as Cli
 import qualified System.Environment
 

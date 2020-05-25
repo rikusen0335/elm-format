@@ -17,20 +17,19 @@ module ElmBuilder.Deps.Solver
 
 
 import Control.Monad (foldM)
-import Control.Concurrent (forkIO, newEmptyMVar, putMVar, readMVar)
 import qualified Data.Map as Map
 import Data.Map ((!))
-import qualified System.Directory as Dir
 import System.FilePath ((</>))
 
+import qualified CommandLine.World as World
+import CommandLine.World (World)
+import CommandLine.World.HttpWrapper (HttpWrapper)
 import qualified ElmBuilder.Deps.Registry as Registry
 import qualified ElmBuilder.Deps.Website as Website
 import qualified ElmCompiler.Elm.Constraint as C
 import qualified ElmCompiler.Elm.Package as Pkg
 import qualified ElmBuilder.Elm.Outline as Outline
 import qualified ElmCompiler.Elm.Version as V
-import qualified ElmBuilder.File as File
-import qualified ElmBuilder.Http as Http
 import qualified ElmCompiler.Json.Decode as D
 import qualified ElmBuilder.Reporting.Exit as Exit
 import qualified ElmBuilder.Stuff as Stuff
@@ -40,22 +39,22 @@ import qualified ElmBuilder.Stuff as Stuff
 -- SOLVER
 
 
-newtype Solver a =
+newtype Solver m a =
   Solver
   (
     forall b.
-      State
-      -> (State -> a -> (State -> IO b) -> IO b)
-      -> (State -> IO b)
-      -> (Exit.Solver -> IO b)
-      -> IO b
+      State m
+      -> (State m -> a -> (State m -> m b) -> m b)
+      -> (State m -> m b)
+      -> (Exit.Solver -> m b)
+      -> m b
   )
 
 
-data State =
+data State m =
   State
     { _cache :: Stuff.PackageCache
-    , _connection :: Connection
+    , _connection :: Connection m
     , _registry :: Registry.Registry
     , _constraints :: Map.Map (Pkg.Name, V.Version) Constraints
     }
@@ -68,8 +67,8 @@ data Constraints =
     }
 
 
-data Connection
-  = Online Http.Manager
+data Connection m
+  = Online (HttpWrapper m (World.HttpManager m))
   | Offline
 
 
@@ -92,7 +91,7 @@ data Details =
   Details V.Version (Map.Map Pkg.Name C.Constraint)
 
 
-verify :: Stuff.PackageCache -> Connection -> Registry.Registry -> Map.Map Pkg.Name C.Constraint -> IO (Result (Map.Map Pkg.Name Details))
+verify :: World m => Stuff.PackageCache -> Connection m -> Registry.Registry -> Map.Map Pkg.Name C.Constraint -> m (Result (Map.Map Pkg.Name Details))
 verify cache connection registry constraints =
   Stuff.withRegistryLock cache $
   case try constraints of
@@ -103,14 +102,14 @@ verify cache connection registry constraints =
         (\e     -> return $ Err e)
 
 
-addDeps :: State -> Pkg.Name -> V.Version -> Details
+addDeps :: State m -> Pkg.Name -> V.Version -> Details
 addDeps (State _ _ _ constraints) name vsn =
   case Map.lookup (name, vsn) constraints of
     Just (Constraints _ deps) -> Details vsn deps
     Nothing                   -> error "compiler bug manifesting in Deps.Solver.addDeps"
 
 
-noSolution :: Connection -> Result a
+noSolution :: Connection m -> Result a
 noSolution connection =
   case connection of
     Online _ -> NoSolution
@@ -129,7 +128,7 @@ data AppSolution =
     }
 
 
-addToApp :: Stuff.PackageCache -> Connection -> Registry.Registry -> Pkg.Name -> Outline.AppOutline -> IO (Result AppSolution)
+addToApp :: World m => Stuff.PackageCache -> Connection m -> Registry.Registry -> Pkg.Name -> Outline.AppOutline -> m (Result AppSolution)
 addToApp cache connection registry pkg outline@(Outline.AppOutline _ _ direct indirect testDirect testIndirect) =
   Stuff.withRegistryLock cache $
   let
@@ -156,7 +155,7 @@ addToApp cache connection registry pkg outline@(Outline.AppOutline _ _ direct in
         (\e     -> return $ Err e)
 
 
-toApp :: State -> Pkg.Name -> Outline.AppOutline -> Map.Map Pkg.Name V.Version -> Map.Map Pkg.Name V.Version -> AppSolution
+toApp :: State m -> Pkg.Name -> Outline.AppOutline -> Map.Map Pkg.Name V.Version -> Map.Map Pkg.Name V.Version -> AppSolution
 toApp (State _ _ _ constraints) pkg (Outline.AppOutline elm srcDirs direct _ testDirect _) old new =
   let
     d   = Map.intersection new (Map.insert pkg V.one direct)
@@ -190,7 +189,7 @@ getTransitive constraints solution unvisited visited =
 -- TRY
 
 
-try :: Map.Map Pkg.Name C.Constraint -> Solver (Map.Map Pkg.Name V.Version)
+try :: World m => Map.Map Pkg.Name C.Constraint -> Solver m (Map.Map Pkg.Name V.Version)
 try constraints =
   exploreGoals (Goals constraints Map.empty)
 
@@ -206,7 +205,7 @@ data Goals =
     }
 
 
-exploreGoals :: Goals -> Solver (Map.Map Pkg.Name V.Version)
+exploreGoals :: World m => Goals -> Solver m (Map.Map Pkg.Name V.Version)
 exploreGoals (Goals pending solved) =
   case Map.minViewWithKey pending of
     Nothing ->
@@ -220,7 +219,7 @@ exploreGoals (Goals pending solved) =
           exploreGoals goals2
 
 
-addVersion :: Goals -> Pkg.Name -> V.Version -> Solver Goals
+addVersion :: World m => Goals -> Pkg.Name -> V.Version -> Solver m Goals
 addVersion (Goals pending solved) name version =
   do  (Constraints elm deps) <- getConstraints name version
       if C.goodElm elm
@@ -231,7 +230,7 @@ addVersion (Goals pending solved) name version =
           backtrack
 
 
-addConstraint :: Map.Map Pkg.Name V.Version -> Map.Map Pkg.Name C.Constraint -> (Pkg.Name, C.Constraint) -> Solver (Map.Map Pkg.Name C.Constraint)
+addConstraint :: Map.Map Pkg.Name V.Version -> Map.Map Pkg.Name C.Constraint -> (Pkg.Name, C.Constraint) -> Solver m (Map.Map Pkg.Name C.Constraint)
 addConstraint solved unsolved (name, newConstraint) =
   case Map.lookup name solved of
     Just version ->
@@ -259,7 +258,7 @@ addConstraint solved unsolved (name, newConstraint) =
 -- GET RELEVANT VERSIONS
 
 
-getRelevantVersions :: Pkg.Name -> C.Constraint -> Solver (V.Version, [V.Version])
+getRelevantVersions :: Pkg.Name -> C.Constraint -> Solver m (V.Version, [V.Version])
 getRelevantVersions name constraint =
   Solver $ \state@(State _ _ registry _) ok back _ ->
     case Registry.getVersions name registry of
@@ -276,7 +275,7 @@ getRelevantVersions name constraint =
 -- GET CONSTRAINTS
 
 
-getConstraints :: Pkg.Name -> V.Version -> Solver Constraints
+getConstraints :: World m => Pkg.Name -> V.Version -> Solver m Constraints
 getConstraints pkg vsn =
   Solver $ \state@(State cache connection registry cDict) ok back err ->
     do  let key = (pkg, vsn)
@@ -288,10 +287,10 @@ getConstraints pkg vsn =
             do  let toNewState cs = State cache connection registry (Map.insert key cs cDict)
                 let home = Stuff.package cache pkg vsn
                 let path = home </> "elm.json"
-                outlineExists <- File.exists path
+                outlineExists <- World.doesFileExist path
                 if outlineExists
                   then
-                    do  bytes <- File.readUtf8 path
+                    do  bytes <- World.readFileWithUtf8 path
                         case D.fromByteString constraintsDecoder bytes of
                           Right cs ->
                             case connection of
@@ -299,13 +298,13 @@ getConstraints pkg vsn =
                                 ok (toNewState cs) cs back
 
                               Offline ->
-                                do  srcExists <- Dir.doesDirectoryExist (Stuff.package cache pkg vsn </> "src")
+                                do  srcExists <- World.doesDirectoryExist (Stuff.package cache pkg vsn </> "src")
                                     if srcExists
                                       then ok (toNewState cs) cs back
                                       else back state
 
                           Left  _  ->
-                            do  File.remove path
+                            do  World.removeFile path
                                 err (Exit.SolverBadCacheData pkg vsn)
                   else
                     case connection of
@@ -314,7 +313,7 @@ getConstraints pkg vsn =
 
                       Online manager ->
                         do  let url = Website.metadata pkg vsn "elm.json"
-                            result <- Http.get manager url [] id (return . Right)
+                            result <- World.httpGet manager url [] id (return . Right)
                             case result of
                               Left httpProblem ->
                                 err (Exit.SolverBadHttp pkg vsn httpProblem)
@@ -322,8 +321,8 @@ getConstraints pkg vsn =
                               Right body ->
                                 case D.fromByteString constraintsDecoder body of
                                   Right cs ->
-                                    do  Dir.createDirectoryIfMissing True home
-                                        File.writeUtf8 path body
+                                    do  World.createDirectoryIfMissing home
+                                        World.writeFileWithUtf8 path body
                                         ok (toNewState cs) cs back
 
                                   Left _ ->
@@ -345,44 +344,42 @@ constraintsDecoder =
 -- ENVIRONMENT
 
 
-data Env =
-  Env Stuff.PackageCache Http.Manager Connection Registry.Registry
+data Env m =
+  Env Stuff.PackageCache (HttpWrapper m (World.HttpManager m)) (Connection m) Registry.Registry
 
 
-initEnv :: IO (Either Exit.RegistryProblem Env)
+initEnv :: World m => m (Either Exit.RegistryProblem (Env m))
 initEnv =
-  do  mvar  <- newEmptyMVar
-      _     <- forkIO $ putMVar mvar =<< Http.getManager
+  do  wrapper <- World.getHttpWrapper
       cache <- Stuff.getPackageCache
       Stuff.withRegistryLock cache $
         do  maybeRegistry <- Registry.read cache
-            manager       <- readMVar mvar
 
             case maybeRegistry of
               Nothing ->
-                do  eitherRegistry <- Registry.fetch manager cache
+                do  eitherRegistry <- Registry.fetch wrapper cache
                     case eitherRegistry of
                       Right latestRegistry ->
-                        return $ Right $ Env cache manager (Online manager) latestRegistry
+                        return $ Right $ Env cache wrapper (Online wrapper) latestRegistry
 
                       Left problem ->
                         return $ Left $ problem
 
               Just cachedRegistry ->
-                do  eitherRegistry <- Registry.update manager cache cachedRegistry
+                do  eitherRegistry <- Registry.update wrapper cache cachedRegistry
                     case eitherRegistry of
                       Right latestRegistry ->
-                        return $ Right $ Env cache manager (Online manager) latestRegistry
+                        return $ Right $ Env cache wrapper (Online wrapper) latestRegistry
 
                       Left _ ->
-                        return $ Right $ Env cache manager Offline cachedRegistry
+                        return $ Right $ Env cache wrapper Offline cachedRegistry
 
 
 
 -- INSTANCES
 
 
-instance Functor Solver where
+instance Functor (Solver m) where
   fmap func (Solver solver) =
     Solver $ \state ok back err ->
       let
@@ -391,7 +388,7 @@ instance Functor Solver where
       solver state okA back err
 
 
-instance Applicative Solver where
+instance Applicative (Solver m) where
   pure a =
     Solver $ \state ok back _ -> ok state a back
 
@@ -407,7 +404,7 @@ instance Applicative Solver where
       solverFunc state okF back err
 
 
-instance Monad Solver where
+instance Monad (Solver m) where
   return a =
     Solver $ \state ok back _ -> ok state a back
 
@@ -421,7 +418,7 @@ instance Monad Solver where
       solverA state okA back err
 
 
-oneOf :: Solver a -> [Solver a] -> Solver a
+oneOf :: Solver m a -> [Solver m a] -> Solver m a
 oneOf solver@(Solver solverHead) solvers =
   case solvers of
     [] ->
@@ -439,6 +436,6 @@ oneOf solver@(Solver solverHead) solvers =
         solverHead state0 ok tryTail err
 
 
-backtrack :: Solver a
+backtrack :: Solver m a
 backtrack =
   Solver $ \state _ back _ -> back state

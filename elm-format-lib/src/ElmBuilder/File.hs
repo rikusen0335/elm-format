@@ -16,6 +16,8 @@ module ElmBuilder.File
 
 
 import qualified Codec.Archive.Zip as Zip
+import qualified CommandLine.World as World
+import CommandLine.World (World)
 import Control.Exception (catch)
 import qualified Data.Binary as Binary
 import qualified Data.ByteString as BS
@@ -43,11 +45,11 @@ newtype Time = Time Fixed.Pico
   deriving (Eq, Ord)
 
 
-getTime :: FilePath -> IO Time
+getTime :: World m => FilePath -> m Time
 getTime path =
   fmap
     (Time . Time.nominalDiffTimeToSeconds . Time.utcTimeToPOSIXSeconds)
-    (Dir.getModificationTime path)
+    (World.getModificationTime path)
 
 
 zeroTime :: Time

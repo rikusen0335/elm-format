@@ -42,6 +42,8 @@ import qualified Network.HTTP.Client.MultipartFormData as Multi
 import qualified ElmCompiler.Json.Encode as Encode
 import qualified ElmCompiler.Elm.Version as V
 
+import ElmBuilder.HttpError
+
 
 
 -- MANAGER
@@ -110,12 +112,6 @@ accept mime =
 
 
 -- EXCEPTIONS
-
-
-data Error
-  = BadUrl String String
-  | BadHttp String HttpExceptionContent
-  | BadMystery String SomeException
 
 
 handleHttpException :: String -> (Error -> e) -> HttpException -> IO (Either e a)
