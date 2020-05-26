@@ -35,11 +35,17 @@ localNames :: Interface.DependencyInterface -> [LocalName]
 localNames depInterface =
     case depInterface of
         Interface.Public interface ->
-            Interface._values interface
-                |> Map.keys
-                |> fmap (VarName . LowercaseIdentifier .  Utf8.toChars)
-            -- TODO: include custom type names
-            -- TODO: include type alias names
+            mconcat
+                [ Interface._values interface
+                    |> Map.keys
+                    |> fmap (VarName . LowercaseIdentifier .  Utf8.toChars)
+                , Interface._unions interface
+                    |> Map.keys
+                    |> fmap (TypeName . UppercaseIdentifier .  Utf8.toChars)
+                , Interface._aliases interface
+                    |> Map.keys
+                    |> fmap (TypeName . UppercaseIdentifier .  Utf8.toChars)
+                ]
             -- TODO: include custom type variants
             -- TODO: include symbol operators
 

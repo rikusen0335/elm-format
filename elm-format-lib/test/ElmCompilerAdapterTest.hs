@@ -32,6 +32,34 @@ spec_spec =
                     |> KnownContents.get [ UppercaseIdentifier "Time" ]
                     |> flip shouldBe (Just [ VarName $ LowercaseIdentifier "now" ])
 
+            it "includes custom types" $ do
+                Map.fromList
+                    [ ( canonical (pkg "elm" "time") "Time"
+                      , Interface.public $ Interface (pkg "elm" "time")
+                            mempty
+                            (Map.singleton "Zone" undefined)
+                            mempty
+                            mempty
+                      )
+                    ]
+                    |> ElmCompilerAdapter.knownContents
+                    |> KnownContents.get [ UppercaseIdentifier "Time" ]
+                    |> flip shouldBe (Just [ TypeName $ UppercaseIdentifier "Zone" ])
+
+            it "includes type aliases" $ do
+                Map.fromList
+                    [ ( canonical (pkg "elm" "json") "Json.Decode"
+                      , Interface.public $ Interface (pkg "elm" "json")
+                            mempty
+                            mempty
+                            (Map.singleton "Value" undefined)
+                            mempty
+                      )
+                    ]
+                    |> ElmCompilerAdapter.knownContents
+                    |> KnownContents.get (fmap UppercaseIdentifier [ "Json", "Decode" ])
+                    |> flip shouldBe (Just [ TypeName $ UppercaseIdentifier "Value" ])
+
 
 canonical :: Pkg.Name -> Name.Name -> ModuleName.Canonical
 canonical packageName moduleName =
