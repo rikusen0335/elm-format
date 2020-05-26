@@ -51,7 +51,7 @@ library
         Data.FileTree
 
 
-test-Suite elm-format-test-lib-tests
+test-suite elm-format-test-lib-tests
     import: common-options
     type: exitcode-stdio-1.0
 
