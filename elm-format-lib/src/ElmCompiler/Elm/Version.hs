@@ -55,7 +55,7 @@ max =
 
 compiler :: Version
 compiler =
-  Version 19 1 0
+  Version 0 19 1
 
 
 
