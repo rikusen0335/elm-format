@@ -27,7 +27,7 @@ isKnown (KnownContents lookup) =
     maybe False (const True) . lookup
 
 
-get :: KnownContents -> [UppercaseIdentifier] -> Maybe [LocalName]
+get :: [UppercaseIdentifier] -> KnownContents -> Maybe [LocalName]
 {-# INLINE get #-}
-get (KnownContents lookup) =
-    lookup
+get ns (KnownContents lookup) =
+    lookup ns

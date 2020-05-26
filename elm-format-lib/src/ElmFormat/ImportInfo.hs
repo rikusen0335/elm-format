@@ -80,7 +80,7 @@ fromImports knownContents rawImports =
                     [ CtorName $ UppercaseIdentifier "Nothing"
                     , CtorName $ UppercaseIdentifier "Just"
                     ]
-                _ -> KnownContents.get knownContents moduleName |> Maybe.fromMaybe []
+                _ -> KnownContents.get moduleName knownContents |> Maybe.fromMaybe []
 
         getExposed moduleName (ImportMethod _ (C _ listing)) =
             Dict.fromList $ fmap (flip (,) moduleName) $
