@@ -6,6 +6,7 @@ module ElmBuilder.Elm.Details
   , ValidOutline(..)
   , Local(..)
   , Foreign(..)
+  , Interfaces
   , load
   , loadObjects
   , loadInterfaces
