@@ -10,6 +10,7 @@ import qualified CommandLine.World as World
 import Data.Coapplicative
 import Data.Either.Extra (collectErrors)
 import Data.Text (Text)
+import ElmFormat.KnownContents (KnownContents)
 import ElmFormat.Upgrade_0_19 (Transformation(..), UpgradeDefinition, parseUpgradeDefinition, applyTransformation)
 import ElmRefactor.CliFlags as Flags
 import ElmRefactor.Messages
@@ -25,8 +26,8 @@ import qualified ElmRefactor.Version
 import qualified Reporting.Result as Result
 
 
-upgrade :: [Transformation] -> (FilePath, Text) -> Either InfoMessage Text
-upgrade transformations (inputFile, inputText) =
+upgrade :: KnownContents -> [Transformation] -> (FilePath, Text) -> Either InfoMessage Text
+upgrade knownContents transformations (inputFile, inputText) =
     let
         elmVersion = Elm_0_19
     in
@@ -34,7 +35,7 @@ upgrade transformations (inputFile, inputText) =
         Result.Result _ (Result.Ok ast) ->
             let
                 transform input =
-                    foldl' (flip applyTransformation) input transformations
+                    foldl' (flip $ applyTransformation knownContents) input transformations
             in
             ast
                 |> fmap (I.convert (Identity . extract))
@@ -65,13 +66,14 @@ main' flags =
         let definitionFiles = Flags._upgradeDefinitions flags
         definitions <- Program.mapError BadUpgradeDefinitions $ Program.liftME $ collectErrors <$> mapM readDefinitionFile definitionFiles
 
+        let knownContents = mempty -- TODO
         let transformations = mconcat
                 -- TODO: keep the relative order of these
                 [ fmap Upgrade definitions
                 , fmap ApplyImport $ Flags._imports flags
                 ]
 
-        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes FilesWillBeOverwritten (upgrade transformations) mode
+        result <- Program.liftM $ TransformFiles.applyTransformation ProcessingFile autoYes FilesWillBeOverwritten (upgrade knownContents transformations) mode
         if result
             then return ()
             else Program.failed

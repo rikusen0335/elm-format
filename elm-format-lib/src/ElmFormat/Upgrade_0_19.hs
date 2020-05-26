@@ -233,32 +233,32 @@ data Transformation
 applyTransformation ::
     forall annf.
     (Applicative annf, Coapplicative annf) =>
-    Transformation
+    KnownContents
+    -> Transformation
     -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
     -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] 'TopLevelNK)
-applyTransformation = \case
+applyTransformation knownContents = \case
     Upgrade upgradeDefinition ->
         transformModule upgradeDefinition
 
     ApplyImport (C c name, method) ->
         -- TODO: are there cases where we need to combine all new imports into a single pass? (like swapping aliases)
-        applyImports $ Dict.singleton name (C c method)
+        applyImports knownContents $ Dict.singleton name (C c method)
 
 
 applyImports ::
     (Applicative annf, Coapplicative annf) =>
-    Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
+    KnownContents
+    -> Dict.Map [UppercaseIdentifier] (C1 Before ImportMethod)
     -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] nk)
     -> Module [UppercaseIdentifier] (ASTNS annf [UppercaseIdentifier] nk)
-applyImports importsToApply modu =
+applyImports knownContents importsToApply modu =
     let
         (Module a b c (C preImports originalImports) originalBody) =
             modu
 
-        knownModuleContents =
-            mempty
         importInfo =
-            ImportInfo.fromModule knownModuleContents modu
+            ImportInfo.fromModule knownContents modu
 
         finalBody =
             originalBody
@@ -269,7 +269,7 @@ applyImports importsToApply modu =
                 |> removeUnusedImports (const False) (usages finalBody)
 
         finalImportInfo =
-            ImportInfo.fromImports knownModuleContents $ fmap extract finalImports
+            ImportInfo.fromImports knownContents $ fmap extract finalImports
     in
     finalBody
         |> applyReferences finalImportInfo
