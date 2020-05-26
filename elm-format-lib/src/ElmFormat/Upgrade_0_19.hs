@@ -218,7 +218,7 @@ transform importInfo =
         Right replacements ->
             applyReferences importInfo
                 . I.convert (pure . extract)
-                . transform' replacements importInfo
+                . transform' replacements
                 . matchReferences importInfo
 
         Left () ->
@@ -307,7 +307,7 @@ transformModule upgradeDefinition modu =
                 |> matchReferences importInfo
                 -- TODO: combine transform' and transformType into a single pass
                 |> I.cata (transformType upgradeDefinition . I.Fix)
-                |> transform' upgradeDefinition importInfo
+                |> transform' upgradeDefinition
                 |> I.convert (pure . extract)
 
 
@@ -330,6 +330,7 @@ transformModule upgradeDefinition modu =
         |> Module a b c (C preImports finalImports)
 
 
+removeTypes :: Set UppercaseIdentifier -> Listing DetailedListing -> Listing DetailedListing
 removeTypes rem listing =
     case listing of
         OpenListing c -> OpenListing c
@@ -391,11 +392,10 @@ type UExpr = UAST 'ExpressionNK
 transform' ::
     Coapplicative annf =>
     UpgradeDefinition
-    -> ImportInfo [UppercaseIdentifier]
     -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind
     -> UAST kind -- TODO: refactor to retain the original annf around ((,) Source)?
-transform' upgradeDefinition importInfo =
-    I.cata (simplify . applyUpgrades upgradeDefinition importInfo . I.Fix)
+transform' upgradeDefinition =
+    I.cata (simplify . applyUpgrades upgradeDefinition . I.Fix)
         . I.convert (Compose . Identity . (,) FromSource . extract)
         -- TODO: get rid of extract and keep the original annf
 
@@ -422,10 +422,9 @@ transformType upgradeDefinition typ =
         _ -> typ
 
 
-applyUpgrades :: UpgradeDefinition -> ImportInfo [UppercaseIdentifier] -> UAST kind -> UAST kind
-applyUpgrades upgradeDefinition importInfo expr =
+applyUpgrades :: UpgradeDefinition -> UAST kind -> UAST kind
+applyUpgrades upgradeDefinition expr =
     let
-        exposed = ImportInfo._exposed importInfo
         replacements = _replacements upgradeDefinition
 
         replace :: Ref (MatchedNamespace [UppercaseIdentifier]) -> Maybe (ASTNS Identity (MatchedNamespace [UppercaseIdentifier]) 'ExpressionNK)
